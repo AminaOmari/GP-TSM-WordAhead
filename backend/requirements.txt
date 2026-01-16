@@ -5,7 +5,7 @@ numpy
 pandas
 sentence-transformers
 spacy
-torch
+
 transformers
 openai
 wordfreq
