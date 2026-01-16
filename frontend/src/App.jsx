@@ -76,7 +76,8 @@ function App() {
   return (
     <div className="app-container">
       {/* Header */}
-      <header className="glass" style={{ padding: '1.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Header */}
+      <header className="glass header-container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'var(--accent)', padding: '0.5rem', borderRadius: '8px' }}>
             <Activity color="white" size={24} />
@@ -87,7 +88,7 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="header-controls">
           <input
             type="password"
             placeholder="OpenAI API Key"
@@ -108,7 +109,7 @@ function App() {
       </header>
 
       {/* Categories Legend */}
-      <div className="glass" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '2rem', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="glass legend-container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span className="word word-hard">Hard Word</span>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
@@ -124,10 +125,10 @@ function App() {
       </div>
 
       {/* Main Content: 3-Column Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr 300px', gap: '1.5rem', alignItems: 'start' }}>
+      <div className="main-layout">
 
         {/* Left Panel: Input */}
-        <div className="glass" style={{ padding: '1rem', height: 'fit-content', position: 'sticky', top: '1rem' }}>
+        <div className="glass input-panel">
           <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.2rem' }}>
             <BookOpen size={18} /> Input
           </h2>
@@ -146,7 +147,7 @@ function App() {
         </div>
 
         {/* Middle Panel: Output */}
-        <div className="glass" style={{ padding: '2rem', minHeight: '600px', background: 'white' }}>
+        <div className="glass content-panel">
           {tokens.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
               <p>Ready to process. Enter text and click Analyze.</p>
@@ -191,7 +192,7 @@ function App() {
         </div>
 
         {/* Right Panel: Translation Sidebar */}
-        <div className="glass" style={{ padding: '1.5rem', height: 'fit-content', minHeight: '300px', position: 'sticky', top: '1rem', background: 'white' }}>
+        <div className="glass translation-panel">
           <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
             <Activity size={18} /> Word Details
           </h2>
