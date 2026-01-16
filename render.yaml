@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: gp-tsm-backend
+    env: python
+    region: ohio
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm"
+    startCommand: "python backend/main.py"
+    envVars:
+      - key: PORT
+        value: 10000

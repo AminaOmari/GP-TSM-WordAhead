@@ -1,0 +1,15 @@
+
+# Added from GP-TSM requirements just in case
+Flask==2.2.2
+numpy
+pandas
+sentence-transformers
+spacy
+torch
+transformers
+openai
+wordfreq
+fastapi
+uvicorn
+python-multipart
+requests
