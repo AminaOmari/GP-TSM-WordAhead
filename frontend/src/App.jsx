@@ -7,7 +7,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 function App() {
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('openai_api_key') || '');
+
+  useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem('openai_api_key', apiKey);
+    }
+  }, [apiKey]);
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B1'); // Start at Medium
   const [tokens, setTokens] = useState([]);
