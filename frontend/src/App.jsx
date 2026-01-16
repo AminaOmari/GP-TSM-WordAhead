@@ -23,15 +23,38 @@ function App() {
   const [transLoading, setTransLoading] = useState(false);
 
   // Dynamic Level Adjustment Logic
+  // Heuristic: If user clicks 3 words that are AT or BELOW their current level, 
+  // it means they are struggling with "easy" words -> Downgrade Level.
+  const [struggleCount, setStruggleCount] = useState(0);
+
   const handleWordClick = async (token) => {
-    // Ignore purely structural tokens if needed, but assuming user clicks meaningful words
+    // Ignore purely structural tokens or undefined levels
     if (!token.cefr) return;
 
-    // Adjust Level
     const wIdx = CEFR_LEVELS.indexOf(token.cefr);
     const uIdx = CEFR_LEVELS.indexOf(userLevel);
 
-    // If word level < current user level, downgrade logic could go here
+    // Dynamic Learning Logic
+    if (wIdx !== -1 && uIdx !== -1) {
+      if (wIdx <= uIdx) {
+        // User clicked a word that should be easy for them (or equal level)
+        // Increment struggle count
+        const newCount = struggleCount + 1;
+        setStruggleCount(newCount);
+
+        if (newCount >= 3) {
+          // Trigger Downgrade if possible
+          if (uIdx > 0) {
+            const newLevel = CEFR_LEVELS[uIdx - 1];
+            setUserLevel(newLevel);
+            setStruggleCount(0); // Reset
+            // Optional: Toast notification could go here
+            console.log(`Dynamic Adjustment: Downgrading user from ${userLevel} to ${newLevel}`);
+            alert(`We noticed you're looking up common words. Adjusting simplified level to ${newLevel} for better support.`);
+          }
+        }
+      }
+    }
 
     // Show Translation in Sidebar
     setSelectedWord(token);
@@ -41,7 +64,7 @@ function App() {
     try {
       const res = await axios.post(`${API_URL}/translate`, {
         word: token.text,
-        context: text.substring(0, 200), // simplistic context
+        context: text.substring(0, 200),
         api_key: apiKey
       });
       setTranslation(res.data);
