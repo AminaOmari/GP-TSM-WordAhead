@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 import diff_text
 
 OPTIMAL_LENGTH = 0.6
-MPNET = SentenceTransformer('all-mpnet-base-v2') # SOTA model, better than SBERT
+MPNET = SentenceTransformer('all-MiniLM-L6-v2') # Switched to MiniLM for memory efficiency on Free Tier
 
 
 def evaluate_on_meaning(original_paragraph, response):
