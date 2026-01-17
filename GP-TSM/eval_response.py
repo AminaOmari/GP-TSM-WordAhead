@@ -1,14 +1,14 @@
-
 import sys
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 from difflib import SequenceMatcher
 import diff_text
+import threading
 
 OPTIMAL_LENGTH = 0.6
-MPNET = SentenceTransformer('all-MiniLM-L6-v2') # Switched to MiniLM for memory efficiency on Free Tier
-
+MPNET = SentenceTransformer('all-MiniLM-L6-v2') 
+MPNET_LOCK = threading.Lock()
 
 def evaluate_on_meaning(original_paragraph, response):
   '''
@@ -16,18 +16,20 @@ def evaluate_on_meaning(original_paragraph, response):
   to the original sentence; Could be used to infer whether important words are removed
   Returns: a float (cosine similarity value)
   '''
-  embedding_original = MPNET.encode(original_paragraph)
-  embedding_response = MPNET.encode(response)
+  with MPNET_LOCK:
+      embedding_original = MPNET.encode(original_paragraph)
+      embedding_response = MPNET.encode(response)
   return cos_sim(embedding_original, embedding_response).item()
 
 
-def evaluate_on_length(original_paragraph, response):
+def evaluate_on_length(original_paragraph, response, optimal_length=None):
   '''
   2nd possible evaluate function that checks the lengths of the shortened sentence
   Could be used to infer whether unnecessary phrases are indeed removed
   Returns: a float (length shortened/length original)
   '''
-  return 1 - abs(len(response)/len(original_paragraph) - OPTIMAL_LENGTH)
+  target_len = optimal_length if optimal_length is not None else OPTIMAL_LENGTH
+  return 1 - abs(len(response)/len(original_paragraph) - target_len)
 
 
 def evaluate_on_paraphrasing(original_paragraph, response):
