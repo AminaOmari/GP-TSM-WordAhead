@@ -10,10 +10,9 @@ function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('openai_api_key') || '');
 
   useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('openai_api_key', apiKey);
-    }
+    localStorage.setItem('openai_api_key', apiKey);
   }, [apiKey]);
+
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B1'); // Start at Medium
   const [tokens, setTokens] = useState([]);

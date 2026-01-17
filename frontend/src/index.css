@@ -7,9 +7,11 @@
   --text-secondary: #64748b;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.1);
+  /* GP-TSM Specific Colors */
   --word-hard: #9333ea;
   --word-important: #000000;
-  --word-non-important: #94a3b8;
+  --word-non-important: #cbd5e1;
+  /* Lighter Grey (Slate 300) to match faded look */
 }
 
 *,
@@ -166,6 +168,12 @@ body {
 .word-low {
   color: var(--word-non-important);
   font-weight: 400;
+  transition: color 0.1s ease;
+}
+
+.word-low:hover {
+  color: #64748b;
+  /* Darken on hover for readability */
 }
 
 .close-btn {
