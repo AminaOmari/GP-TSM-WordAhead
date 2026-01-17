@@ -157,7 +157,14 @@ body {
 
 .word-hard {
   color: var(--word-hard);
-  font-weight: 600;
+  font-weight: 500;
+  /* Regular weight for Hard, Not Important */
+}
+
+.word-hard-important {
+  color: var(--word-hard);
+  font-weight: 800;
+  /* Bold for Hard + Important */
 }
 
 .word-important {

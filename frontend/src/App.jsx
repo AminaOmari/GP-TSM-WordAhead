@@ -139,11 +139,15 @@ function App() {
       {/* Categories Legend */}
       <div className="glass legend-container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="word word-hard">Hard Word</span>
+          <span className="word word-hard-important">Hard & Important</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Purple)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span className="word word-hard">Hard</span>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="word word-important">Important Word</span>
+          <span className="word word-important">Important</span>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Black)</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -188,12 +192,17 @@ function App() {
                 let className = "word";
 
                 // Logic based on requirements:
-                // 1. Hard Word -> Purple (word-hard)
-                // 2. Important (GP-TSM > 0) -> Bold Black (word-important)
-                // 3. Non-Important (GP-TSM 0) -> Grey (word-low)
+                // 1. Hard + Important -> Bold Purple (word-hard-important)
+                // 2. Hard + Not Important -> Purple (word-hard)
+                // 3. Easy + Important -> Bold Black (word-important)
+                // 4. Easy + Not Important -> Grey (word-low)
 
                 if (t.isDifficult) {
-                  className += " word-hard";
+                  if (t.importance > 0) {
+                    className += " word-hard-important";
+                  } else {
+                    className += " word-hard";
+                  }
                 } else if (t.importance > 0) {
                   className += " word-important";
                 } else {
