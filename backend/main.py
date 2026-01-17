@@ -175,7 +175,7 @@ async def translate(req: TranslateRequest):
     prompt = f"""
     Translate the English word "{req.word}" to Hebrew (Ivrit).
     Also provide:
-    1. The root (shoresh) if applicable.
+    1. The Hebrew Root (Shoresh/שורש) of the HEBREW translation.
     2. An example sentence in English with Hebrew translation.
     
     Output JSON format:

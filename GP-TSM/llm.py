@@ -9,9 +9,9 @@ import concurrent.futures
 import threading
 import uuid
 
-MAX_DEPTH = 3 # Reduced from 4 for speed
+MAX_DEPTH = 4 # Restored to 4 to match backend expectation of l4 (Importance 4)
 TEMPERATURE = 0.8
-N = 1 # Reduced from 2 for speed
+N = 2 # Restored to 2 to ensure quality selection (Best of N)
 
 GRAMMER_SCORE_RULE = {'A': 1, 'B': 0.5, 'C': 0}
 
@@ -86,14 +86,17 @@ def find_score(score):
 def for_viz(lst): #prepare data for the viz code in app.py
     # Adapt to variable depth if needed, but for now assumption is consistent depth
     # If list is shorter than expected, we handle it
-    if len(lst) >= MAX_DEPTH + 1:
-        return [{str(i): lst[i] for i in range(len(lst))}]
-    rst = [{str(i): lst[i] for i in range(len(lst))}]
-    # Fill remaining depths with last result
-    for j in range(MAX_DEPTH - len(lst) + 1):
-        rst[0][str(len(lst)+j)] = lst[-1]
     
-    # We don't write to tgt.json anymore to avoid race conditions in threads
+    # backend/main.py expects keys '0' to '4' explicitly.
+    TARGET_DEPTH = 4
+    
+    rst = [{str(i): lst[i] for i in range(len(lst))}]
+    
+    # Fill remaining depths with last result (if stopped early)
+    last_val = lst[-1] if lst else ""
+    for j in range(len(lst), TARGET_DEPTH + 1):
+        rst[0][str(j)] = last_val
+    
     return rst
 
 def _split_into_sentences(text):
