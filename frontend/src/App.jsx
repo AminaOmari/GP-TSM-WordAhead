@@ -195,18 +195,30 @@ function App() {
                 // 1. Hard + Important -> Bold Purple (word-hard-important)
                 // 2. Hard + Not Important -> Purple (word-hard)
                 // 3. Easy + Important -> Bold Black (word-important)
-                // 4. Easy + Not Important -> Grey (word-low)
+                // 4. Easy + Not Important -> "Progressive Fading" Grey (word-low / word-fade-X)
+
+                // Importance usually ranges from 0 to 4 (depending on depth)
+                // 0 = least important (removed early), 4 = most important (kept till end)
 
                 if (t.isDifficult) {
-                  if (t.importance > 0) {
+                  // HARD WORDS (Purple)
+                  if (t.importance > 2) { // Assuming >2 is "Significant" importance
                     className += " word-hard-important";
                   } else {
                     className += " word-hard";
                   }
-                } else if (t.importance > 0) {
+                } else if (t.importance >= 3) {
+                  // IMPORTANT WORDS (Bold Black) - Easy but Critical
                   className += " word-important";
                 } else {
-                  className += " word-low";
+                  // NOT IMPORTANT (Greys) - Easy and less critical
+                  // Use importance level to determine shade of grey
+                  // importance 0 -> lightest (word-low)
+                  // importance 1 -> slightly darker (word-fade-1)
+                  // importance 2 -> darker still (word-fade-2)
+                  if (t.importance === 2) className += " word-fade-2";
+                  else if (t.importance === 1) className += " word-fade-1";
+                  else className += " word-low"; // importance 0
                 }
 
                 return (
@@ -261,6 +273,30 @@ function App() {
                   <span style={{ background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     Importance: <strong>{selectedWord.importance}</strong>
                   </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  <button
+                    className="btn"
+                    style={{ background: '#22c55e', fontSize: '0.9rem', padding: '0.5rem' }}
+                    onClick={() => {
+                      alert(`Marked "${selectedWord.text}" as Learned! (Updates CEFR profile logic here)`);
+                      // Future logic: Send to backend to update user profile
+                    }}
+                  >
+                    Mark Learned
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ background: '#f59e0b', fontSize: '0.9rem', padding: '0.5rem' }}
+                    onClick={() => {
+                      alert(`Added "${selectedWord.text}" to Review List.`);
+                      // Future logic: Add to 'saved words' list
+                    }}
+                  >
+                    Review Later
+                  </button>
                 </div>
 
                 {transLoading ? (

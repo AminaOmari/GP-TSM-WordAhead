@@ -172,10 +172,43 @@ body {
   font-weight: 800;
 }
 
+/* Progressive Fading for importance=0, importance=1, etc if user wants granularity */
+/* Base low importance */
 .word-low {
-  color: var(--word-non-important);
+  color: #cbd5e1;
+  /* Base Lightest (Level 0) */
   font-weight: 400;
   transition: color 0.1s ease;
+}
+
+/* Progressive Levels for "Easy + Important" range or nuanced "Not Important" range */
+/* If we treat importance 0 as lightest, and importance > 0 as black, 
+   but user asked for progressive fading for GREY. 
+   Assuming purely decoration for now or for importance=1/2 vs 3/4? 
+   Let's define classes that App.jsx can use if logic dictates.
+*/
+.word-fade-1 {
+  color: #94a3b8;
+}
+
+/* Darker Grey (Level 1) */
+.word-fade-2 {
+  color: #64748b;
+}
+
+/* Even Darker (Level 2) */
+.word-fade-3 {
+  color: #475569;
+}
+
+/* Almost Black (Level 3) */
+/* Level 4 is usually Bold Black (Important) */
+
+.word-low:hover,
+.word-fade-1:hover,
+.word-fade-2:hover {
+  color: var(--text-primary);
+  /* Darken on hover for readability */
 }
 
 .word-low:hover {
