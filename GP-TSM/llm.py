@@ -194,12 +194,12 @@ def process_single_sentence(sentence, k, system_message=None):
                 # Scoring logic
                 if smooth_aggressiveness > 0.1:
                     length_reduction = 1 - (len(reverted) / len(paragraph)) if len(paragraph) > 0 else 0
-                    length_bonus = length_reduction * 0.3 * smooth_aggressiveness
-                    conservative_score = semantic_score + (grammar_score * 1.5) + paraphrase_score + length_score + grammar_penalty
-                    aggressive_score = (semantic_score * 0.3) + (grammar_score * 0.6) + (paraphrase_score * 0.15) + (length_score * 0.4) + length_bonus + grammar_penalty
+                    length_bonus = length_reduction * 0.2 * smooth_aggressiveness
+                    conservative_score = (semantic_score * 2.5) + (grammar_score * 1.5) + paraphrase_score + (length_score * 0.5) + grammar_penalty
+                    aggressive_score = (semantic_score * 1.5) + (grammar_score * 0.8) + (paraphrase_score * 0.2) + (length_score * 0.3) + length_bonus + grammar_penalty
                     composite_score = conservative_score * (1 - smooth_aggressiveness) + aggressive_score * smooth_aggressiveness
                 else:
-                    composite_score = semantic_score + (grammar_score * 2.0) + paraphrase_score + length_score + grammar_penalty
+                    composite_score = (semantic_score * 3.0) + (grammar_score * 2.0) + paraphrase_score + (length_score * 0.5) + grammar_penalty
                 
                 response_infos.append({
                     "response": response,
