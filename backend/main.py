@@ -204,19 +204,50 @@ async def translate(req: TranslateRequest):
         traceback.print_exc()
         return {"min_error": str(e)}
 
-# Serve static files from the React frontend build
-# Ensure the directory exists (it will be created by the build script)
-frontend_path = os.path.join(PROJECT_ROOT, "frontend", "dist")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
+# --- Frontend Serving Logic ---
+# Try to find the frontend dist folder in a few likely locations
+possible_paths = [
+    os.path.join(PROJECT_ROOT, "frontend", "dist"),
+    os.path.join(PROJECT_ROOT, "dist"),
+    "/opt/render/project/src/frontend/dist" # Common Render path
+]
 
-# Catch-all for SPA routing
+frontend_path = None
+for p in possible_paths:
+    if os.path.exists(p):
+        frontend_path = p
+        print(f"DEBUG: Found frontend build at {p}")
+        break
+
+if frontend_path:
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="static_assets")
+else:
+    print("WARNING: Frontend build folder 'dist' not found. SPA routes will fail.")
+
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
+    # If it looks like an API call but wasn't caught, return 404
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API route not found")
+        
+    if not frontend_path:
+        return {
+            "error": "Frontend build not found",
+            "cwd": os.getcwd(),
+            "project_root": PROJECT_ROOT,
+            "tried_paths": possible_paths,
+            "suggestion": "Check Render build logs to see if 'npm run build' succeeded."
+        }
+        
     index_file = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
-    return {"error": "Frontend build not found"}
+        
+    return {
+        "error": "index.html not found in build folder",
+        "path_checked": index_file,
+        "folder_contents": os.listdir(frontend_path) if os.path.exists(frontend_path) else "Folder missing"
+    }
 
 if __name__ == "__main__":
     import uvicorn
