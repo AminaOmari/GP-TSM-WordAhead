@@ -93,14 +93,10 @@ function App() {
         </div>
 
         <div className="header-controls">
-          <select
-            className="input"
-            value={userLevel}
-            onChange={(e) => setUserLevel(e.target.value)}
-            style={{ width: '100px' }}
-          >
-            {CEFR_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
+          <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Current Profile:</span>
+            <span style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{userLevel}</span>
+          </div>
         </div>
       </header>
 
