@@ -4,8 +4,11 @@ services:
     env: python
     region: ohio
     plan: free
-    buildCommand: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm && python backend/download_models.py
+    buildCommand: "./build.sh"
     startCommand: "python backend/main.py"
     envVars:
       - key: PORT
         value: 10000
+      - key: OPENAI_API_KEY
+        sync: false # User must set this in Render Dashboard
+

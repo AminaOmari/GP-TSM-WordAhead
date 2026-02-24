@@ -3,16 +3,10 @@ import axios from 'axios';
 import { BookOpen, Settings, X, Loader2, Play, Activity, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = ''; // Relative to the domain serving the app
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 function App() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('openai_api_key') || '');
-
-  useEffect(() => {
-    localStorage.setItem('openai_api_key', apiKey);
-  }, [apiKey]);
-
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B1'); // Start at Medium
   const [tokens, setTokens] = useState([]);
@@ -22,49 +16,37 @@ function App() {
   const [transLoading, setTransLoading] = useState(false);
 
   // Dynamic Level Adjustment Logic
-  // Heuristic: If user clicks 3 words that are AT or BELOW their current level, 
-  // it means they are struggling with "easy" words -> Downgrade Level.
   const [struggleCount, setStruggleCount] = useState(0);
 
   const handleWordClick = async (token) => {
-    // Ignore purely structural tokens or undefined levels
     if (!token.cefr) return;
 
     const wIdx = CEFR_LEVELS.indexOf(token.cefr);
     const uIdx = CEFR_LEVELS.indexOf(userLevel);
 
-    // Dynamic Learning Logic
     if (wIdx !== -1 && uIdx !== -1) {
       if (wIdx <= uIdx) {
-        // User clicked a word that should be easy for them (or equal level)
-        // Increment struggle count
         const newCount = struggleCount + 1;
         setStruggleCount(newCount);
-
         if (newCount >= 3) {
-          // Trigger Downgrade if possible
           if (uIdx > 0) {
             const newLevel = CEFR_LEVELS[uIdx - 1];
             setUserLevel(newLevel);
-            setStruggleCount(0); // Reset
-            // Optional: Toast notification could go here
-            console.log(`Dynamic Adjustment: Downgrading user from ${userLevel} to ${newLevel}`);
+            setStruggleCount(0);
             alert(`We noticed you're looking up common words. Adjusting simplified level to ${newLevel} for better support.`);
           }
         }
       }
     }
 
-    // Show Translation in Sidebar
     setSelectedWord(token);
     setTransLoading(true);
     setTranslation(null);
 
     try {
-      const res = await axios.post(`${API_URL}/translate`, {
+      const res = await axios.post(`${API_URL}/api/translate`, {
         word: token.text,
-        context: text.substring(0, 200),
-        api_key: apiKey
+        context: text.substring(0, 200)
       });
       setTranslation(res.data);
     } catch (err) {
@@ -76,20 +58,15 @@ function App() {
   };
 
   const handleAnalyze = async () => {
-    if (!apiKey) {
-      alert("Please enter an OpenAI API Key.");
-      return;
-    }
     if (!text.trim()) {
       alert("Please enter some text to analyze.");
       return;
     }
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/analyze`, {
+      const res = await axios.post(`${API_URL}/api/analyze`, {
         text,
-        user_level: userLevel,
-        api_key: apiKey
+        user_level: userLevel
       });
       setTokens(res.data.tokens);
     } catch (err) {
@@ -104,27 +81,18 @@ function App() {
   return (
     <div className="app-container">
       {/* Header */}
-      {/* Header */}
       <header className="glass header-container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'var(--accent)', padding: '0.5rem', borderRadius: '8px' }}>
             <Activity color="white" size={24} />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>GP-TSM Reader</h1>
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>WordAhead</h1>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Adaptive Reading Assistant</p>
           </div>
         </div>
 
         <div className="header-controls">
-          <input
-            type="password"
-            placeholder="OpenAI API Key"
-            className="input"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            style={{ width: '200px' }}
-          />
           <select
             className="input"
             value={userLevel}
@@ -135,6 +103,7 @@ function App() {
           </select>
         </div>
       </header>
+
 
       {/* Categories Legend */}
       <div className="glass legend-container">

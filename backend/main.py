@@ -35,8 +35,12 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 app = FastAPI()
 
+# Allow CORS for local development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,15 +48,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Load API Key from environment variable
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 class AnalyzeRequest(BaseModel):
     text: str
     user_level: str
-    api_key: str
 
 class TranslateRequest(BaseModel):
     word: str
     context: str = ""
-    api_key: str
 
 def is_equal(w1, w2):
     punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
@@ -98,12 +103,12 @@ def analyze_importance(l0, l1, l2, l3, l4):
         
     return tokens
 
-@app.post("/analyze")
+@app.post("/api/analyze")
 async def analyze(req: AnalyzeRequest):
     print(f"Received analyze request. Text length: {len(req.text)}")
-    if not req.api_key:
-        print("Error: No API Key provided")
-        raise HTTPException(status_code=400, detail="API Key required")
+    if not OPENAI_API_KEY:
+        print("Error: OpenAI API Key not configured in environment")
+        raise HTTPException(status_code=500, detail="Server API Key not configured")
 
     try:
         # Validate logic first
@@ -126,7 +131,7 @@ async def analyze(req: AnalyzeRequest):
             # Also it uses OpenAI.
             
             # Use default system message or None
-            gp_res = llm.get_shortened_paragraph(p, k=req.api_key)
+            gp_res = llm.get_shortened_paragraph(p, k=OPENAI_API_KEY)
             
             if not gp_res:
                 print("Warning: GP-TSM returned empty result")
@@ -160,17 +165,16 @@ async def analyze(req: AnalyzeRequest):
         return {"tokens": all_tokens}
 
     except Exception as e:
-        print("CRITICAL EXCEPTION IN ANALYZE:")
         traceback.print_exc()
         # Return the actual error to frontend
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/translate")
+@app.post("/api/translate")
 async def translate(req: TranslateRequest):
-    if not req.api_key:
-        raise HTTPException(status_code=400, detail="API Key required")
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Server API Key not configured")
         
-    client = OpenAI(api_key=req.api_key)
+    client = OpenAI(api_key=OPENAI_API_KEY)
     
     prompt = f"""
     Translate the English word "{req.word}" to Hebrew (Ivrit).
@@ -197,9 +201,22 @@ async def translate(req: TranslateRequest):
         import json
         return json.loads(content)
     except Exception as e:
-        print("Translation Error:")
         traceback.print_exc()
         return {"min_error": str(e)}
+
+# Serve static files from the React frontend build
+# Ensure the directory exists (it will be created by the build script)
+frontend_path = os.path.join(PROJECT_ROOT, "frontend", "dist")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
+
+# Catch-all for SPA routing
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    index_file = os.path.join(frontend_path, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
+    return {"error": "Frontend build not found"}
 
 if __name__ == "__main__":
     import uvicorn
