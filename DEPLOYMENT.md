@@ -1,65 +1,44 @@
-# Deployment Guide: Client-Server Mode (Free Tier)
+# Deployment Guide: Unified Render Deployment
 
-This guide helps you deploy the GP-TSM WordAhead application to free hosting providers:
-- **Backend**: Render (Free Web Service)
-- **Frontend**: Vercel (Free Static Site)
+This guide helps you deploy the **WordAhead** application (GP-TSM adaptive reader) to Render as a single, unified web service.
 
 ## Prerequisites
-- GitHub Account
-- Accounts on [Render.com](https://render.com) and [Vercel.com](https://vercel.com)
+- GitHub Account with your code pushed.
+- Account on [Render.com](https://render.com).
+- OpenAI API Key.
 
 ---
 
-## Part 1: Backend Deployment (Render)
+## Unified Deployment Steps (Render)
 
-1. **Commit your code** to a GitHub repository.
-2. Log in to **Render** and click **New +** -> **Web Service**.
-3. Connect your GitHub repository.
-4. Render should automatically detect `render.yaml` (Blueprint) if you used `New -> Blueprint`, but if you selected **Web Service**:
-   - **Name**: `gp-tsm-backend`
-   - **Region**: (Choose closest to you)
-   - **Branch**: `main`
-   - **Runtime**: Python 3
-   - **Build Command**: `pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm`
-   - **Start Command**: `python backend/main.py`
-5. **Environment Variables**:
-   - Scroll down to "Environment Variables".
-   - You SHOULD add your OpenAI API Key here if you want it hardcoded on server, OR rely on the Client sending it (current implementation relies on Client).
-   - The code automatically uses the `PORT` variable provided by Render.
-
-**Note on Free Tier Limits**:
-The backend uses `torch` and `transformers`. These are heavy libraries. The free tier (512MB RAM) *might* run out of memory. If deployments fail:
-- Update `backend/requirements.txt` to use CPU-only PyTorch versions if possible (advanced).
-- Or upgrade to a paid starter plan ($7/mo).
-
-6. **Deploy**.
-7. Once deployed, Render will give you a URL (e.g., `https://gp-tsm-backend.onrender.com`). **Copy this URL.**
+1.  Log in to **Render** and click **New +** -> **Web Service**.
+2.  Connect your GitHub repository.
+3.  **Configure Project**:
+    - **Name**: `wordahead-app` (or your choice).
+    - **Region**: (Choose closest to you).
+    - **Branch**: `main`.
+    - **Runtime**: `Python 3`.
+    - **Build Command**: `./build.sh`
+    - **Start Command**: `python backend/main.py`
+4.  **Environment Variables**:
+    - Scroll down to "Environment Variables" or click "Advanced".
+    - Click **Add Environment Variable**.
+    - **Key**: `OPENAI_API_KEY`
+    - **Value**: *[Your Secret OpenAI Key from platform.openai.com]*
+5.  **Deploy**.
 
 ---
 
-## Part 2: Frontend Deployment (Vercel)
+## What Happens Under the Hood?
 
-1. Log in to **Vercel** and click **Add New** -> **Project**.
-2. Import your GitHub repository.
-3. **Configure Project**:
-   - **Framework Preset**: Vite
-   - **Root Directory**: Click `Edit` and select `frontend`. (This is import!)
-4. **Environment Variables**:
-   - Add a variable named `VITE_API_URL`.
-   - Value: The URL you copied from Render (e.g., `https://gp-tsm-backend.onrender.com`).
-     - *Note: Do not add a trailing slash.*
-5. **Deploy**.
-
----
-
-## Part 3: Verify
-
-Open your Vercel URL.
-- Enter your OpenAI API Key in the UI.
-- Enter text and click "Analyze".
-- The frontend will call your Render backend.
+Instead of using two different platforms, Render now handles everything:
+1.  The `build.sh` script runs `npm run build` inside the `frontend` folder.
+2.  It then installs the Python requirements and downloads the AI models.
+3.  The FastAPI backend is configured to serve the resulting static files from the `frontend/dist` folder.
+4.  All API calls are handled on the same domain.
 
 ## Troubleshooting
 
-- **CORS Issues**: The backend is configured to allow `*` (all origins), so it should work.
-- **Backend 500 Errors**: Check the Render logs. It might be an "Out of Memory" (OOM) error due to `torch`.
+- **First Load Delay**: Since this is on Render's Free Tier, the server will "sleep" after 15 minutes of inactivity. When you first visit the URL, it may take ~50 seconds to boot up.
+- **Out of Memory**: AI models are heavy. If the build fails or crashes, check the Render logs. We use a CPU-optimized version of `torch` and the `all-MiniLM-L6-v2` model to stay within the 512MB free RAM limit.
+- **API Key Error**: If you see a "401" error in the app, it means the `OPENAI_API_KEY` in your Render Environment settings is incorrect or your OpenAI account has $0 balance.
