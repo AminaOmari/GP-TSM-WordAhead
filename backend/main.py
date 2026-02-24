@@ -181,25 +181,29 @@ async def translate(req: TranslateRequest):
     client = OpenAI(api_key=OPENAI_API_KEY)
     
     prompt = f"""
-    Translate the English word "{req.word}" to Hebrew (Ivrit).
-    Also provide:
-    1. The Hebrew Root (Shoresh/שורש) of the HEBREW translation.
-    2. An example sentence in English with Hebrew translation.
+    Translate the English word "{req.word}" to Hebrew (Ivrit), accurately matching the meaning intended in this context: "{req.context}".
     
-    Output JSON format:
+    Provide the following fields in JSON:
+    1. "translation": The Hebrew word/phrase.
+    2. "root": The Hebrew Root (Shoresh) of the translated word, formatted with dashes (e.g., כ-ת-ב). If the word has no Hebrew root (like a loanword), write "N/A".
+    3. "example": A simple, clear example sentence in English that uses the word "{req.word}", followed by its Hebrew translation.
+    
+    JSON Format:
     {{
-        "translation": "...",
-        "root": "...",
-        "example": "..."
+        "translation": "Hebrew translation here",
+        "root": "X-Y-Z",
+        "example": "English sentence. [Hebrew translation]"
     }}
-    Context: {req.context}
     """
     
     try:
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={ "type": "json_object" }
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert English-Hebrew linguist and CEFR language teacher. Focus on accuracy and morphological roots."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"}
         )
         content = completion.choices[0].message.content
         import json
