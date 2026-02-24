@@ -14,6 +14,47 @@ function App() {
   const [selectedWord, setSelectedWord] = useState(null);
   const [translation, setTranslation] = useState(null);
   const [transLoading, setTransLoading] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+
+  // Persistence State
+  const [learnedWords, setLearnedWords] = useState(() => {
+    const saved = localStorage.getItem('learned_words');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [reviewList, setReviewList] = useState(() => {
+    const saved = localStorage.getItem('review_list');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('learned_words', JSON.stringify(learnedWords));
+  }, [learnedWords]);
+
+  useEffect(() => {
+    localStorage.setItem('review_list', JSON.stringify(reviewList));
+  }, [reviewList]);
+
+  const markLearned = (word) => {
+    setLearnedWords(prev => ({ ...prev, [word.toLowerCase()]: true }));
+    // Remove from review if it was there
+    setReviewList(prev => {
+      const { [word.toLowerCase()]: removed, ...rest } = prev;
+      return rest;
+    });
+    alert(`"${word}" marked as learned! It won't be highlighted as hard anymore.`);
+  };
+
+  const addToReview = (word, details) => {
+    setReviewList(prev => ({ ...prev, [word.toLowerCase()]: details }));
+    alert(`"${word}" added to your study list.`);
+  };
+
+  const removeFromReview = (word) => {
+    setReviewList(prev => {
+      const { [word.toLowerCase()]: removed, ...rest } = prev;
+      return rest;
+    });
+  };
 
   // Dynamic Level Adjustment Logic
   const [struggleCount, setStruggleCount] = useState(0);
@@ -93,6 +134,9 @@ function App() {
         </div>
 
         <div className="header-controls">
+          <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
+            <Settings size={18} /> My Progress
+          </button>
           <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Current Profile:</span>
             <span style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{userLevel}</span>
@@ -165,7 +209,9 @@ function App() {
                 // Importance usually ranges from 0 to 4 (depending on depth)
                 // 0 = least important (removed early), 4 = most important (kept till end)
 
-                if (t.isDifficult) {
+                const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
+
+                if (t.isDifficult && !isLearned) {
                   // HARD WORDS (Purple)
                   if (t.importance > 2) { // Assuming >2 is "Significant" importance
                     className += " word-hard-important";
@@ -245,20 +291,14 @@ function App() {
                   <button
                     className="btn"
                     style={{ background: '#22c55e', fontSize: '0.9rem', padding: '0.5rem' }}
-                    onClick={() => {
-                      alert(`Marked "${selectedWord.text}" as Learned! (Updates CEFR profile logic here)`);
-                      // Future logic: Send to backend to update user profile
-                    }}
+                    onClick={() => markLearned(selectedWord.text)}
                   >
                     Mark Learned
                   </button>
                   <button
                     className="btn"
                     style={{ background: '#f59e0b', fontSize: '0.9rem', padding: '0.5rem' }}
-                    onClick={() => {
-                      alert(`Added "${selectedWord.text}" to Review List.`);
-                      // Future logic: Add to 'saved words' list
-                    }}
+                    onClick={() => addToReview(selectedWord.text, { translation, cefr: selectedWord.cefr })}
                   >
                     Review Later
                   </button>
@@ -301,6 +341,78 @@ function App() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Dashboard Modal */}
+      <AnimatePresence>
+        {showDashboard && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDashboard(false)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+            }}
+          >
+            <motion.div
+              className="glass"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '90%', maxWidth: '800px', maxHeight: '80vh', overflow: 'hidden',
+                display: 'flex', flexDirection: 'column', background: 'white', padding: '2rem'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ margin: 0 }}>My Learning Progress</h2>
+                <button className="close-btn" onClick={() => setShowDashboard(false)}><X size={24} /></button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', overflowY: 'auto' }}>
+                {/* Review Section */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '0.5rem' }}>Study List ({Object.keys(reviewList).length})</h3>
+                  {Object.keys(reviewList).length === 0 ? <p style={{ color: '#64748b' }}>No words saved for review yet.</p> : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {Object.entries(reviewList).map(([word, data]) => (
+                        <div key={word} className="glass" style={{ padding: '1rem', position: 'relative' }}>
+                          <button
+                            onClick={() => removeFromReview(word)}
+                            style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                          >
+                            <X size={14} />
+                          </button>
+                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent)' }}>{word}</div>
+                          <div style={{ fontSize: '0.9rem', color: '#0f172a' }}>{data.translation?.translation || '...'}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '5px' }}>Level: {data.cefr}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Learned Section */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #22c55e', paddingBottom: '0.5rem' }}>Mastered Words ({Object.keys(learnedWords).length})</h3>
+                  {Object.keys(learnedWords).length === 0 ? <p style={{ color: '#64748b' }}>None yet. Mark words to see them here!</p> : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {Object.keys(learnedWords).map(word => (
+                        <span key={word} style={{ background: '#f0fdf4', color: '#166534', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.9rem', border: '1px solid #bbf7d0' }}>
+                          {word}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
