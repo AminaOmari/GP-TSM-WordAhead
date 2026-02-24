@@ -49,7 +49,11 @@ app.add_middleware(
 )
 
 # Load API Key from environment variable
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+if OPENAI_API_KEY:
+    print(f"DEBUG: API Key loaded (Length: {len(OPENAI_API_KEY)}, Starts with: {OPENAI_API_KEY[:12]}...)")
+else:
+    print("WARNING: OPENAI_API_KEY is missing from environment variables!")
 
 class AnalyzeRequest(BaseModel):
     text: str
