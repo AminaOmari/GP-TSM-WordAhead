@@ -50,6 +50,7 @@ function App() {
   const [translation, setTranslation] = useState(null);
   const [transLoading, setTransLoading] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [skimmingLevel, setSkimmingLevel] = useState(0); // 0 = Show All, higher = More Condensed
 
   // Persistence State
   const [learnedWords, setLearnedWords] = useState(() => {
@@ -172,8 +173,18 @@ function App() {
           <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
             <Settings size={18} /> My Progress
           </button>
-          <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Current Profile:</span>
+          <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Skimming:</span>
+              <input
+                type="range" min="0" max="3" step="1"
+                value={skimmingLevel}
+                onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
+                style={{ width: '80px', accentColor: 'var(--accent)' }}
+              />
+            </div>
+            <div style={{ borderLeft: '1px solid #e2e8f0', height: '1.2rem', margin: '0 0.2rem' }}></div>
+            <span style={{ color: 'var(--text-secondary)' }}>Profile:</span>
             <span style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{userLevel}</span>
           </div>
         </div>
@@ -272,9 +283,14 @@ function App() {
                     key={i}
                     className={className}
                     onClick={() => handleWordClick(t)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.001 }}
+                    animate={{
+                      opacity: t.importance < skimmingLevel ? 0.1 : 1,
+                      scale: 1
+                    }}
+                    transition={{
+                      delay: i * 0.001,
+                      opacity: { duration: 0.3 }
+                    }}
                     whileHover={{ scale: 1.05 }}
                     title={t.cefr ? `Level: ${t.cefr} | Imp: ${t.importance}` : null}
                   >
