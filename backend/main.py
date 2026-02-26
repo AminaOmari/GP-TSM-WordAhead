@@ -180,18 +180,21 @@ async def translate(req: TranslateRequest):
         
     client = OpenAI(api_key=OPENAI_API_KEY)
     
+    # We use a dual-stage prompt to force the AI to reason about morphology
     prompt = f"""
-    Translate the English word "{req.word}" to Hebrew (Ivrit), accurately matching the meaning intended in this context: "{req.context}".
+    Analyze the English word "{req.word}" in the following context: "{req.context}".
     
-    Provide the following fields in JSON:
-    1. "translation": The Hebrew word/phrase.
-    2. "root": The Hebrew Root (Shoresh) of the translated word, formatted with dashes (e.g., כ-ת-ב). If the word has no Hebrew root (like a loanword), write "N/A".
-    3. "example": A simple, clear example sentence in English that uses the word "{req.word}", followed by its Hebrew translation.
+    Step 1: Translate it to Hebrew (Ivrit).
+    Step 2: Identify the Hebrew Root (Shoresh) using strict morphological rules (Binyanim/Mishkalim). 
+      - Distinguish between strong and weak roots (e.g., if a letter drops like 'נ' or 'י').
+      - If it's a loanword (e.g., 'אוניברסיטה'), write "N/A".
+    Step 3: Create a clear example sentence in English using "{req.word}", followed by its Hebrew translation.
     
-    JSON Format:
+    Provide your response as a JSON object:
     {{
-        "translation": "Hebrew translation here",
-        "root": "X-Y-Z",
+        "analysis": "Brief step-by-step morphological reasoning",
+        "translation": "The Hebrew word/phrase",
+        "root": "X-Y-Z (formatted with dashes)",
         "example": "English sentence. [Hebrew translation]"
     }}
     """
@@ -200,14 +203,23 @@ async def translate(req: TranslateRequest):
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert English-Hebrew linguist and CEFR language teacher. Focus on accuracy and morphological roots."},
+                {"role": "system", "content": "You are a professional Hebrew Morphologist and Linguistic Expert. Your mission is to provide 100% accurate roots based on the Academy of the Hebrew Language standards."},
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"}
         )
         content = completion.choices[0].message.content
         import json
-        return json.loads(content)
+        from morphology import verify_root
+        
+        result = json.loads(content)
+        
+        # Guard rails: Verify the root if it's not N/A
+        if result.get("root") and result["root"] != "N/A":
+            result["root"] = verify_root(result["root"], result["translation"])
+            
+        print(f"Translation logic complete: {result.get('root')}")
+        return result
     except Exception as e:
         traceback.print_exc()
         return {"min_error": str(e)}
