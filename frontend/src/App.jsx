@@ -6,6 +6,41 @@ import { motion, AnimatePresence } from 'framer-motion';
 const API_URL = ''; // Relative to the domain serving the app
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
+const Flashcard = ({ word, data, onRemove }) => {
+  const [flipped, setFlipped] = useState(false);
+
+  return (
+    <div
+      className={`flashcard-container ${flipped ? 'is-flipped' : ''}`}
+      onClick={() => setFlipped(!flipped)}
+    >
+      <div className="flashcard-inner">
+        <div className="flashcard-front">
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(word); }}
+            style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '5px' }}
+          >
+            <X size={16} />
+          </button>
+          <div className="flashcard-word">{word}</div>
+          <div className="flashcard-meta">CEFR Level: <strong>{data.cefr}</strong></div>
+          <div className="flashcard-hint">Click to see translation</div>
+        </div>
+        <div className="flashcard-back">
+          <div className="flashcard-translation">{data.translation?.translation || '...'}</div>
+          {data.translation?.root && (
+            <div className="flashcard-meta" style={{ marginTop: '0.5rem' }}>
+              Root: <strong>{data.translation.root}</strong>
+            </div>
+          )}
+          <div className="flashcard-hint">Click to flip back</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 function App() {
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B2'); // Start at Higher Intermediate
@@ -375,21 +410,23 @@ function App() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', overflowY: 'auto' }}>
                 {/* Review Section */}
                 <div>
-                  <h3 style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '0.5rem' }}>Study List ({Object.keys(reviewList).length})</h3>
-                  {Object.keys(reviewList).length === 0 ? <p style={{ color: '#64748b' }}>No words saved for review yet.</p> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h3 style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    Study List
+                    <span style={{ fontSize: '0.8rem', background: '#f59e0b', color: 'white', padding: '0.1rem 0.6rem', borderRadius: '12px' }}>
+                      {Object.keys(reviewList).length}
+                    </span>
+                  </h3>
+                  {Object.keys(reviewList).length === 0 ? (
+                    <p style={{ color: '#64748b', textAlign: 'center', marginTop: '2rem' }}>No words saved for review yet.</p>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxHeight: '50vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
                       {Object.entries(reviewList).map(([word, data]) => (
-                        <div key={word} className="glass" style={{ padding: '1rem', position: 'relative' }}>
-                          <button
-                            onClick={() => removeFromReview(word)}
-                            style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
-                          >
-                            <X size={14} />
-                          </button>
-                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--accent)' }}>{word}</div>
-                          <div style={{ fontSize: '0.9rem', color: '#0f172a' }}>{data.translation?.translation || '...'}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '5px' }}>Level: {data.cefr}</div>
-                        </div>
+                        <Flashcard
+                          key={word}
+                          word={word}
+                          data={data}
+                          onRemove={removeFromReview}
+                        />
                       ))}
                     </div>
                   )}

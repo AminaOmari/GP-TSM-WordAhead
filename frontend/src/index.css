@@ -323,3 +323,79 @@ body {
     padding: 1rem;
   }
 }
+
+/* --- Flashcard Styles --- */
+.flashcard-container {
+  perspective: 1000px;
+  width: 100%;
+  height: 180px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flashcard-container.is-flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--glass-border);
+}
+
+.flashcard-front {
+  background-color: white;
+}
+
+.flashcard-back {
+  background-color: #f8fafc;
+  transform: rotateY(180deg);
+  border: 2px solid var(--accent);
+}
+
+.flashcard-word {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.flashcard-translation {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  direction: rtl;
+}
+
+.flashcard-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.flashcard-meta {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
