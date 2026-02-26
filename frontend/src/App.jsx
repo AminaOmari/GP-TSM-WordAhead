@@ -8,7 +8,7 @@ const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 function App() {
   const [text, setText] = useState(''); // Start empty
-  const [userLevel, setUserLevel] = useState('B1'); // Start at Medium
+  const [userLevel, setUserLevel] = useState('B2'); // Start at Higher Intermediate
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedWord, setSelectedWord] = useState(null);
