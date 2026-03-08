@@ -13,11 +13,10 @@ source venv/bin/activate
 # Install dependencies (fast if already installed)
 echo "Checking dependencies..."
 pip install -r backend/requirements.txt
-python -m spacy download en_core_web_sm
 
 # Start Backend
 echo "Starting Backend (FastAPI)..."
-python backend/main.py &
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1 &
 BACKEND_PID=$!
 
 # Start Frontend

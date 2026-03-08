@@ -1,10 +1,10 @@
 from promptengine.pipelines import PromptPipeline
 from promptengine.template import PromptTemplate, PromptPermutationGenerator
 from promptengine.utils import LLM, extract_responses
-import spacy
+# import spacy
 import string
 
-nlp = spacy.load("en_core_web_sm")
+# nlp = spacy.load("en_core_web_sm")
 
 TEMPERATURE = 1 #The temperature for ChatGPT calls
 
