@@ -141,11 +141,11 @@ function App() {
       alert("Please enter some text to analyze.");
       return;
     }
-    
+
     const controller = new AbortController();
     setAbortController(controller);
     setLoading(true);
-    
+
     try {
       const res = await axios.post(`${API_URL}/api/analyze`, {
         text,
@@ -226,14 +226,14 @@ function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Condensation (Skimming)</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-               <span style={{ fontSize: '0.7rem' }}>Detailed</span>
-               <input
-                 type="range" min="0" max="3" step="1"
-                 value={skimmingLevel}
-                 onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
-                 style={{ width: '120px', accentColor: 'var(--accent)' }}
-               />
-               <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
+              <span style={{ fontSize: '0.7rem' }}>Detailed</span>
+              <input
+                type="range" min="0" max="3" step="1"
+                value={skimmingLevel}
+                onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
+                style={{ width: '120px', accentColor: 'var(--accent)' }}
+              />
+              <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
             </div>
           </div>
         </div>
@@ -260,11 +260,11 @@ function App() {
       {/* Main Content: 3-Column Layout */}
       <div className="main-layout">
 
-        <div className="glass input-panel" style={{ width: '320px' }}>
+        <div className="glass input-panel">
           <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.2rem' }}>
             <BookOpen size={18} /> Input
           </h2>
-          
+
           <div style={{ marginBottom: '1rem' }}>
             <label className="btn" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)', border: '1px dashed var(--accent)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', fontSize: '0.85rem' }}>
               <Upload size={16} /> Upload Text File
