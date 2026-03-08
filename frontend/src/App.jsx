@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle } from 'lucide-react';
+import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
@@ -53,6 +53,7 @@ function App() {
   const [skimmingLevel, setSkimmingLevel] = useState(0); // 0 = Show All, higher = More Condensed
   const [abortController, setAbortController] = useState(null);
   const [fileLimitError, setFileLimitError] = useState('');
+  const [showHowToUse, setShowHowToUse] = useState(false);
 
   // Persistence State
   const [learnedWords, setLearnedWords] = useState(() => {
@@ -209,6 +210,9 @@ function App() {
         </div>
 
         <div className="header-controls">
+          <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
+            <HelpCircle size={18} /> How to Use
+          </button>
           <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
             <Settings size={18} /> My Progress
           </button>
@@ -537,6 +541,101 @@ function App() {
                   )}
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* How to Use Modal */}
+      <AnimatePresence>
+        {showHowToUse && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowHowToUse(false)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+            }}
+          >
+            <motion.div
+              className="glass"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto',
+                background: 'white', padding: '2.5rem', position: 'relative'
+              }}
+            >
+              <button
+                className="close-btn"
+                onClick={() => setShowHowToUse(false)}
+                style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}
+              >
+                <X size={24} />
+              </button>
+
+              <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <div style={{ background: 'var(--accent)', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                  <HelpCircle color="white" size={30} />
+                </div>
+                <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>Welcome to WordAhead</h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Your personal Hebrew reading assistant</p>
+              </div>
+
+              <div className="tutorial-content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <section>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>1. Analysis & Input</h3>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                    Paste text or upload a <strong>.txt</strong> file. Click <strong>Analyze</strong> to highlight difficult words and calculate importance levels tailored to your level.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>2. Understanding Colors</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', fontSize: '0.85rem' }}>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
+                      <strong style={{ color: '#7c3aed' }}>Purple:</strong> Hard words for your level.
+                    </div>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
+                      <strong>Bold:</strong> Important for general meaning.
+                    </div>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
+                      <span style={{ color: '#94a3b8' }}>Grey:</span> Common/Easy words.
+                    </div>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
+                      <strong style={{ color: '#7c3aed' }}>Bold Purple:</strong> Critical words to learn first!
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>3. The Skimming Slider</h3>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                    Use the <strong>Condensation</strong> bar to fade out less important words. Moving it to the right helps you focus only on the core meaning of the text.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>4. Interactive Translation</h3>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
+                    Click any word to see its <strong>Hebrew Root (Shoresh)</strong>, translation, and example.
+                    Mark words as <strong>Learned</strong> to stop them from being highlighted in future texts.
+                  </p>
+                </section>
+              </div>
+
+              <button
+                className="btn"
+                onClick={() => setShowHowToUse(false)}
+                style={{ width: '100%', marginTop: '2rem', padding: '1rem' }}
+              >
+                Got it, let's go!
+              </button>
             </motion.div>
           </motion.div>
         )}
