@@ -63,16 +63,18 @@ def calculate_importance_from_layers(layers: List[str]):
 UK_LAW_SYSTEM_MESSAGE = "You are an expert legal assistant. Your goal is to reveal the core legal structure. You MUST aggressively delete specific dates, locations, and citations as they are considered noise here. However, you must PRESERVE legal terms of art (e.g., 'common ground', 'proprietor', 'registered') and the logical flow of the argument. Focus on the main legal action."
 
 EXTRACTIVE_SHORTENER_PROMPT_TEMPLATE = \
-"""For each sentence in the following paragraph from a legal document, delete phrases that are not the main subject, verb, or object of the sentence, or key modifiers/ terms, while preserving the main meaning of the sentence as much as possible. Be aggressive in removing parentheticals, attached clauses, and details about dates/ location. The length of the result should be at most 80 percent of the original length (you must delete at least 20% of the text). Important: Please make sure the result remains grammatical!!
-"${paragraph}"
-
-Please do not add any new words or change words, only delete words."""
+"""Analyze the following text and delete phrases that are not the main subject, verb, or object of the sentence, or essential logical connectors. Reveal the core structure of the argument.
+Be aggressive in removing parentheticals, dates, specific locations, and descriptive adjectives that aren't critical to the core logic. 
+The length of the result should be at most 75 percent of the original length.
+Important: Only delete words. Do NOT add or change words. Maintain grammatical correctness.
+"${paragraph}" """
 
 EXTRACTIVE_SHORTENER_PROMPT_TEMPLATE_AGGRESSIVE = \
-"""For each sentence in the following paragraph from a legal document, delete phrases that are not the main subject, verb, or object of the sentence, or key modifiers/ terms, while preserving the main meaning of the sentence as much as possible. Be more aggressive in removing parentheticals, attached clauses, and details about dates/ location. The length of the result should be at most 70 percent of the original length (you must delete at least 30% of the text). Important: Please make sure the result remains grammatical!!
-"${paragraph}"
-
-Please do not add any new words or change words, only delete words."""
+"""Analyze the following text and aggressively strip it down to its most basic logical skeleton. Keep only the absolutely essential subject-verb-object relationships.
+Everything else is noise for this layer. Delete dates, precise names, and all non-vital modifying phrases.
+The length of the result should be at most 55 percent of the original length.
+Important: Only delete words. Do NOT add or change words. Maintain grammatical correctness.
+"${paragraph}" """
 
 GRAMMAR_CHECKER_PROMPT_TEMPLATE = \
 """Score the following paragraph from a legal document by how grammatical it is. Be strict in your evaluation - only mark as A if the text is fully grammatically correct with proper sentence structure, subject-verb agreement, and correct word order.
@@ -175,8 +177,9 @@ def _calculate_smooth_aggressiveness(word_count):
 def _get_parameters_for_aggressiveness(smooth_aggressiveness):
     current_temperature = TEMPERATURE
     current_n = N
-    optimal_length = 0.6 - (0.6 - 0.5) * smooth_aggressiveness
-    use_aggressive = smooth_aggressiveness > 0.5
+    # Match the paper: Much more aggressive reduction targets (from 80% down to 40% at max depth)
+    optimal_length = 0.8 - (0.8 - 0.4) * smooth_aggressiveness
+    use_aggressive = smooth_aggressiveness > 0.4
     return current_temperature, current_n, optimal_length, use_aggressive
 
 def process_single_sentence(sentence, k, system_message=None):
