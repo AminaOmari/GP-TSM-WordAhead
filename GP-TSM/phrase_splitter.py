@@ -25,18 +25,31 @@ class SentenceSegmenterPromptPipeline(PromptPipeline):
             "sentence": properties["sentence"]
         }))
 
+import re
+import string
+
 def split_and_concatenate(sentence):
-    # Remove punctuation at the end of the sentence
+    """
+    Lightweight version of GP-TSM phrase splitting.
+    Splits at commas, conjunctions, and prepositions to create candidates.
+    Replaces the Spacy-based version to stay under 512MB RAM.
+    """
+    # Standard splitting markers for English
+    markers = [',', ';', '--', ' although ', ' because ', ' which ', ' that ', ' while ', ' since ']
+    
+    # Create a regex to split while keeping markers
+    pattern = "|".join(map(re.escape, markers))
+    parts = re.split(f"({pattern})", sentence, flags=re.IGNORECASE)
+    
     result = []
-    sentence = sentence.rstrip(string.punctuation)
-    # Split the sentence into words
-    tokens = []
-    doc = nlp(sentence.strip())
-    for token in doc:
-        tokens.append(token.text)
-        if token.head.i > token.i: # current word has a parent on the right of it, so ending the sentence here will not make sense.
-            continue
-        result.append((' '.join(tokens)))     
+    current_tokens = []
+    
+    for part in parts:
+        if not part: continue
+        current_tokens.append(part)
+        # Create a candidate string from the tokens accumulated so far
+        result.append(" ".join(" ".join(current_tokens).split()))
+            
     return result
 
 def strip_wrapping_quotes(s: str) -> str:

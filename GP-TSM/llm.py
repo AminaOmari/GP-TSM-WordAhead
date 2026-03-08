@@ -15,6 +15,51 @@ N = 2 # Restored to 2 to ensure quality selection (Best of N)
 
 GRAMMER_SCORE_RULE = {'A': 1, 'B': 0.5, 'C': 0}
 
+def is_equal(w1, w2):
+    punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
+    tmp1 = w1
+    tmp2 = w2
+    if len(w1) > 0 and w1[-1] in punc:
+        tmp1 = w1[:-1]
+    if len(w2) > 0 and w2[-1] in punc:
+        tmp2 = w2[:-1]
+    return (tmp1.lower() == tmp2.lower())
+
+def calculate_importance_from_layers(layers: List[str]):
+    """
+    Core GP-TSM Attribute Calculation.
+    Compares original (L0) with subsequent shortening layers (L1-L4).
+    Returns a list of tokens with importance attribute.
+    """
+    if not layers: return []
+    
+    # We expect layers[0] to be the original sentence
+    l0_tokens = layers[0].split()
+    other_layers = [l.split() for l in layers[1:]]
+    
+    tokens_meta = []
+    
+    # Track pointers for each layer to find matches in order
+    pointers = [0] * len(other_layers)
+    
+    for w in l0_tokens:
+        importance = 0
+        
+        # Check from deepest layer to shallowest
+        for i in range(len(other_layers) - 1, -1, -1):
+            p = pointers[i]
+            if p < len(other_layers[i]) and is_equal(w, other_layers[i][p]):
+                importance = i + 1
+                # Advance all pointers for this word to maintain sequence
+                for j in range(i + 1):
+                    if pointers[j] < len(other_layers[j]) and is_equal(w, other_layers[j][pointers[j]]):
+                         pointers[j] += 1
+                break
+                
+        tokens_meta.append({"text": w, "importance": importance})
+        
+    return tokens_meta
+
 UK_LAW_SYSTEM_MESSAGE = "You are an expert legal assistant. Your goal is to reveal the core legal structure. You MUST aggressively delete specific dates, locations, and citations as they are considered noise here. However, you must PRESERVE legal terms of art (e.g., 'common ground', 'proprietor', 'registered') and the logical flow of the argument. Focus on the main legal action."
 
 EXTRACTIVE_SHORTENER_PROMPT_TEMPLATE = \
@@ -266,33 +311,24 @@ def process_single_sentence(sentence, k, system_message=None):
             except: pass
 
 
-def get_shortened_paragraph(orig_paragraph, k, system_message: str = None):
-    # Validate API key
-    if not k or not k.strip():
-        raise ValueError("API key is required but was not provided or is empty.")
-    k = k.strip()
-    
+def analyze_text_for_reading(orig_paragraph, k, system_message: str = None):
+    """
+    The integrated 'Reading Support' entry point.
+    Returns tokens with GP-TSM importance levels.
+    """
     # Split paragraph into sentences
     sentences = _split_into_sentences(orig_paragraph)
     
-    # Parallel execution using ThreadPoolExecutor
-    # Workers count: 8 seems reasonable for I/O bound tasks
-    shortened_sentences = []
+    all_tokens = []
     
+    # Process sentences in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        # Map returns results in the order of input iterable
         future_results = executor.map(lambda s: process_single_sentence(s, k, system_message), sentences)
-        shortened_sentences = list(future_results)
-    
-    # Combine shortened sentences back into paragraph format
-    max_sentence_depth = max(len(sent_results) for sent_results in shortened_sentences) if shortened_sentences else 1
-    
-    combined_responses = []
-    for depth in range(max_sentence_depth):
-        combined_paragraph = []
-        for sent_results in shortened_sentences:
-            depth_idx = min(depth, len(sent_results) - 1)
-            combined_paragraph.append(sent_results[depth_idx])
-        combined_responses.append(' '.join(combined_paragraph))
-    
-    return for_viz(combined_responses)
+        for sent_layers in future_results:
+            # sent_layers is a list [L0, L1, L2, L3, L4]
+            sent_tokens = calculate_importance_from_layers(sent_layers)
+            all_tokens.extend(sent_tokens)
+            # Add a sentence break space or marker if needed? 
+            # Our backend likes a newline between paragraphs, but sentences usually stay together.
+            
+    return all_tokens
