@@ -27,39 +27,8 @@ def is_equal(w1, w2):
     return (tmp1.lower() == tmp2.lower())
 
 def calculate_importance_from_layers(layers: List[str]):
-    """
-    Core GP-TSM Attribute Calculation.
-    Compares original (L0) with subsequent shortening layers (L1-L4).
-    Returns a list of tokens with importance attribute.
-    """
-    if not layers: return []
-    
-    # We expect layers[0] to be the original sentence
-    l0_tokens = layers[0].split()
-    other_layers = [l.split() for l in layers[1:]]
-    
-    tokens_meta = []
-    
-    # Track pointers for each layer to find matches in order
-    pointers = [0] * len(other_layers)
-    
-    for w in l0_tokens:
-        importance = 0
-        
-        # Check from deepest layer to shallowest
-        for i in range(len(other_layers) - 1, -1, -1):
-            p = pointers[i]
-            if p < len(other_layers[i]) and is_equal(w, other_layers[i][p]):
-                importance = i + 1
-                # Advance all pointers for this word to maintain sequence
-                for j in range(i + 1):
-                    if pointers[j] < len(other_layers[j]) and is_equal(w, other_layers[j][pointers[j]]):
-                         pointers[j] += 1
-                break
-                
-        tokens_meta.append({"text": w, "importance": importance})
-        
-    return tokens_meta
+    # Functionality moved to backend/main.py analyze_importance to match original frontend design
+    return []
 
 UK_LAW_SYSTEM_MESSAGE = "You are an expert legal assistant. Your goal is to reveal the core legal structure. You MUST aggressively delete specific dates, locations, and citations as they are considered noise here. However, you must PRESERVE legal terms of art (e.g., 'common ground', 'proprietor', 'registered') and the logical flow of the argument. Focus on the main legal action."
 
@@ -315,24 +284,37 @@ def process_single_sentence(sentence, k, system_message=None):
             except: pass
 
 
-def analyze_text_for_reading(orig_paragraph, k, system_message: str = None):
-    """
-    The integrated 'Reading Support' entry point.
-    Returns tokens with GP-TSM importance levels.
-    """
+def for_viz(lst): #prepare data for the viz code in app.py
+    # Adapt to variable depth if needed, but for now assumption is consistent depth
+    TARGET_DEPTH = 4
+    rst = [{str(i): lst[i] for i in range(len(lst))}]
+    last_val = lst[-1] if lst else ""
+    for j in range(len(lst), TARGET_DEPTH + 1):
+        rst[0][str(j)] = last_val
+    return rst
+
+def get_shortened_paragraph(orig_paragraph, k, system_message: str = None):
+    # Validate API key
+    if not k or not k.strip():
+        raise ValueError("API key is required but was not provided or is empty.")
+    k = k.strip()
+    
     # Split paragraph into sentences
     sentences = _split_into_sentences(orig_paragraph)
     
-    all_tokens = []
-    
-    # Process sentences in parallel
+    shortened_sentences = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         future_results = executor.map(lambda s: process_single_sentence(s, k, system_message), sentences)
-        for sent_layers in future_results:
-            # sent_layers is a list [L0, L1, L2, L3, L4]
-            sent_tokens = calculate_importance_from_layers(sent_layers)
-            all_tokens.extend(sent_tokens)
-            # Add a sentence break space or marker if needed? 
-            # Our backend likes a newline between paragraphs, but sentences usually stay together.
-            
-    return all_tokens
+        shortened_sentences = list(future_results)
+    
+    max_sentence_depth = max(len(sent_results) for sent_results in shortened_sentences) if shortened_sentences else 1
+    
+    combined_responses = []
+    for depth in range(max_sentence_depth):
+        combined_paragraph = []
+        for sent_results in shortened_sentences:
+            depth_idx = min(depth, len(sent_results) - 1)
+            combined_paragraph.append(sent_results[depth_idx])
+        combined_responses.append(' '.join(combined_paragraph))
+    
+    return for_viz(combined_responses)
