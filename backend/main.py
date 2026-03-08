@@ -212,17 +212,28 @@ async def translate(req: TranslateRequest):
     
     # We use a dual-stage prompt to force the AI to reason about morphology
     prompt = f"""
-    Analyze the English word "{req.word}" in the following context: "{req.context}".
+    You are an expert in Hebrew linguistics and morphology. Analyze the English word "{req.word}" in the following context: "{req.context}".
     
-    Step 1: Translate it to Hebrew (Ivrit).
-    Step 2: Identify the Hebrew Root (Shoresh) using strict morphological rules (Binyanim/Mishkalim). 
-      - Distinguish between strong and weak roots (e.g., if a letter drops like 'נ' or 'י').
-      - If it's a loanword (e.g., 'אוניברסיטה'), write "N/A".
-    Step 3: Create a clear example sentence in English using "{req.word}", followed by its Hebrew translation.
+    TASK:
+    1. Translate the word to its most natural Hebrew equivalent given the context.
+    2. Extract the Triliteral Root (שורש) based on the standards of the Academy of the Hebrew Language.
+    
+    LINGUISTIC GUIDELINES:
+    - Distinguish between a root and its pattern (Binyan/Mishkal).
+    - Handle weak roots (Gezarot) correctly (e.g., if a 'נ', 'י', or 'ה' drops out or changes).
+    - For loanwords with no Semitic root (e.g., 'אוניברסיטה', 'טלפון'), return "N/A".
+    - Provide a morphological reasoning step.
+    
+    EXAMPLES:
+    - Word: "guard", Context: "I guarded the door", Output Root: "ש-מ-ר", Translation: "שמרתי"
+    - Word: "dress", Context: "She dressed quickly", Output Root: "ל-ב-ש", Translation: "התלבשה"
+    - Word: "fall", Context: "I will fall tomorrow", Output Root: "נ-פ-ל", Translation: "אפול" (Note: the 'נ' is hidden in this form)
+    - Word: "give", Context: "He gives a gift", Output Root: "נ-ת-ן", Translation: "נותן"
+    - Word: "buy", Context: "They bought a house", Output Root: "ק-נ-ה", Translation: "קנו"
     
     Provide your response as a JSON object:
     {{
-        "analysis": "Brief step-by-step morphological reasoning",
+        "analysis": "Brief step-by-step morphological reasoning (explain the Binyan and how you found the root letters)",
         "translation": "The Hebrew word/phrase",
         "root": "X-Y-Z (formatted with dashes)",
         "example": "English sentence. [Hebrew translation]"
@@ -231,9 +242,9 @@ async def translate(req: TranslateRequest):
     
     try:
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o", # Upgraded to full GPT-4o for better linguistic precision
             messages=[
-                {"role": "system", "content": "You are a professional Hebrew Morphologist and Linguistic Expert. Your mission is to provide 100% accurate roots based on the Academy of the Hebrew Language standards."},
+                {"role": "system", "content": "You are a professional Hebrew Morphologist. You follow the strict rules of the Academy of the Hebrew Language (האקדמיה ללשון העברית)."},
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"}
