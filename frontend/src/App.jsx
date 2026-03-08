@@ -623,7 +623,7 @@ function App() {
                 <section>
                   <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>4. Interactive Translation</h3>
                   <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
-                    Click any word to see its <strong>Hebrew Root (Shoresh)</strong>, translation, and example.
+                    Click any word to see its <strong>Hebrew Root (שורש)</strong>, translation, and example.
                     Mark words as <strong>Learned</strong> to stop them from being highlighted in future texts.
                   </p>
                 </section>
