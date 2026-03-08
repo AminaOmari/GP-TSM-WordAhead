@@ -6,3 +6,4 @@ requests
 openai
 wordfreq
 numpy
+gunicorn
