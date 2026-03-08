@@ -1,3 +1,4 @@
+from typing import List
 from promptengine.pipelines import PromptPipeline
 from promptengine.template import PromptTemplate, PromptPermutationGenerator
 from promptengine.utils import LLM, extract_responses, is_valid_filepath
