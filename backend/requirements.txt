@@ -1,15 +1,8 @@
-
-# Added from GP-TSM requirements just in case
-Flask==2.2.2
-numpy
-pandas
-sentence-transformers
-spacy
-
-transformers
-openai
-wordfreq
+# Slim requirements for Render (Stay under 512MB)
 fastapi
 uvicorn
 python-multipart
 requests
+openai
+wordfreq
+numpy

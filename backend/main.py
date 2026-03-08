@@ -1,6 +1,8 @@
 import sys
 import os
 import traceback
+import gc
+import re
 from typing import List, Dict, Any
 
 # Add GP-TSM to path
@@ -39,6 +41,24 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 app = FastAPI()
+
+def clean_rtf(text: str) -> str:
+    """Basic RTF stripping if text starts with {\\rtf1."""
+    if not text.strip().startswith("{\\rtf1"):
+        return text
+    
+    # Remove control words and their parameters
+    pattern = re.compile(r"\\([a-z]{1,32})(-?\d{1,10})?[ ]?|\\'([0-9a-f]{2})|\\([^a-z])|[{}]", re.IGNORECASE)
+    
+    def replace(match):
+        if match.group(3):
+            return chr(int(match.group(3), 16))
+        return ""
+
+    out = pattern.sub(replace, text)
+    # Clean up whitespace
+    out = " ".join(out.split())
+    return out.strip()
 
 # Allow CORS for local development
 app.add_middleware(
@@ -121,10 +141,17 @@ async def analyze(req: AnalyzeRequest):
         # We should provide the system message from llm if needed, or None creates default.
         # But wait, llm.py has `UK_LAW_SYSTEM_MESSAGE`.
         # The prompt uses string formatting `${paragraph}`.
-        
         raw_text = req.text
+        text = clean_rtf(raw_text)
+    
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="Text is empty after cleaning")
+            
+        set_user_level = req.user_level
+        
+        set_loading = True
         # Clean up empty lines
-        paragraphs = [p for p in raw_text.split('\n') if len(p.strip()) > 0]
+        paragraphs = [p.strip() for p in text.split('\n') if p.strip()]
         
         all_tokens = []
         
@@ -166,6 +193,9 @@ async def analyze(req: AnalyzeRequest):
                 all_tokens.append({"text": "\n", "importance": -1, "cefr": ""})
 
         print("Analysis complete successfully")
+        # Trigger garbage collection to clear RAM on tight Render instances
+        gc.collect()
+        
         return {"tokens": all_tokens}
 
     except Exception as e:
