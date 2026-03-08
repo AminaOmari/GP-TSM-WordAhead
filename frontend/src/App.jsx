@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BookOpen, Settings, X, Loader2, Play, Activity, Info } from 'lucide-react';
+import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
@@ -51,6 +51,8 @@ function App() {
   const [transLoading, setTransLoading] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [skimmingLevel, setSkimmingLevel] = useState(0); // 0 = Show All, higher = More Condensed
+  const [abortController, setAbortController] = useState(null);
+  const [fileLimitError, setFileLimitError] = useState('');
 
   // Persistence State
   const [learnedWords, setLearnedWords] = useState(() => {
@@ -139,20 +141,57 @@ function App() {
       alert("Please enter some text to analyze.");
       return;
     }
+    
+    const controller = new AbortController();
+    setAbortController(controller);
     setLoading(true);
+    
     try {
       const res = await axios.post(`${API_URL}/api/analyze`, {
         text,
         user_level: userLevel
-      });
+      }, { signal: controller.signal });
       setTokens(res.data.tokens);
     } catch (err) {
-      console.error(err);
-      const msg = err.response?.data?.detail || err.message || "Unknown error";
-      alert(`Analysis failed: ${msg}`);
+      if (axios.isCancel(err)) {
+        console.log("Analysis cancelled by user");
+      } else {
+        console.error(err);
+        const msg = err.response?.data?.detail || err.message || "Unknown error";
+        alert(`Analysis failed: ${msg}`);
+      }
     } finally {
       setLoading(false);
+      setAbortController(null);
     }
+  };
+
+  const handleStopAnalysis = () => {
+    if (abortController) {
+      abortController.abort();
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      setFileLimitError("File is too large. Max size is 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      if (content.length > 50000) {
+        setFileLimitError("Text is too long. Max characters: 50,000.");
+        return;
+      }
+      setText(content);
+      setFileLimitError('');
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -174,17 +213,7 @@ function App() {
             <Settings size={18} /> My Progress
           </button>
           <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Skimming:</span>
-              <input
-                type="range" min="0" max="3" step="1"
-                value={skimmingLevel}
-                onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
-                style={{ width: '80px', accentColor: 'var(--accent)' }}
-              />
-            </div>
-            <div style={{ borderLeft: '1px solid #e2e8f0', height: '1.2rem', margin: '0 0.2rem' }}></div>
-            <span style={{ color: 'var(--text-secondary)' }}>Profile:</span>
+            <span style={{ color: 'var(--text-secondary)' }}>Language Level:</span>
             <span style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{userLevel}</span>
           </div>
         </div>
@@ -193,51 +222,96 @@ function App() {
 
       {/* Categories Legend */}
       <div className="glass legend-container">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="word word-hard-important">Hard & Important</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Purple)</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderRight: '1px solid #e2e8f0', paddingRight: '1.5rem', marginRight: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Condensation (Skimming)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+               <span style={{ fontSize: '0.7rem' }}>Detailed</span>
+               <input
+                 type="range" min="0" max="3" step="1"
+                 value={skimmingLevel}
+                 onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
+                 style={{ width: '120px', accentColor: 'var(--accent)' }}
+               />
+               <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="word word-hard">Hard</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="word word-important">Important</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Black)</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="word word-low">Non-Important</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Grey)</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="word word-hard-important">Hard & Important</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Purple)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="word word-hard">Hard</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="word word-important">Important</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Black)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="word word-low">Non-Important</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Grey)</span>
+          </div>
         </div>
       </div>
 
       {/* Main Content: 3-Column Layout */}
       <div className="main-layout">
 
-        {/* Left Panel: Input */}
-        <div className="glass input-panel">
+        <div className="glass input-panel" style={{ width: '320px' }}>
           <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.2rem' }}>
             <BookOpen size={18} /> Input
           </h2>
+          
+          <div style={{ marginBottom: '1rem' }}>
+            <label className="btn" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)', border: '1px dashed var(--accent)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', fontSize: '0.85rem' }}>
+              <Upload size={16} /> Upload Text File
+              <input type="file" accept=".txt" onChange={handleFileUpload} style={{ display: 'none' }} />
+            </label>
+            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '0.3rem' }}>
+              Max size: 5MB / 50k chars
+            </p>
+            {fileLimitError && <p style={{ fontSize: '0.7rem', color: '#dc2626', textAlign: 'center', marginTop: '0.3rem' }}>{fileLimitError}</p>}
+          </div>
+
           <textarea
             className="input"
-            rows={10}
+            rows={20}
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Enter text here..."
-            style={{ resize: 'vertical', fontFamily: 'monospace', marginBottom: '1rem', fontSize: '0.9rem' }}
+            style={{ resize: 'vertical', fontFamily: 'monospace', marginBottom: '1rem', fontSize: '0.9rem', minHeight: '300px' }}
           />
-          <button className="btn" onClick={handleAnalyze} style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.5rem' }}>
-            {loading ? <Loader2 className="loader" style={{ width: 16, height: 16 }} /> : <Play size={16} />}
-            {loading ? 'Analyzing...' : 'Analyze'}
-          </button>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn" onClick={handleAnalyze} disabled={loading} style={{ flex: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.5rem' }}>
+              {loading ? <Loader2 className="loader" style={{ width: 16, height: 16 }} /> : <Play size={16} />}
+              {loading ? 'Analyzing...' : 'Analyze'}
+            </button>
+            {loading && (
+              <button className="btn" onClick={handleStopAnalysis} style={{ flex: 1, background: '#dc2626', padding: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }} title="Stop Analysis">
+                <StopCircle size={18} />
+              </button>
+            )}
+          </div>
+
+          <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic' }}>
+              Ready to process. Enter text and click Analyze.
+            </p>
+          </div>
         </div>
 
         {/* Middle Panel: Output */}
         <div className="glass content-panel">
+          <h2 style={{ marginTop: 0, marginBottom: '1.5rem', paddingBottom: '0.5rem', borderBottom: '1px solid #f1f5f9', color: 'var(--text-secondary)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Output
+          </h2>
           {tokens.length === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
-              <p>Ready to process. Enter text and click Analyze.</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%', color: 'var(--text-secondary)' }}>
+              <p>Analysis results will appear here.</p>
             </div>
           ) : (
             <div style={{ lineHeight: '2.0', fontSize: '1.2rem' }}>
@@ -304,9 +378,10 @@ function App() {
 
         {/* Right Panel: Translation Sidebar */}
         <div className="glass translation-panel">
-          <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-            <Activity size={18} /> Word Details
+          <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+            <Activity size={18} /> Translation
           </h2>
+          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '-0.3rem', marginBottom: '1rem' }}>English → Hebrew</p>
 
           <AnimatePresence mode="wait">
             {!selectedWord ? (
