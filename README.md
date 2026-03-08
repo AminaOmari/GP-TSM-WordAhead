@@ -1,45 +1,49 @@
 # WordAhead: Adaptive Reading Assistant 🚀
 
-**WordAhead** is an intelligent, full-stack web application designed to help English language learners (specifically Hebrew speakers) tackle authentic texts. It uses the **GP-TSM (Grammatical Paraphrasing for Text Simplification and Modeling)** algorithm to provide a personalized, adaptive learning experience.
+**WordAhead** is an intelligent, full-stack web application designed to help English language learners (specifically Hebrew speakers) tackle authentic texts. It is "dressed" directly on the **GP-TSM (Grammatical Paraphrasing for Text Simplification and Modeling)** algorithm, providing a personalized, adaptive reading experience that maps the core structure of complex sentences.
 
 ---
 
 ## 🌟 Key Features
 
-### 1. Intelligent Text Analysis
-- **Difficulty Estimation**: Automatically assigns CEFR levels (A1-C2) to every word in the text.
-- **Semantic Importance**: Uses AI to determine which words are critical for understanding the main message.
-- **Visual Scaffolding**: Color-codes text to guide the student's attention:
-  - **Bold Purple**: Hard & Important (High Priority).
-  - **Purple**: Hard but less critical.
-  - **Bold Black**: Common but critical words.
-  - **Faded Grey**: Non-essential "filler" vocabulary.
+### 1. Structure Mapping (GP-TSM Core)
+- **Logical Skeleton**: Uses the GP-TSM algorithm to reveal the core subject-verb-object structure of any text.
+- **Condensation (Skimming)**: A dynamic slider allows users to "fade out" non-essential details, focusing solely on the structural backbone of the argument.
+- **Importance Attributes**: Words are assigned a structural importance level (0-4) based on their presence in various stages of the GP-TSM shortening process.
 
-### 2. Adaptive Learning Profile
-- **Click-Based Adjustment**: The app monitors word lookups. If a student struggles with "easy" words, it automatically lowers the difficulty profile (e.g., from B1 to A2) to offer more support.
-- **Knowledge Retention**: When a student marks a word as **"Learned"**, the app remembers it permanently. Those words will never be highlighted as "Hard" again, creating a truly personalized reading experience.
+### 2. Intelligent Highlighting & CEFR
+- **Personalized Scaffolding**: Color-codes text specifically for the user's level:
+  - **Bold Purple**: Hard & Important (Top Priority words).
+  - **Purple**: Difficult words for the current level.
+  - **Bold Black**: Important logical connectors or keywords.
+  - **Faded Grey**: Contextual "noise" (dates, filler adjectives).
+- **Difficulty Profile**: Automatically estimates CEFR levels (A1-C2) for every word using Zipf-frequency analysis.
 
-### 3. Linguistic Support
-- **Context-Aware Translation**: Provides Hebrew translations based on the surrounding sentence meaning using GPT-4o-mini.
-- **Morphological Roots**: Extracts the Hebrew **Shoresh (Root)** of translated words to help students build deeper linguistic connections.
-- **Vocabulary Dashboard**: A dedicated space to manage "Study Lists" and track "Mastered Words" across sessions.
+### 3. Professional Hebrew Morphology
+- **High-Precision Roots (שורש)**: Powered by **GPT-4o**, following the strict standards of the **Academy of the Hebrew Language (האקדמיה ללשון העברית)**.
+- **Morphological Guard-Rails**: Includes internal Python verification to strip prefixes/suffixes and validate root accuracy, even for "weak" roots (*Gezarot*).
+- **Context-Aware Translation**: Provides translations that respect the specific meaning of words in their current context.
+
+### 4. Adaptive Learning & Persistence
+- **Auto-Level Adjust**: The app monitors lookups; if a student struggles with common words, it lowers the support profile dynamically.
+- **Knowledge Retention**: Marked "Learned" words are remembered via `localStorage` and will never be highlighted as "Hard" again.
+- **Study Mode**: A dedicated dashboard to track study lists and flashcards for review.
 
 ---
 
 ## 🛠 Technology Stack
 
 ### Backend
-- **FastAPI**: High-performance Python framework for the API.
-- **OpenAI API (GPT-4o-mini)**: For contextual translation and linguistic analysis.
-- **spaCy**: For NLP tasks like tokenization and lemmatization.
-- **Sentence-Transformers**: Used for semantic importance scoring.
-- **Wordfreq**: For Zipf-scale frequency analysis to estimate CEFR levels.
+- **FastAPI**: High-performance Python framework.
+- **OpenAI GPT-4o**: Upgraded for superior linguistic precision and morphological reasoning.
+- **Lightweight NLP Engine**: Optimized for **Render (512MB RAM)**. Replaces heavy spaCy/Torch models with a custom regex-based phrase splitter to maintain speed and reliability on low-memory instances.
+- **Wordfreq**: For accurate Zipf-scale frequency analysis.
 
 ### Frontend
 - **React**: Modern component-based UI.
-- **Framer Motion**: For smooth micro-animations and transitions.
-- **Lucide React**: For elegant iconography.
-- **Tailwind CSS**: For responsive, premium design.
+- **Framer Motion**: Smooth micro-animations for the condensation slider and sidebar transitions.
+- **Lucide React**: Elegant iconography.
+- **Glassmorphism Design**: A premium, clean aesthetic focused on readability.
 
 ---
 
@@ -48,6 +52,7 @@
 ### Prerequisites
 - Python 3.9+
 - Node.js & npm
+- OpenAI API Key
 
 ### Local Installation
 
@@ -57,34 +62,27 @@
    cd GP-TSM-WordAhead
    ```
 
-2. **Run the Setup Script**:
-   We've included a helper script to start both the backend and frontend simultaneously for development:
+2. **Run the Integrated Start Script**:
+   This will boot both the FastAPI backend and the React frontend:
    ```bash
    chmod +x start.sh
    ./start.sh
    ```
 
-### Environment Variables
-To run the analysis and translation, you must provide your OpenAI API key in a `.env` file or in your environment:
-```env
-OPENAI_API_KEY=your_secret_key_here
-```
-
 ---
 
 ## 📦 Deployment
 
-This project is optimized for deployment as a **Unified Web Service** on **Render**. For detailed instructions on how to deploy this yourself, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+The project is pre-configured for **Render** using `render.yaml`. It is specifically optimized for memory-constrained environments, using a single-worker Gunicorn/Uvicorn setup and automated garbage collection.
 
 ---
 
-## 🎓 Graduation Project Context
-This project was developed as a graduation project focusing on the intersection of **Artificial Intelligence** and **Language Pedagogy**. It demonstrates proficiency in:
-- Full-stack system architecture.
-- Advanced NLP algorithm implementation (GP-TSM).
-- Adaptive user modeling and profile persistence.
-- Secure API management and cloud deployment.
+## 🎓 Graduation Project
+Developed as part of a Graduation Project in **Educational Technology & AI**.
 
----
+**Team Members:**
+- **Amina O**
+- **Ossama Z**
+- **Smia I**
 
 Developed with ❤️ for language learners.
