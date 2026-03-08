@@ -227,9 +227,9 @@ async def translate(req: TranslateRequest):
     EXAMPLES:
     - Word: "guard", Context: "I guarded the door", Output Root: "ש-מ-ר", Translation: "שמרתי"
     - Word: "dress", Context: "She dressed quickly", Output Root: "ל-ב-ש", Translation: "התלבשה"
+    - Word: "revolution", Context: "The Industrial Revolution", Output Root: "ה-פ-ך", Translation: "מהפכה" (Note: 'מ' is a prefix of the Mishkal pattern, not a root letter)
     - Word: "fall", Context: "I will fall tomorrow", Output Root: "נ-פ-ל", Translation: "אפול" (Note: the 'נ' is hidden in this form)
     - Word: "give", Context: "He gives a gift", Output Root: "נ-ת-ן", Translation: "נותן"
-    - Word: "buy", Context: "They bought a house", Output Root: "ק-נ-ה", Translation: "קנו"
     
     Provide your response as a JSON object:
     {{
