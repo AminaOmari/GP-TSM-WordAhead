@@ -217,41 +217,37 @@ async def translate(req: TranslateRequest):
         
     client = OpenAI(api_key=OPENAI_API_KEY)
     
-    # We use a dual-stage prompt to force the AI to reason about morphology
+    # Professional prompt with Self-Correction / Reflection step
     prompt = f"""
-    You are an expert in Hebrew linguistics and morphology. Analyze the English word "{req.word}" in the following context: "{req.context}".
+    You are a world-class Hebrew Lexicographer and Morphologist.
     
     TASK:
-    1. Translate the word to its most natural Hebrew equivalent given the context.
-    2. Extract the Triliteral Root (שורש) based on the standards of the Academy of the Hebrew Language.
+    Analyze the English word "{req.word}" in this context: "{req.context}".
     
-    LINGUISTIC GUIDELINES:
-    - Distinguish between a root and its pattern (Binyan/Mishkal).
-    - Handle weak roots (Gezarot) correctly (e.g., if a 'נ', 'י', or 'ה' drops out or changes).
-    - For loanwords with no Semitic root (e.g., 'אוניברסיטה', 'טלפון'), return "N/A".
-    - Provide a morphological reasoning step.
+    STEP-BY-STEP REASONING (DO THIS FIRST):
+    1. Determine the most accurate Hebrew translation for the context.
+    2. Identify the Shoresh (triliteral root). 
+    3. DOUBLE-CHECK: Is the first letter a prefix (like 'מ' in Mishkal or 'ת' in Future tense) or is it a permanent part of the root?
+       - EXAMPLE: In "תורם" (contributes), the 'ת' is the root (ת-ר-מ). It is NOT a prefix.
+       - EXAMPLE: In "מהפכה" (revolution), the 'מ' is a prefix. The root is ה-פ-ך.
+    4. VERIFICATION: Verify the root by checking if other words with the same meaning share these three letters (e.g., תרומה, תרמתי -> ת-ר-מ).
     
-    EXAMPLES:
-    - Word: "guard", Context: "I guarded the door", Output Root: "ש-מ-ר", Translation: "שמרתי"
-    - Word: "dress", Context: "She dressed quickly", Output Root: "ל-ב-ש", Translation: "התלבשה"
-    - Word: "revolution", Context: "The Industrial Revolution", Output Root: "ה-פ-ך", Translation: "מהפכה" (Note: 'מ' is a prefix of the Mishkal pattern, not a root letter)
-    - Word: "fall", Context: "I will fall tomorrow", Output Root: "נ-פ-ל", Translation: "אפול" (Note: the 'נ' is hidden in this form)
-    - Word: "give", Context: "He gives a gift", Output Root: "נ-ת-ן", Translation: "נותן"
-    
-    Provide your response as a JSON object:
+    OUTPUT FORMAT:
+    Provide your final response ONLY as a JSON object:
     {{
-        "analysis": "Brief step-by-step morphological reasoning (explain the Binyan and how you found the root letters)",
+        "analysis": "Step-by-step morphological reasoning including your self-verification check.",
         "translation": "The Hebrew word/phrase",
         "root": "X-Y-Z (formatted with dashes)",
-        "example": "English sentence. [Hebrew translation]"
+        "example": "English sentence. [Hebrew translation]",
+        "confidence": "High/Medium/Low based on your verification"
     }}
     """
     
     try:
         completion = client.chat.completions.create(
-            model="gpt-4o", # Upgraded to full GPT-4o for better linguistic precision
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a professional Hebrew Morphologist. You follow the strict rules of the Academy of the Hebrew Language (האקדמיה ללשון העברית)."},
+                {"role": "system", "content": "You are a professional Hebrew Morphologist. You strictly follow the rules of the Academy of the Hebrew Language. You always double-check your own work for 'prefix-root' confusion."},
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"}
@@ -264,9 +260,10 @@ async def translate(req: TranslateRequest):
         
         # Guard rails: Verify the root if it's not N/A
         if result.get("root") and result["root"] != "N/A":
+            # Pass the reasoning to verify_root to help the logic if needed
             result["root"] = verify_root(result["root"], result["translation"])
             
-        print(f"Translation logic complete: {result.get('root')}")
+        print(f"Translation logic complete: {result.get('root')} (Confidence: {result.get('confidence')})")
         return result
     except Exception as e:
         traceback.print_exc()
