@@ -270,24 +270,51 @@ async def translate(req: TranslateRequest):
         return {"min_error": str(e)}
 
 # --- Frontend Serving Logic ---
-# Try to find the frontend dist folder in a few likely locations
-possible_paths = [
-    os.path.join(PROJECT_ROOT, "frontend", "dist"),
-    os.path.join(PROJECT_ROOT, "dist"),
-    "/opt/render/project/src/frontend/dist" # Common Render path
-]
+def find_frontend_path():
+    # 1. Try common locations
+    possible_paths = [
+        os.path.join(PROJECT_ROOT, "frontend", "dist"),
+        os.path.join(PROJECT_ROOT, "dist"),
+        os.path.join(os.getcwd(), "frontend", "dist"),
+        os.path.join(os.getcwd(), "dist"),
+    ]
+    
+    for p in possible_paths:
+        if os.path.exists(p) and os.path.isdir(p):
+            # Check if index.html exists in this folder
+            if os.path.exists(os.path.join(p, "index.html")):
+                print(f"DEBUG: Found valid frontend build at {p}")
+                return p
+    
+    # 2. Fallback: Search for any 'dist' folder that contains index.html
+    print("DEBUG: Standard paths failed. Searching for 'dist/index.html'...")
+    for root, dirs, files in os.walk(PROJECT_ROOT):
+        if "dist" in dirs:
+            p = os.path.join(root, "dist")
+            if os.path.exists(os.path.join(p, "index.html")):
+                print(f"DEBUG: Discovered frontend build via search at {p}")
+                return p
+    return None
 
-frontend_path = None
-for p in possible_paths:
-    if os.path.exists(p):
-        frontend_path = p
-        print(f"DEBUG: Found frontend build at {p}")
-        break
+frontend_path = find_frontend_path()
 
 if frontend_path:
-    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="static_assets")
+    assets_path = os.path.join(frontend_path, "assets")
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="static_assets")
+        print(f"DEBUG: Mounted /assets from {assets_path}")
+    else:
+        print(f"WARNING: Assets folder not found at {assets_path}")
 else:
-    print("WARNING: Frontend build folder 'dist' not found. SPA routes will fail.")
+    # Diagnostic: Print tree of /app to help fix paths
+    print(f"CRITICAL: Frontend not found. CWD: {os.getcwd()}, PROJECT_ROOT: {PROJECT_ROOT}")
+    try:
+        # Use a simple listdir on root to see what's there
+        print(f"Root contents: {os.listdir(PROJECT_ROOT)}")
+        if os.path.exists(os.path.join(PROJECT_ROOT, "frontend")):
+            print(f"Frontend folder contents: {os.listdir(os.path.join(PROJECT_ROOT, 'frontend'))}")
+    except:
+        pass
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
@@ -296,13 +323,27 @@ async def serve_spa(full_path: str):
         raise HTTPException(status_code=404, detail="API route not found")
         
     if not frontend_path:
-        return {
-            "error": "Frontend build not found",
-            "cwd": os.getcwd(),
-            "project_root": PROJECT_ROOT,
-            "tried_paths": possible_paths,
-            "suggestion": "Check Render build logs to see if 'npm run build' succeeded."
-        }
+        # Try finding it again (maybe it was built after start? unlikely but safe)
+        current_path = find_frontend_path()
+        if not current_path:
+            # Final diagnostic response
+            debug_info = {
+                "error": "Frontend build not found",
+                "cwd": os.getcwd(),
+                "project_root": PROJECT_ROOT,
+                "suggestion": "Check build logs. Ensure 'npm run build' is creating 'frontend/dist'."
+            }
+            # List shallow directories for debugging
+            try:
+                debug_info["root_ls"] = os.listdir(PROJECT_ROOT)
+                if "frontend" in debug_info["root_ls"]:
+                    debug_info["frontend_ls"] = os.listdir(os.path.join(PROJECT_ROOT, "frontend"))
+            except: pass
+            return debug_info
+        else:
+            # Found it on second try! (Can happen in some dev setups)
+            index_file = os.path.join(current_path, "index.html")
+            return FileResponse(index_file)
         
     index_file = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_file):
