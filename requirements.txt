@@ -1,0 +1,9 @@
+# Slim requirements for Render (Stay under 512MB)
+fastapi
+uvicorn
+python-multipart
+requests
+openai
+wordfreq
+numpy
+gunicorn
