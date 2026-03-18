@@ -9,3 +9,7 @@ cmds = ["cd frontend && npm run build"]
 
 [phases.start]
 cmd = "python3 backend/main.py"
+
+[output]
+paths = ["frontend/dist"]
+
