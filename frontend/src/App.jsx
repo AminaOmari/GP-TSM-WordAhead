@@ -66,6 +66,13 @@ function App() {
   const [abortController, setAbortController] = useState(null);
   const [fileLimitError, setFileLimitError] = useState('');
   const [showHowToUse, setShowHowToUse] = useState(false);
+  const [learnedStatus, setLearnedStatus] = useState(false);
+  const [notification, setNotification] = useState('');
+
+  const showNotification = (msg) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(''), 4000);
+  };
 
   // Persistence State
   const [learnedWords, setLearnedWords] = useState(() => {
@@ -86,18 +93,25 @@ function App() {
   }, [reviewList]);
 
   const markLearned = (word) => {
-    setLearnedWords(prev => ({ ...prev, [word.toLowerCase()]: true }));
-    // Remove from review if it was there
+    const cleanWord = word.toLowerCase().replace(/[.,:;?!"()]/g, '');
+    setLearnedWords(prev => ({ ...prev, [cleanWord]: true }));
+    // Immediately update current tokens so highlighting disappears right away
+    setTokens(prev => prev.map(token => {
+      const tokenClean = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+      if (tokenClean === cleanWord) {
+        return { ...token, isDifficult: false, isLearned: true };
+      }
+      return token;
+    }));
     setReviewList(prev => {
-      const { [word.toLowerCase()]: removed, ...rest } = prev;
+      const { [cleanWord]: removed, ...rest } = prev;
       return rest;
     });
-    alert(`"${word}" marked as learned! It won't be highlighted as hard anymore.`);
   };
 
   const addToReview = (word, details) => {
     setReviewList(prev => ({ ...prev, [word.toLowerCase()]: details }));
-    alert(`"${word}" added to your study list.`);
+    showNotification(`"${word}" added to your study list.`);
   };
 
   const removeFromReview = (word) => {
@@ -116,18 +130,14 @@ function App() {
     const wIdx = CEFR_LEVELS.indexOf(token.cefr);
     const uIdx = CEFR_LEVELS.indexOf(userLevel);
 
-    if (wIdx !== -1 && uIdx !== -1) {
-      if (wIdx <= uIdx) {
-        const newCount = struggleCount + 1;
-        setStruggleCount(newCount);
-        if (newCount >= 3) {
-          if (uIdx > 0) {
-            const newLevel = CEFR_LEVELS[uIdx - 1];
-            setUserLevel(newLevel);
-            setStruggleCount(0);
-            alert(`We noticed you're looking up common words. Adjusting simplified level to ${newLevel} for better support.`);
-          }
-        }
+    if (wIdx !== -1 && uIdx !== -1 && wIdx >= uIdx) {
+      const newCount = struggleCount + 1;
+      setStruggleCount(newCount);
+      if (newCount >= 3 && uIdx > 0) {
+        const newLevel = CEFR_LEVELS[uIdx - 1];
+        setUserLevel(newLevel);
+        setStruggleCount(0);
+        showNotification(`We noticed you're looking up hard words. Adjusting level to ${newLevel} for better support.`);
       }
     }
 
@@ -156,7 +166,7 @@ function App() {
 
   const handleAnalyze = async () => {
     if (!text.trim()) {
-      alert("Please enter some text to analyze.");
+      showNotification("Please enter some text to analyze.");
       return;
     }
 
@@ -169,14 +179,21 @@ function App() {
         text,
         user_level: userLevel
       }, { signal: controller.signal });
-      setTokens(res.data.tokens);
+      const processedTokens = res.data.tokens.map(token => {
+        const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+        if (learnedWords[cleanWord]) {
+          return { ...token, isDifficult: false, isLearned: true };
+        }
+        return token;
+      });
+      setTokens(processedTokens);
     } catch (err) {
       if (axios.isCancel(err)) {
         console.log("Analysis cancelled by user");
       } else {
         console.error(err);
         const msg = err.response?.data?.detail || err.message || "Unknown error";
-        alert(`Analysis failed: ${msg}`);
+        showNotification(`Analysis failed: ${msg}`);
       }
     } finally {
       setLoading(false);
@@ -239,6 +256,16 @@ function App() {
           </div>
         </div>
       </header>
+
+      {notification && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--accent)', color: 'white', padding: '0.75rem 1.5rem',
+          borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        }}>
+          {notification}
+        </div>
+      )}
 
 
       {/* Categories Legend */}
@@ -457,9 +484,13 @@ function App() {
                   <button
                     className="btn"
                     style={{ background: '#22c55e', fontSize: '0.9rem', padding: '0.5rem' }}
-                    onClick={() => markLearned(selectedWord.text)}
+                    onClick={() => {
+                      markLearned(selectedWord.text);
+                      setLearnedStatus(true);
+                      setTimeout(() => setLearnedStatus(false), 2000);
+                    }}
                   >
-                    Mark Learned
+                    {learnedStatus ? "✓ Learned!" : "Mark Learned"}
                   </button>
                   <button
                     className="btn"
