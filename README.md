@@ -1,12 +1,3 @@
----
-title: WordAhead
-emoji: 🚀
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-pinned: false
----
-
 # WordAhead: Adaptive Reading Assistant 🚀
 
 **WordAhead** is an intelligent, full-stack web application designed to help English language learners (specifically Hebrew speakers) tackle authentic texts. It is "dressed" directly on the **GP-TSM (Grammatical Paraphrasing for Text Simplification and Modeling)** algorithm, providing a personalized, adaptive reading experience that maps the core structure of complex sentences.
