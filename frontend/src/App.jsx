@@ -502,6 +502,19 @@ function App() {
                               {translation.root_meaning}
                             </div>
                           )}
+                          {translation.root_source && (
+                            <span style={{
+                              fontSize: '0.7rem',
+                              background: translation.root_source === 'Wiktionary' ? '#f0fdf4' : '#fefce8',
+                              color: translation.root_source === 'Wiktionary' ? '#166534' : '#854d0e',
+                              padding: '0.1rem 0.4rem',
+                              borderRadius: '4px',
+                              marginTop: '0.3rem',
+                              display: 'inline-block'
+                            }}>
+                              {translation.root_source === 'Wiktionary' ? '✓ Verified' : 'AI estimate'}
+                            </span>
+                          )}
                         </div>
                       )}
 

@@ -210,6 +210,70 @@ async def analyze(req: AnalyzeRequest):
         # Return the actual error to frontend
         raise HTTPException(status_code=500, detail=str(e))
 
+import httpx
+
+async def lookup_root_wiktionary(hebrew_word: str) -> str | None:
+    """
+    Query English Wiktionary for the Hebrew root of a word.
+    Uses the MediaWiki API to fetch the raw wikitext, then extracts
+    the he-rootbox template which contains the official root.
+    Returns the root as 'X-Y-Z' string, or None if not found.
+    """
+    # Clean the word — remove nikkud and whitespace
+    clean = re.sub(r'[\u0591-\u05C7\s]', '', hebrew_word).strip()
+    if not clean:
+        return None
+
+    url = "https://en.wiktionary.org/w/api.php"
+    params = {
+        "action": "query",
+        "titles": clean,
+        "prop": "revisions",
+        "rvprop": "content",
+        "rvslots": "main",
+        "format": "json",
+        "formatversion": "2"
+    }
+
+    try:
+        headers = {"User-Agent": "WordAhead/1.0 (https://github.com/AminaOmari/GP-TSM-WordAhead)"}
+        async with httpx.AsyncClient(timeout=5.0, headers=headers) as client:
+            resp = await client.get(url, params=params)
+            data = resp.json()
+
+        pages = data.get("query", {}).get("pages", [])
+        if not pages or pages[0].get("missing"):
+            return None
+
+        content = pages[0].get("revisions", [{}])[0].get("slots", {}).get("main", {}).get("content", "")
+
+        # Look for Hebrew section
+        if "==Hebrew==" not in content:
+            return None
+
+        # Extract he-rootbox template: {{he-rootbox|א־ב־ג}} or {{he-rootbox|א|ב|ג}}
+        rootbox_match = re.search(r'\{\{he-rootbox\|([^}]+)\}\}', content)
+        if not rootbox_match:
+            return None
+
+        raw = rootbox_match.group(1)
+
+        # Format can be "א־ב־ג" (already with dashes) or "א|ב|ג" (pipe-separated)
+        if '|' in raw:
+            letters = [l.strip() for l in raw.split('|') if l.strip()]
+        else:
+            # Remove the Hebrew maqaf separator ־ and split into chars
+            letters = [c for c in raw if c.strip() and c != '־']
+
+        if len(letters) >= 2:
+            return '-'.join(letters)
+
+        return None
+
+    except Exception as e:
+        print(f"Wiktionary lookup failed for '{clean}': {e}")
+        return None
+
 def extract_best_context(word: str, context: str) -> str:
     """Extract the sentence from context that contains the word."""
     sentences = re.split(r'(?<=[.!?])\s+', context)
@@ -300,11 +364,21 @@ async def translate(req: TranslateRequest):
         result["root_meaning"] = result.get("root_meaning", "")
         result["part_of_speech"] = result.get("part_of_speech", "")
         result["confidence"] = result.get("confidence", "Medium")
+        result["root_source"] = result.get("root_source", "AI")
         
         # Guard rails: Verify the root if it's not N/A
         if result.get("root") and not is_loanword_root(result["root"]):
-            # Pass the reasoning to verify_root to help the logic if needed
-            result["root"] = verify_root(result["root"], result["translation"])
+            # First: try to get the authoritative root from Wiktionary
+            wiki_root = await lookup_root_wiktionary(result["translation"])
+            if wiki_root:
+                print(f"✅ Wiktionary confirmed root: {wiki_root} (GPT had: {result['root']})")
+                result["root"] = wiki_root
+                result["root_source"] = "Wiktionary"
+            else:
+                # Wiktionary doesn't have it — fall back to GPT + local verification
+                result["root"] = verify_root(result["root"], result["translation"])
+                result["root_source"] = "AI"
+                print(f"⚠️ Wiktionary miss — using GPT root: {result['root']}")
             
         print(f"Translation logic complete: {result.get('root')} (Confidence: {result.get('confidence')})")
         return result

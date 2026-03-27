@@ -7,3 +7,4 @@ openai
 wordfreq
 numpy
 gunicorn
+httpx
