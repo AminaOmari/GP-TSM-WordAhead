@@ -23,6 +23,6 @@ COPY GP-TSM/ ./GP-TSM/
 # Crucial step: Copy the built frontend from Stage 1 into the correct path
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Expose port (Railway will override this if configured through ENV)
+# Expose port (Render or other platforms will override this if configured through ENV)
 EXPOSE 8000
 CMD ["python", "backend/main.py"]

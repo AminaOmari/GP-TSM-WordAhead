@@ -26,6 +26,11 @@ This guide helps you deploy the **WordAhead** application (GP-TSM adaptive reade
     - **Key**: `OPENAI_API_KEY`
     - **Value**: *[Your Secret OpenAI Key from platform.openai.com]*
 5.  **Deploy**.
+6.  **Custom Domain Configuration**:
+    - Once deployed, go to the "Settings" tab of your service.
+    - Scroll down to "Custom Domains" and click **Add Custom Domain**.
+    - Enter `gp-tsm-wordahead.com` (and optionally `www.gp-tsm-wordahead.com`).
+    - Update your DNS settings at your domain registrar with the CNAME and A/ALIAS records provided by Render.
 
 ---
 

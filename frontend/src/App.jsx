@@ -27,10 +27,22 @@ const Flashcard = ({ word, data, onRemove }) => {
           <div className="flashcard-hint">Click to see translation</div>
         </div>
         <div className="flashcard-back">
-          <div className="flashcard-translation">{data.translation?.translation || '...'}</div>
-          {data.translation?.root && (
+          <div className="flashcard-translation">
+            {data.translation?.translation || '...'}
+            {data.translation?.transliteration && (
+              <span style={{ fontSize: '0.9em', color: '#94a3b8', marginLeft: '0.3rem', fontWeight: 'normal' }}>
+                ({data.translation.transliteration})
+              </span>
+            )}
+          </div>
+          {data.translation?.root && data.translation.root !== "N/A" && !data.translation.root.toLowerCase().includes("loanword") && (
             <div className="flashcard-meta" style={{ marginTop: '0.5rem' }}>
               Root: <strong>{data.translation.root}</strong>
+              {data.translation?.root_meaning && (
+                <div style={{ fontSize: '0.9em', color: '#64748b', marginTop: '0.2rem' }}>
+                  {data.translation.root_meaning}
+                </div>
+              )}
             </div>
           )}
           <div className="flashcard-hint">Click to flip back</div>
@@ -447,13 +459,25 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                       <div>
                         <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>Translation</h4>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{translation.translation}</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                          {translation.translation}
+                          {translation.transliteration && (
+                            <span style={{ fontSize: '1rem', color: '#94a3b8', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                              ({translation.transliteration})
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      {translation.root && (
+                      {translation.root && translation.root !== "N/A" && !translation.root.toLowerCase().includes("loanword") && (
                         <div>
                           <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>Root (Shoresh)</h4>
                           <div style={{ fontSize: '1.2rem', fontFamily: 'serif' }}>{translation.root}</div>
+                          {translation.root_meaning && (
+                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                              {translation.root_meaning}
+                            </div>
+                          )}
                         </div>
                       )}
 

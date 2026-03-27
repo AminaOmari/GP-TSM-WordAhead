@@ -219,27 +219,52 @@ async def translate(req: TranslateRequest):
     
     # Professional prompt with Self-Correction / Reflection step
     prompt = f"""
-    You are a world-class Hebrew Lexicographer and Morphologist.
-    
+    You are a world-class Hebrew Lexicographer, Morphologist, and English Language Teacher.
+
     TASK:
-    Analyze the English word "{req.word}" in this context: "{req.context}".
-    
-    STEP-BY-STEP REASONING (DO THIS FIRST):
-    1. Determine the most accurate Hebrew translation for the context.
-    2. Identify the Shoresh (triliteral root). 
-    3. DOUBLE-CHECK: Is the first letter a prefix (like 'מ' in Mishkal or 'ת' in Future tense) or is it a permanent part of the root?
-       - EXAMPLE: In "תורם" (contributes), the 'ת' is the root (ת-ר-מ). It is NOT a prefix.
-       - EXAMPLE: In "מהפכה" (revolution), the 'מ' is a prefix. The root is ה-פ-ך.
-    4. VERIFICATION: Verify the root by checking if other words with the same meaning share these three letters (e.g., תרומה, תרמתי -> ת-ר-מ).
-    
+    Analyze the English word "{req.word}" as it is used in this exact context:
+    "{req.context}"
+
+    STEP-BY-STEP REASONING (MANDATORY — do this before writing any output):
+
+    1. CONTEXTUAL TRANSLATION
+       - What is the precise meaning of "{req.word}" in this specific sentence?
+       - Translate it to Hebrew accordingly. Do NOT translate the word in isolation.
+       - If the word has multiple meanings, pick the one that fits this context.
+
+    2. PART OF SPEECH
+       - Identify: noun / verb / adjective / adverb / other.
+       - Note the tense or form if it is a verb (e.g., past tense, present participle).
+
+    3. SHORESH (ROOT) DETECTION
+       - Identify the triliteral (3-letter) Hebrew root of your translation.
+       - RULE: Strip all prefixes (מ, ת, נ, י, ל, ב, ה, ו, כ, ש) and suffixes (ים, ות, ה, תי, נו) before deciding the root.
+       - CONFIRM by asking: do other Hebrew words with related meaning share these 3 letters?
+         Example check: if root is ת-ר-מ → does תרומה, תרמתי also share this root? ✓
+       - If the word is a loanword or has no Semitic root (e.g., "television" → טלוויזיה), write "N/A — loanword".
+       - If the root is uncertain, say so and explain why.
+
+    4. EXAMPLE SENTENCE
+       - Write ONE clear, natural English example sentence using "{req.word}" in a similar context to the one provided.
+       - The sentence should help a language learner remember the word's meaning.
+       - Then provide its Hebrew translation in brackets.
+
+    5. SELF-VERIFICATION
+       - Re-read your translation. Does it sound natural in Hebrew for this context?
+       - Re-check the root. Are you confident no prefix was mistaken for a root letter?
+       - Assign confidence: High (certain), Medium (likely correct), Low (uncertain or loanword).
+
     OUTPUT FORMAT:
-    Provide your final response ONLY as a JSON object:
+    Respond ONLY with a valid JSON object, no markdown, no explanation outside the JSON:
     {{
-        "analysis": "Step-by-step morphological reasoning including your self-verification check.",
-        "translation": "The Hebrew word/phrase",
-        "root": "X-Y-Z (formatted with dashes)",
-        "example": "English sentence. [Hebrew translation]",
-        "confidence": "High/Medium/Low based on your verification"
+        "analysis": "Your full step-by-step morphological reasoning including self-verification.",
+        "translation": "The Hebrew word or phrase",
+        "transliteration": "Pronunciation in English letters (e.g., 'shalom')",
+        "part_of_speech": "noun / verb / adjective / adverb / other",
+        "root": "X-Y-Z (with dashes) or 'N/A — loanword' or 'Uncertain — [reason]'",
+        "root_meaning": "The core meaning conveyed by this root in Hebrew (e.g., 'giving/contributing')",
+        "example": "English sentence using the word. [Hebrew translation of the sentence]",
+        "confidence": "High / Medium / Low"
     }}
     """
     
@@ -250,16 +275,21 @@ async def translate(req: TranslateRequest):
                 {"role": "system", "content": "You are a professional Hebrew Morphologist. You strictly follow the rules of the Academy of the Hebrew Language. You always double-check your own work for 'prefix-root' confusion."},
                 {"role": "user", "content": prompt}
             ],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            temperature=0.2
         )
         content = completion.choices[0].message.content
         import json
         from morphology import verify_root
         
         result = json.loads(content)
+
+        # Add fallbacks for existing caches or missing fields
+        result["transliteration"] = result.get("transliteration", "")
+        result["root_meaning"] = result.get("root_meaning", "")
         
         # Guard rails: Verify the root if it's not N/A
-        if result.get("root") and result["root"] != "N/A":
+        if result.get("root") and "n/a" not in result["root"].lower() and "uncertain" not in result["root"].lower():
             # Pass the reasoning to verify_root to help the logic if needed
             result["root"] = verify_root(result["root"], result["translation"])
             
@@ -357,6 +387,6 @@ async def serve_spa(full_path: str):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 5000))
     print(f"Starting server on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port)
