@@ -31,9 +31,12 @@ def strip_suffixes(word: str) -> str:
     return word
 
 def format_root(root_letters: str) -> str:
-    """Format root with dashes: כ-ת-ב."""
+    """Format root with dashes: כ-ת-ב or כ-ת-ב-ם for quadriliterals."""
     if not root_letters or len(root_letters) < 2:
         return "N/A"
+    if len(root_letters) > 4:
+        # Truncate to 4 — anything longer is likely a parsing error
+        root_letters = root_letters[:4]
     return "-".join(list(root_letters))
 
 def verify_root(ai_root: str, hebrew_word: str) -> str:
@@ -60,10 +63,10 @@ def verify_root(ai_root: str, hebrew_word: str) -> str:
     if ordered_matches < 2 and len(clean_ai) >= 3:
         # Try stripping prefixes+suffixes for a fallback root
         stripped = strip_suffixes(strip_prefixes(clean_word))
-        if len(stripped) == 3:
+        if len(stripped) in (3, 4):
             return format_root(stripped)
-        elif len(stripped) > 3:
-            # Take the middle 3 letters as best guess
+        elif len(stripped) > 4:
+            # Try 3-letter core first, then 4-letter
             mid = len(stripped) // 2
             core = stripped[max(0, mid-1):mid+2]
             return format_root(core) + " (estimated)"

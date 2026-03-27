@@ -217,7 +217,7 @@ async def lookup_root_wiktionary(hebrew_word: str) -> str | None:
     Query English Wiktionary for the Hebrew root of a word.
     Uses the MediaWiki API to fetch the raw wikitext, then extracts
     the he-rootbox template which contains the official root.
-    Returns the root as 'X-Y-Z' string, or None if not found.
+    Returns the root as 'X-Y-Z' or 'X-Y-Z-W' string, or None if not found.
     """
     # Clean the word — remove nikkud and whitespace
     clean = re.sub(r'[\u0591-\u05C7\s]', '', hebrew_word).strip()
@@ -312,10 +312,10 @@ async def translate(req: TranslateRequest):
        - Note the tense or form if it is a verb (e.g., past tense, present participle).
 
     3. SHORESH (ROOT) DETECTION
-       - Identify the triliteral (3-letter) Hebrew root of your translation.
+       - Identify the Hebrew root of your translation. Most roots are triliteral (3 letters), but some are quadriliteral (4 letters, e.g. ע-ר-ע-ר for ערעור, ת-ר-ג-ם for תרגום).
        - RULE: Strip all prefixes (מ, ת, נ, י, ל, ב, ה, ו, כ, ש) and suffixes (ים, ות, ה, תי, נו) before deciding the root.
-       - CONFIRM by asking: do other Hebrew words with related meaning share these 3 letters?
-         Example check: if root is ת-ר-מ → does תרומה, תרמתי also share this root? ✓
+       - RULE: If the same letter appears twice in a pattern like X-Y-X-Y or X-X-Y, this is likely a quadriliteral root — do NOT reduce it to 3 letters.
+       - EXAMPLES of quadriliteral roots: ע-ר-ע-ר (ערעור), ת-ר-ג-ם (תרגם), צ-ל-צ-ל (צלצל), ג-מ-ג-מ (גמגם).
        - If the word is a loanword or has no Semitic root (e.g., "television" → טלוויזיה), write "N/A — loanword".
        - If the root is uncertain, say so and explain why.
 
@@ -336,7 +336,7 @@ async def translate(req: TranslateRequest):
         "translation": "The Hebrew word or phrase",
         "transliteration": "Pronunciation in English letters (e.g., 'shalom')",
         "part_of_speech": "noun / verb / adjective / adverb / other",
-        "root": "X-Y-Z (with dashes) or 'N/A — loanword' or 'Uncertain — [reason]'",
+        "root": "X-Y-Z or X-Y-Z-W for quadriliteral roots (with dashes) or 'N/A — loanword' or 'Uncertain — [reason]'",
         "root_meaning": "The core meaning conveyed by this root in Hebrew (e.g., 'giving/contributing')",
         "example": "English sentence using the word. [Hebrew translation of the sentence]",
         "confidence": "High / Medium / Low"

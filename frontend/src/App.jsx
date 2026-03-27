@@ -37,7 +37,10 @@ const Flashcard = ({ word, data, onRemove }) => {
           </div>
           {data.translation?.root && data.translation.root !== "N/A" && !data.translation.root.toLowerCase().includes("loanword") && (
             <div className="flashcard-meta" style={{ marginTop: '0.5rem' }}>
-              Root: <strong>{data.translation.root}</strong>
+              Root: <strong style={{
+                fontSize: data.translation.root.length > 5 ? '0.9em' : 'inherit',
+                letterSpacing: '0.05em'
+              }}>{data.translation.root}</strong>
               {data.translation?.root_meaning && (
                 <div style={{ fontSize: '0.9em', color: '#64748b', marginTop: '0.2rem' }}>
                   {data.translation.root_meaning}
@@ -527,7 +530,11 @@ function App() {
                       {translation.root && translation.root !== "N/A" && !translation.root.toLowerCase().includes("loanword") && (
                         <div>
                           <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>Root (Shoresh)</h4>
-                          <div style={{ fontSize: '1.2rem', fontFamily: 'serif' }}>{translation.root}</div>
+                          <div style={{
+                            fontSize: translation.root.length > 5 ? '1rem' : '1.2rem',
+                            fontFamily: 'serif',
+                            letterSpacing: '0.05em'
+                          }}>{translation.root}</div>
                           {translation.root_meaning && (
                             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                               {translation.root_meaning}
