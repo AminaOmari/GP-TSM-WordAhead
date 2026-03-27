@@ -136,9 +136,14 @@ function App() {
     setTranslation(null);
 
     try {
+      const sentences = text.match(/[^.!?]*[.!?]/g) || [text];
+      const relevantSentence = sentences.find(s =>
+        s.toLowerCase().includes(token.text.toLowerCase())
+      ) || text.substring(0, 300);
+
       const res = await axios.post(`${API_URL}/api/translate`, {
         word: token.text,
-        context: text.substring(0, 200)
+        context: relevantSentence
       });
       setTranslation(res.data);
     } catch (err) {
@@ -427,6 +432,25 @@ function App() {
                     Importance: <strong>{selectedWord.importance}</strong>
                   </span>
                 </div>
+
+                {translation && !translation.error && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    {translation.part_of_speech && (
+                      <span style={{ background: '#ede9fe', color: '#6d28d9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                        {translation.part_of_speech}
+                      </span>
+                    )}
+                    {translation.confidence && (
+                      <span style={{
+                        background: translation.confidence === 'High' ? '#f0fdf4' : translation.confidence === 'Low' ? '#fef2f2' : '#fefce8',
+                        color: translation.confidence === 'High' ? '#166534' : translation.confidence === 'Low' ? '#991b1b' : '#854d0e',
+                        padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem'
+                      }}>
+                        Confidence: {translation.confidence}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>

@@ -210,6 +210,15 @@ async def analyze(req: AnalyzeRequest):
         # Return the actual error to frontend
         raise HTTPException(status_code=500, detail=str(e))
 
+def extract_best_context(word: str, context: str) -> str:
+    """Extract the sentence from context that contains the word."""
+    sentences = re.split(r'(?<=[.!?])\s+', context)
+    for sentence in sentences:
+        if word.lower() in sentence.lower():
+            return sentence.strip()
+    # Fallback: return first 200 chars
+    return context[:200]
+
 @app.post("/api/translate")
 async def translate(req: TranslateRequest):
     if not OPENAI_API_KEY:
@@ -217,13 +226,15 @@ async def translate(req: TranslateRequest):
         
     client = OpenAI(api_key=OPENAI_API_KEY)
     
+    best_context = extract_best_context(req.word, req.context)
+    
     # Professional prompt with Self-Correction / Reflection step
     prompt = f"""
     You are a world-class Hebrew Lexicographer, Morphologist, and English Language Teacher.
 
     TASK:
     Analyze the English word "{req.word}" as it is used in this exact context:
-    "{req.context}"
+    "{best_context}"
 
     STEP-BY-STEP REASONING (MANDATORY — do this before writing any output):
 
@@ -280,16 +291,18 @@ async def translate(req: TranslateRequest):
         )
         content = completion.choices[0].message.content
         import json
-        from morphology import verify_root
+        from morphology import verify_root, is_loanword_root
         
         result = json.loads(content)
 
         # Add fallbacks for existing caches or missing fields
         result["transliteration"] = result.get("transliteration", "")
         result["root_meaning"] = result.get("root_meaning", "")
+        result["part_of_speech"] = result.get("part_of_speech", "")
+        result["confidence"] = result.get("confidence", "Medium")
         
         # Guard rails: Verify the root if it's not N/A
-        if result.get("root") and "n/a" not in result["root"].lower() and "uncertain" not in result["root"].lower():
+        if result.get("root") and not is_loanword_root(result["root"]):
             # Pass the reasoning to verify_root to help the logic if needed
             result["root"] = verify_root(result["root"], result["translation"])
             

@@ -38,25 +38,41 @@ def format_root(root_letters: str) -> str:
 
 def verify_root(ai_root: str, hebrew_word: str) -> str:
     """
-    Heuristic to verify if the AI-provided root makes sense for the word.
-    Checks if at least 2 letters of the root appear in the clean word.
+    Verify the AI-provided root against the Hebrew word.
+    Checks letter order (not just presence) for better accuracy.
     """
     clean_ai = ai_root.replace("-", "").strip()
     clean_word = clean_nikkud(hebrew_word)
-    
-    if not clean_ai:
+
+    if not clean_ai or len(clean_ai) < 2:
         return ai_root
-        
-    matches = 0
+
+    # Check letters appear in ORDER in the word (not just anywhere)
+    idx = 0
+    ordered_matches = 0
     for char in clean_ai:
-        if char in clean_word:
-            matches += 1
-            
-    # If the root has NO letters in common with the word, it's likely a hallucination
-    if matches < 2 and len(clean_ai) >= 3:
-         # Fallback: Try a basic strip
-         stripped = strip_suffixes(strip_prefixes(clean_word))
-         if len(stripped) == 3:
-             return format_root(stripped)
-             
+        found = clean_word.find(char, idx)
+        if found != -1:
+            ordered_matches += 1
+            idx = found + 1
+
+    # If fewer than 2 root letters appear in order → likely hallucination
+    if ordered_matches < 2 and len(clean_ai) >= 3:
+        # Try stripping prefixes+suffixes for a fallback root
+        stripped = strip_suffixes(strip_prefixes(clean_word))
+        if len(stripped) == 3:
+            return format_root(stripped)
+        elif len(stripped) > 3:
+            # Take the middle 3 letters as best guess
+            mid = len(stripped) // 2
+            core = stripped[max(0, mid-1):mid+2]
+            return format_root(core) + " (estimated)"
+
     return ai_root
+
+def is_loanword_root(root: str) -> bool:
+    """Returns True if the root string signals a loanword or uncertain case."""
+    if not root:
+        return True
+    lower = root.lower()
+    return any(x in lower for x in ["n/a", "loanword", "uncertain", "unknown"])
