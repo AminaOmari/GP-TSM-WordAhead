@@ -540,7 +540,9 @@ function App() {
                               {translation.root_meaning}
                             </div>
                           )}
-                          {translation.root_source && (
+                          {/* 
+                          // Temporarily hiding "AI estimate" - uncomment to restore full indicators
+                          translation.root_source && (
                             <span style={{
                               fontSize: '0.7rem',
                               background: translation.root_source === 'Wiktionary' ? '#f0fdf4' : '#fefce8',
@@ -551,6 +553,20 @@ function App() {
                               display: 'inline-block'
                             }}>
                               {translation.root_source === 'Wiktionary' ? '✓ Verified' : 'AI estimate'}
+                            </span>
+                          )
+                          */}
+                          {translation.root_source === 'Wiktionary' && (
+                            <span style={{
+                              fontSize: '0.7rem',
+                              background: '#f0fdf4',
+                              color: '#166534',
+                              padding: '0.1rem 0.4rem',
+                              borderRadius: '4px',
+                              marginTop: '0.3rem',
+                              display: 'inline-block'
+                            }}>
+                              ✓ Verified
                             </span>
                           )}
                         </div>
