@@ -470,7 +470,9 @@ function App() {
                         {translation.part_of_speech}
                       </span>
                     )}
-                    {translation.confidence && (
+                    {/*
+                    // Temporarily hiding "Confidence" badge
+                    translation.confidence && (
                       <span style={{
                         background: translation.confidence === 'High' ? '#f0fdf4' : translation.confidence === 'Low' ? '#fef2f2' : '#fefce8',
                         color: translation.confidence === 'High' ? '#166534' : translation.confidence === 'Low' ? '#991b1b' : '#854d0e',
@@ -478,7 +480,8 @@ function App() {
                       }}>
                         Confidence: {translation.confidence}
                       </span>
-                    )}
+                    )
+                    */}
                   </div>
                 )}
 
