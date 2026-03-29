@@ -541,7 +541,7 @@ function App() {
                             </div>
                           )}
                           {/* 
-                          // Temporarily hiding "AI estimate" - uncomment to restore full indicators
+                          // Temporarily hiding root source indicators ("AI estimate" and "Verified")
                           translation.root_source && (
                             <span style={{
                               fontSize: '0.7rem',
@@ -556,19 +556,6 @@ function App() {
                             </span>
                           )
                           */}
-                          {translation.root_source === 'Wiktionary' && (
-                            <span style={{
-                              fontSize: '0.7rem',
-                              background: '#f0fdf4',
-                              color: '#166534',
-                              padding: '0.1rem 0.4rem',
-                              borderRadius: '4px',
-                              marginTop: '0.3rem',
-                              display: 'inline-block'
-                            }}>
-                              ✓ Verified
-                            </span>
-                          )}
                         </div>
                       )}
 
