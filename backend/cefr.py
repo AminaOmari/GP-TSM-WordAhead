@@ -1,5 +1,5 @@
 import os
-import pandas as pd
+import csv
 from wordfreq import zipf_frequency
 
 # Global cache to store the EFLLex dictionary in memory so it only loads once
@@ -15,17 +15,43 @@ def load_efllex_dictionary():
     
     if os.path.exists(csv_path):
         try:
-            df = pd.read_csv(csv_path, sep='\t', on_bad_lines='skip')
-            # Extract the actual level columns based on EFLLex format
-            level_cols = ["level_freq@a1", "level_freq@a2", "level_freq@b1", "level_freq@b2", "level_freq@c1"]
-            df["efllex_level"] = df[level_cols].idxmax(axis=1).apply(lambda x: x.split('@')[1].upper())
-            df = df[df[level_cols].sum(axis=1) > 0]
-            
-            # Map word to its CEFR level
-            for _, row in df.iterrows():
-                word = str(row['word']).strip().lower()
-                _efllex_dict[word] = row['efllex_level']
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f, delimiter='\t')
+                headers = next(reader)
                 
+                # מציאת העמודות הרלוונטיות
+                try:
+                    a1_idx = headers.index("level_freq@a1")
+                    a2_idx = headers.index("level_freq@a2")
+                    b1_idx = headers.index("level_freq@b1")
+                    b2_idx = headers.index("level_freq@b2")
+                    c1_idx = headers.index("level_freq@c1")
+                except ValueError:
+                    return _efllex_dict
+                    
+                word_idx = headers.index("word") if "word" in headers else 0
+                
+                levels = ["A1", "A2", "B1", "B2", "C1"]
+                indices = [a1_idx, a2_idx, b1_idx, b2_idx, c1_idx]
+                
+                for row in reader:
+                    if len(row) <= max(indices):
+                        continue
+                        
+                    freqs = []
+                    for idx in indices:
+                        try:
+                            freqs.append(float(row[idx]))
+                        except ValueError:
+                            freqs.append(0.0)
+                            
+                    # בחירת הרמה עם התדירות הגבוהה ביותר
+                    if sum(freqs) > 0:
+                        max_idx = freqs.index(max(freqs))
+                        best_level = levels[max_idx]
+                        word = str(row[word_idx]).strip().lower()
+                        _efllex_dict[word] = best_level
+                        
             print(f"✅ Loaded EFLLex dictionary ({len(_efllex_dict)} words) into memory.")
         except Exception as e:
             print(f"⚠️ Warning: Failed to load EFLLex dictionary: {e}")
