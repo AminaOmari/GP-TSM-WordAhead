@@ -97,8 +97,8 @@ The project is pre-configured for **Render** using `render.yaml`. It is specific
 Developed as part of a Graduation Project in **Educational Technology & AI**.
 
 **Team Members:**
-- **Amina O**
-- **Ossama Z**
-- **Smia I**
+- **Amina Omari**
+- **Ossama Ziadat**
+- **Smia Idres**
 
 Developed with ❤️ for language learners.
