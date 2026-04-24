@@ -1,0 +1,51 @@
+word,context,expected_translation,expected_root
+bank,I need to deposit money in the bank today.,בנק,N/A
+bank,We sat on the river bank and watched the water.,גדה,ג-ד-ה
+book,I am reading a fascinating book about history.,ספר,ס-פ-ר
+book,I need to book a flight to London for tomorrow.,להזמין,ז-מ-ן
+hesitate,He didn't hesitate to jump into the water.,להסס,ה-ס-ס
+translate,She will translate the document from English to Hebrew.,לתרגם,ת-ר-ג-ם
+organize,We need to organize a meeting for next week.,לארגן,א-ר-ג-ן
+complicated,The math problem was very complicated.,מסובך,ס-ב-ך
+television,I bought a new television for the living room.,טלוויזיה,N/A
+run,I run three miles every morning to stay fit.,לרוץ,ר-ו-צ
+run,She runs a very successful tech company.,לנהל,נ-ה-ל
+confusion,There was a lot of confusion during the fire drill.,בלבול,ב-ל-ב-ל
+invest,They decided to invest their money in real estate.,להשקיע,ש-ק-ע
+dog,The brown dog barked loudly at the mailman.,כלב,כ-ל-ב
+apple,I ate a sweet red apple for a snack.,תפוח,ת-פ-ח
+computer,My computer crashed and I lost all my work.,מחשב,ח-ש-ב
+beautiful,The sunset over the ocean was incredibly beautiful.,יפה,י-פ-ה
+quickly,He finished his homework very quickly.,מהר,מ-ה-ר
+play,The children play in the park every afternoon.,לשחק,ש-ח-ק
+play,We watched a wonderful play at the theater.,הצגה,צ-ג-ה
+light,Please turn off the light when you leave.,אור,א-ו-ר
+light,This suitcase is very light.,קל,ק-ל-ל
+match,Did you watch the football match last night?,משחק,ש-ח-ק
+match,This shirt doesn't match your pants.,להתאים,ת-א-ם
+letter,I wrote a letter to my grandmother.,מכתב,כ-ת-ב
+letter,The word has four letters.,אות,א-ו-ת
+record,She holds the world record for the fastest sprint.,שיא,ש-י-א
+record,I will record the lecture so I can listen later.,להקליט,ק-ל-ט
+tear,A tear rolled down her cheek.,דמעה,ד-מ-ע
+tear,Be careful not to tear the paper.,לקרוע,ק-ר-ע
+lead,The guide will lead us through the forest.,להוביל,י-ב-ל
+lead,The pipes were made of heavy lead.,עופרת,ע-פ-ר
+object,There is a strange object in the sky.,עצם,ע-צ-ם
+object,I object to the proposed changes.,להתנגד,נ-ג-ד
+present,He gave me a lovely present for my birthday.,מתנה,נ-ת-ן
+present,She will present her findings at the conference.,להציג,י-צ-ג
+minute,I will be there in one minute.,דקה,ד-ק-ק
+minute,The details were too minute to see without a microscope.,זעיר,ז-ע-ר
+invalid,The password you entered is invalid.,שגוי,ש-ג-ה
+invalid,The war invalid receives a monthly pension.,נכה,נ-כ-ה
+close,Please close the door behind you.,לסגור,ס-ג-ר
+close,The store is very close to my house.,קרוב,ק-ר-ב
+desert,The Sahara is the largest hot desert.,מדבר,ד-ב-ר
+desert,He decided to desert his post.,לנטוש,נ-ט-ש
+internet,I found the information on the internet.,אינטרנט,N/A
+philosophy,She is studying ancient Greek philosophy.,פילוסופיה,N/A
+challenge,Climbing the mountain was a huge challenge.,אתגר,א-ת-ג-ר
+system,The digestive system breaks down food.,מערכת,ע-ר-כ
+develop,We need to develop a new strategy.,לפתח,פ-ת-ח
+improvement,There has been a significant improvement in his health.,שיפור,ש-פ-ר
