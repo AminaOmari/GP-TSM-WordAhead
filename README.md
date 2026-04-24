@@ -17,12 +17,12 @@
   - **Purple**: Difficult words for the current level.
   - **Bold Black**: Important logical connectors or keywords.
   - **Faded Grey**: Contextual "noise" (dates, filler adjectives).
-- **Difficulty Profile**: Automatically estimates CEFR levels (A1-C2) for every word using Zipf-frequency analysis.
+- **Difficulty Profile**: Empirically maps CEFR levels (A1-C2) using the **EFLLex dataset** (15,000+ words), with Zipf-frequency interpolation as a fallback for out-of-vocabulary terms.
 
 ### 3. Professional Hebrew Morphology
-- **High-Precision Roots (שורש)**: Powered by **GPT-4o**, following the strict standards of the **Academy of the Hebrew Language (האקדמיה ללשון העברית)**.
-- **Morphological Guard-Rails**: Includes internal Python verification to strip prefixes/suffixes and validate root accuracy, even for "weak" roots (*Gezarot*).
-- **Context-Aware Translation**: Provides translations that respect the specific meaning of words in their current context.
+- **High-Precision Roots (שורש)**: Uses the **Wiktionary API** as the authoritative primary source for Hebrew morphology, falling back to **GPT-4o** reasoning for unmapped words.
+- **Context-Aware Translation**: Provides translations that respect the specific meaning of polysemous words in their current context.
+- **Empirical Validation**: Benchmarks accuracy against human-annotated Gold Standard datasets.
 
 ### 4. Adaptive Learning & Persistence
 - **Auto-Level Adjust**: The app monitors lookups; if a student struggles with common words, it lowers the support profile dynamically.
@@ -67,6 +67,22 @@
    ```bash
    chmod +x start.sh
    ./start.sh
+   ```
+
+### Running the Evaluation Suite (Empirical Validation)
+WordAhead includes built-in academic evaluation scripts to measure the accuracy of its models:
+
+1. **CEFR Classification Validation**:
+   Tests the difficulty engine against the EFLLex dataset (Accuracy, Cohen's Kappa).
+   ```bash
+   cd backend
+   python validate_efllex.py EFLLex.tsv
+   ```
+2. **Context-Aware Translation & Morphology Validation**:
+   Tests the LLM against a curated Gold Standard dataset (50 edge-case sentences).
+   ```bash
+   cd backend
+   python validate_translation.py
    ```
 
 ---
