@@ -94,7 +94,7 @@ The project is pre-configured for **Render** using `render.yaml`. It is specific
 ---
 
 ## 🎓 Graduation Project
-Developed as part of a Graduation Project in **Educational Technology & AI**.
+Developed as part of a Graduation Project in **Information Systems Specializing in AI**.
 
 **Team Members:**
 - **Amina Omari**
