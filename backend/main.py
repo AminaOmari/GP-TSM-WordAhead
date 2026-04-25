@@ -185,8 +185,14 @@ async def analyze(req: AnalyzeRequest):
                 tokens = analyze_importance(l0, l1, l2, l3, l4)
                 
                 clean_punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
+                filtered_tokens = []
                 for t in tokens:
                     word = t['text']
+                    
+                    # Remove purely symbolic/gibberish tokens if they are not important
+                    if not re.search(r'\w', word) and t['importance'] <= 1:
+                        continue
+                        
                     clean_word = word
                     if len(clean_word) > 1 and clean_word[-1] in clean_punc:
                         clean_word = clean_word[:-1]
@@ -195,8 +201,9 @@ async def analyze(req: AnalyzeRequest):
                         
                     t['cefr'] = cefr.get_cefr_level(clean_word)
                     t['isDifficult'] = cefr.is_difficult(t['cefr'], req.user_level)
+                    filtered_tokens.append(t)
                 
-                all_tokens.extend(tokens)
+                all_tokens.extend(filtered_tokens)
                 all_tokens.append({"text": "\n", "importance": -1, "cefr": ""})
 
         print("Analysis complete successfully")
