@@ -238,7 +238,7 @@ function App() {
       <header className="glass header-container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '48px', width: '48px', objectFit: 'contain', borderRadius: '8px' }} />
+            <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '50px', width: '100px', objectFit: 'contain', borderRadius: '8px' }} />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '1.5rem' }}>WordAhead</h1>
