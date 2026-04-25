@@ -462,6 +462,12 @@ async def serve_spa(full_path: str):
             index_file = os.path.join(current_path, "index.html")
             return FileResponse(index_file)
         
+    # Serve the requested file if it exists (e.g., favicon)
+    if full_path and full_path != "/":
+        requested_file = os.path.join(frontend_path, full_path)
+        if os.path.exists(requested_file) and os.path.isfile(requested_file):
+            return FileResponse(requested_file)
+            
     index_file = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
