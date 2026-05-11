@@ -83,6 +83,53 @@ class TranslateRequest(BaseModel):
     word: str
     context: str = ""
 
+class TrackClickRequest(BaseModel):
+    user_id: str = "default"
+    user_level: str
+    word_level: str
+
+CEFR_MAPPING = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6}
+REVERSE_CEFR_MAPPING = {1: "A1", 2: "A2", 3: "B1", 4: "B2", 5: "C1", 6: "C2"}
+
+class LevelManager:
+    """
+    Manages dynamic user reading levels using a Weighted Penalty Formula based on Guttman Scaling.
+    Aligns with Laufer (2010) regarding lexical thresholds.
+    """
+    def __init__(self, base_penalty: float = 0.1, threshold: float = 1.0):
+        self.base_penalty = base_penalty
+        self.threshold = threshold
+        self.user_penalties = {}
+
+    def get_accumulated_penalty(self, user_id: str) -> float:
+        return self.user_penalties.get(user_id, 0.0)
+
+    def process_click(self, user_id: str, user_level: int, word_level: int) -> dict:
+        distance = max(0, user_level - word_level)
+        adjustment = self.base_penalty * ((1 + distance) ** 2)
+        
+        current_penalty = self.get_accumulated_penalty(user_id)
+        new_penalty = current_penalty + adjustment
+        
+        level_changed = False
+        new_level = user_level
+        
+        if new_penalty >= self.threshold:
+            if new_level > 1:
+                new_level -= 1
+                level_changed = True
+            new_penalty = 0.0
+            
+        self.user_penalties[user_id] = new_penalty
+        
+        return {
+            "accumulated_penalty": round(new_penalty, 3),
+            "user_level": new_level,
+            "level_changed": level_changed
+        }
+
+level_manager = LevelManager()
+
 def is_equal(w1, w2):
     punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
     tmp1 = w1
@@ -390,8 +437,19 @@ async def translate(req: TranslateRequest):
         print(f"Translation logic complete: {result.get('root')} (Confidence: {result.get('confidence')})")
         return result
     except Exception as e:
-        traceback.print_exc()
         return {"min_error": str(e)}
+
+@app.post("/api/track_click")
+async def track_click(req: TrackClickRequest):
+    u_level = CEFR_MAPPING.get(req.user_level.upper())
+    w_level = CEFR_MAPPING.get(req.word_level.upper())
+    
+    if not u_level or not w_level:
+        return {"error": "Invalid CEFR level"}
+        
+    res = level_manager.process_click(req.user_id, u_level, w_level)
+    res["user_level_str"] = REVERSE_CEFR_MAPPING.get(res["user_level"], req.user_level)
+    return res
 
 # --- Frontend Serving Logic ---
 def find_frontend_path():

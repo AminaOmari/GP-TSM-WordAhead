@@ -126,23 +126,25 @@ function App() {
   };
 
   // Dynamic Level Adjustment Logic
-  const [struggleCount, setStruggleCount] = useState(0);
-
   const handleWordClick = async (token) => {
     if (!token.cefr) return;
 
-    const uIdx = CEFR_LEVELS.indexOf(userLevel);
     const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
     const isLearned = learnedWords[cleanWord];
 
-    if (token.isDifficult && !isLearned && !experimentMode && uIdx > 0) {
-      const newCount = struggleCount + 1;
-      setStruggleCount(newCount);
-      if (newCount >= 3) {
-        const newLevel = CEFR_LEVELS[uIdx - 1];
-        setUserLevel(newLevel);
-        setStruggleCount(0);
-        showNotification(`We noticed you're looking up difficult words. Adjusting level to ${newLevel} for better support.`);
+    if (!isLearned && !experimentMode) {
+      try {
+        const res = await axios.post(`${API_URL}/api/track_click`, {
+          user_level: userLevel,
+          word_level: token.cefr
+        });
+        
+        if (res.data && res.data.level_changed) {
+          setUserLevel(res.data.user_level_str);
+          showNotification(`We noticed a gap in foundational words. Adjusting level to ${res.data.user_level_str} for better support.`);
+        }
+      } catch (err) {
+        console.error("Failed to track click", err);
       }
     }
 
@@ -240,81 +242,81 @@ function App() {
         <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
         {/* Header */}
         <header className="glass header-container">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '50px', width: '100px', objectFit: 'contain', borderRadius: '8px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '50px', width: '100px', objectFit: 'contain', borderRadius: '8px' }} />
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '1.5rem' }}>WordAhead</h1>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Adaptive Reading Assistant</p>
+            </div>
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>WordAhead</h1>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Adaptive Reading Assistant</p>
+
+          <div className="header-controls">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px' }}>
+              <input type="checkbox" checked={experimentMode} onChange={(e) => setExperimentMode(e.target.checked)} />
+              Experiment Mode
+            </label>
+            <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              <HelpCircle size={18} /> How to Use
+            </button>
+            <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              <Settings size={18} /> My Progress
+            </button>
+            <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Language Level:</span>
+              <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{userLevel}</span>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <div className="header-controls">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px' }}>
-            <input type="checkbox" checked={experimentMode} onChange={(e) => setExperimentMode(e.target.checked)} />
-            Experiment Mode
-          </label>
-          <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-            <HelpCircle size={18} /> How to Use
-          </button>
-          <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-            <Settings size={18} /> My Progress
-          </button>
-          <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Language Level:</span>
-            <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{userLevel}</span>
+        {notification && (
+          <div style={{
+            position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+            background: 'var(--accent)', color: 'white', padding: '0.75rem 1.5rem',
+            borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          }}>
+            {notification}
           </div>
-        </div>
-      </header>
-
-      {notification && (
-        <div style={{
-          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-          background: 'var(--accent)', color: 'white', padding: '0.75rem 1.5rem',
-          borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }}>
-          {notification}
-        </div>
-      )}
+        )}
 
 
-      {/* Categories Legend */}
-      <div className="glass legend-container" style={{ marginBottom: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderRight: '1px solid #e2e8f0', paddingRight: '1.5rem', marginRight: '0.5rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Condensation (Skimming)</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <span style={{ fontSize: '0.7rem' }}>Detailed</span>
-              <input
-                type="range" min="0" max="3" step="1"
-                value={skimmingLevel}
-                onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
-                style={{ width: '120px', accentColor: 'var(--accent)' }}
-              />
-              <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
+        {/* Categories Legend */}
+        <div className="glass legend-container" style={{ marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderRight: '1px solid #e2e8f0', paddingRight: '1.5rem', marginRight: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Condensation (Skimming)</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                <span style={{ fontSize: '0.7rem' }}>Detailed</span>
+                <input
+                  type="range" min="0" max="3" step="1"
+                  value={skimmingLevel}
+                  onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
+                  style={{ width: '120px', accentColor: 'var(--accent)' }}
+                />
+                <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="word word-difficult-important">Difficult & Important</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Purple)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="word word-difficult">Difficult</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="word word-important">Important</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Black)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="word word-low">Non-Important</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Grey)</span>
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="word word-difficult-important">Difficult & Important</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Purple)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="word word-difficult">Difficult</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="word word-important">Important</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Black)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="word word-low">Non-Important</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Grey)</span>
-          </div>
-        </div>
-      </div>
       </div>
 
       {/* Main Content: 3-Column Layout */}
@@ -393,7 +395,7 @@ function App() {
                 } else {
                   if (t.isDifficult && !isLearned) {
                     // DIFFICULT WORDS (Purple)
-                    if (t.importance > 2) { 
+                    if (t.importance > 2) {
                       className += " word-difficult-important";
                     } else {
                       className += " word-difficult";
