@@ -71,6 +71,7 @@ function App() {
   const [showHowToUse, setShowHowToUse] = useState(false);
   const [learnedStatus, setLearnedStatus] = useState(false);
   const [notification, setNotification] = useState('');
+  const [experimentMode, setExperimentMode] = useState(false);
 
   const showNotification = (msg) => {
     setNotification(msg);
@@ -125,23 +126,17 @@ function App() {
   };
 
   // Dynamic Level Adjustment Logic
-  const [struggleCount, setStruggleCount] = useState(0);
-
   const handleWordClick = async (token) => {
     if (!token.cefr) return;
 
-    const wIdx = CEFR_LEVELS.indexOf(token.cefr);
     const uIdx = CEFR_LEVELS.indexOf(userLevel);
+    const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+    const isLearned = learnedWords[cleanWord];
 
-    if (wIdx !== -1 && uIdx !== -1 && wIdx >= uIdx) {
-      const newCount = struggleCount + 1;
-      setStruggleCount(newCount);
-      if (newCount >= 3 && uIdx > 0) {
-        const newLevel = CEFR_LEVELS[uIdx - 1];
-        setUserLevel(newLevel);
-        setStruggleCount(0);
-        showNotification(`We noticed you're looking up hard words. Adjusting level to ${newLevel} for better support.`);
-      }
+    if (token.isDifficult && !isLearned && !experimentMode && uIdx > 0) {
+      const newLevel = CEFR_LEVELS[uIdx - 1];
+      setUserLevel(newLevel);
+      showNotification(`We noticed you're looking up difficult words. Adjusting level to ${newLevel} for better support.`);
     }
 
     setSelectedWord(token);
@@ -247,15 +242,19 @@ function App() {
         </div>
 
         <div className="header-controls">
-          <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px' }}>
+            <input type="checkbox" checked={experimentMode} onChange={(e) => setExperimentMode(e.target.checked)} />
+            Experiment Mode
+          </label>
+          <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
             <HelpCircle size={18} /> How to Use
           </button>
-          <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
+          <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
             <Settings size={18} /> My Progress
           </button>
           <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Language Level:</span>
-            <span style={{ fontWeight: 'bold', color: 'var(--accent)' }}>{userLevel}</span>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{userLevel}</span>
           </div>
         </div>
       </header>
@@ -290,11 +289,11 @@ function App() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="word word-hard-important">Hard & Important</span>
+            <span className="word word-difficult-important">Difficult & Important</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Bold Purple)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="word word-hard">Hard</span>
+            <span className="word word-difficult">Difficult</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Purple)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -317,7 +316,7 @@ function App() {
           </h2>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label className="btn" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)', border: '1px dashed var(--accent)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', fontSize: '0.85rem' }}>
+            <label className="btn" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px dashed var(--text-secondary)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', fontSize: '0.85rem' }}>
               <Upload size={16} /> Upload Text File
               <input type="file" accept=".txt" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
@@ -365,42 +364,39 @@ function App() {
               <p>Analysis results will appear here.</p>
             </div>
           ) : (
-            <div style={{ lineHeight: '2.0', fontSize: '1.2rem' }}>
+            <div style={{ lineHeight: '2.0', fontSize: '1.1rem' }}>
               {tokens.map((t, i) => {
                 if (t.text === '\n') return <br key={i} />;
 
                 let className = "word";
 
                 // Logic based on requirements:
-                // 1. Hard + Important -> Bold Purple (word-hard-important)
-                // 2. Hard + Not Important -> Purple (word-hard)
+                // 1. Difficult + Important -> Bold Purple (word-difficult-important)
+                // 2. Difficult + Not Important -> Purple (word-difficult)
                 // 3. Easy + Important -> Bold Black (word-important)
                 // 4. Easy + Not Important -> "Progressive Fading" Grey (word-low / word-fade-X)
 
-                // Importance usually ranges from 0 to 4 (depending on depth)
-                // 0 = least important (removed early), 4 = most important (kept till end)
-
                 const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
 
-                if (t.isDifficult && !isLearned) {
-                  // HARD WORDS (Purple)
-                  if (t.importance > 2) { // Assuming >2 is "Significant" importance
-                    className += " word-hard-important";
-                  } else {
-                    className += " word-hard";
-                  }
-                } else if (t.importance >= 3) {
-                  // IMPORTANT WORDS (Bold Black) - Easy but Critical
-                  className += " word-important";
+                if (experimentMode) {
+                  className += " word-experiment";
                 } else {
-                  // NOT IMPORTANT (Greys) - Easy and less critical
-                  // Use importance level to determine shade of grey
-                  // importance 0 -> lightest (word-low)
-                  // importance 1 -> slightly darker (word-fade-1)
-                  // importance 2 -> darker still (word-fade-2)
-                  if (t.importance === 2) className += " word-fade-2";
-                  else if (t.importance === 1) className += " word-fade-1";
-                  else className += " word-low"; // importance 0
+                  if (t.isDifficult && !isLearned) {
+                    // DIFFICULT WORDS (Purple)
+                    if (t.importance > 2) { 
+                      className += " word-difficult-important";
+                    } else {
+                      className += " word-difficult";
+                    }
+                  } else if (t.importance >= 3) {
+                    // IMPORTANT WORDS (Bold Black) - Easy but Critical
+                    className += " word-important";
+                  } else {
+                    // NOT IMPORTANT (Greys) - Easy and less critical
+                    if (t.importance === 2) className += " word-fade-2";
+                    else if (t.importance === 1) className += " word-fade-1";
+                    else className += " word-low"; // importance 0
+                  }
                 }
 
                 return (
@@ -409,7 +405,7 @@ function App() {
                     className={className}
                     onClick={() => handleWordClick(t)}
                     animate={{
-                      opacity: t.importance < skimmingLevel ? 0.1 : 1,
+                      opacity: (!experimentMode && t.importance < skimmingLevel) ? 0.35 : 1,
                       scale: 1
                     }}
                     transition={{
@@ -450,7 +446,7 @@ function App() {
                 exit={{ x: -20, opacity: 0 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--accent)' }}>{selectedWord.text}</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>{selectedWord.text}</h3>
                   <button className="close-btn" onClick={() => setSelectedWord(null)} style={{ position: 'static', fontSize: '1.2rem' }}><X size={18} /></button>
                 </div>
 
@@ -563,7 +559,7 @@ function App() {
                       )}
 
                       {translation.example && (
-                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent)' }}>
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid #cbd5e1' }}>
                           <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>Example</h4>
                           <p style={{ fontStyle: 'italic', margin: 0, color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.5' }}>"{translation.example}"</p>
                         </div>
@@ -701,10 +697,10 @@ function App() {
                 </section>
 
                 <section>
-                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>2. Understanding Colors</h3>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>2. Understanding Colors</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', fontSize: '0.85rem' }}>
                     <div style={{ border: '1px solid #f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
-                      <strong style={{ color: '#7c3aed' }}>Purple:</strong> Hard words for your level.
+                      <strong style={{ color: '#7c3aed' }}>Purple:</strong> Difficult words for your level.
                     </div>
                     <div style={{ border: '1px solid #f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
                       <strong>Bold:</strong> Important for general meaning.

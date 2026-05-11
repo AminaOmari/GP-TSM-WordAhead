@@ -91,6 +91,9 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .header-controls {
@@ -160,16 +163,21 @@ body {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.word-hard {
+.word-difficult {
   color: var(--word-hard);
   font-weight: 500;
   /* Regular weight for Hard, Not Important */
 }
 
-.word-hard-important {
+.word-difficult-important {
   color: var(--word-hard);
   font-weight: 800;
   /* Bold for Hard + Important */
+}
+
+.word-experiment {
+  color: var(--text-primary);
+  font-weight: 400;
 }
 
 .word-important {
