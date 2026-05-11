@@ -31,6 +31,7 @@ except Exception as e:
     print(f"CRITICAL ERROR: Failed to import llm: {e}")
     traceback.print_exc()
 
+import uvicorn
 import cefr
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -129,16 +130,6 @@ class LevelManager:
         }
 
 level_manager = LevelManager()
-
-def is_equal(w1, w2):
-    punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
-    tmp1 = w1
-    tmp2 = w2
-    if len(w1) > 0 and w1[-1] in punc:
-        tmp1 = w1[:-1]
-    if len(w2) > 0 and w2[-1] in punc:
-        tmp2 = w2[:-1]
-    return (tmp1.lower() == tmp2.lower())
 
 def is_equal(w1, w2):
     punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
@@ -544,7 +535,6 @@ async def serve_spa(full_path: str):
     }
 
 if __name__ == "__main__":
-    import uvicorn
     port = int(os.environ.get("PORT", 5000))
     print(f"Starting server on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port)
