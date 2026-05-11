@@ -399,6 +399,10 @@ function App() {
                   }
                 }
 
+                if (experimentMode && t.importance < skimmingLevel) {
+                  return null;
+                }
+
                 return (
                   <motion.span
                     key={i}
