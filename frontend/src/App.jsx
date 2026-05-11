@@ -229,8 +229,10 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Header */}
-      <header className="glass header-container">
+      <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
+        <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
+        {/* Header */}
+        <header className="glass header-container">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '50px', width: '100px', objectFit: 'contain', borderRadius: '8px' }} />
@@ -271,7 +273,7 @@ function App() {
 
 
       {/* Categories Legend */}
-      <div className="glass legend-container">
+      <div className="glass legend-container" style={{ marginBottom: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderRight: '1px solid #e2e8f0', paddingRight: '1.5rem', marginRight: '0.5rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Condensation (Skimming)</span>
@@ -305,6 +307,7 @@ function App() {
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>(Grey)</span>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Main Content: 3-Column Layout */}
