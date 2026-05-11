@@ -187,7 +187,7 @@ body {
 .word-low {
   color: #cbd5e1;
   /* Base Lightest (Level 0) */
-  font-weight: 400;
+  font-weight: 600;
   transition: color 0.1s ease;
 }
 
@@ -199,16 +199,19 @@ body {
 */
 .word-fade-1 {
   color: #94a3b8;
+  font-weight: 600;
 }
 
 /* Darker Grey (Level 1) */
 .word-fade-2 {
   color: #64748b;
+  font-weight: 600;
 }
 
 /* Even Darker (Level 2) */
 .word-fade-3 {
   color: #475569;
+  font-weight: 600;
 }
 
 /* Almost Black (Level 3) */
