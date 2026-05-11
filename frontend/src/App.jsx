@@ -126,6 +126,8 @@ function App() {
   };
 
   // Dynamic Level Adjustment Logic
+  const [struggleCount, setStruggleCount] = useState(0);
+
   const handleWordClick = async (token) => {
     if (!token.cefr) return;
 
@@ -134,9 +136,14 @@ function App() {
     const isLearned = learnedWords[cleanWord];
 
     if (token.isDifficult && !isLearned && !experimentMode && uIdx > 0) {
-      const newLevel = CEFR_LEVELS[uIdx - 1];
-      setUserLevel(newLevel);
-      showNotification(`We noticed you're looking up difficult words. Adjusting level to ${newLevel} for better support.`);
+      const newCount = struggleCount + 1;
+      setStruggleCount(newCount);
+      if (newCount >= 3) {
+        const newLevel = CEFR_LEVELS[uIdx - 1];
+        setUserLevel(newLevel);
+        setStruggleCount(0);
+        showNotification(`We noticed you're looking up difficult words. Adjusting level to ${newLevel} for better support.`);
+      }
     }
 
     setSelectedWord(token);
