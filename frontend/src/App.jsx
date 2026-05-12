@@ -71,7 +71,7 @@ function App() {
   const [showHowToUse, setShowHowToUse] = useState(false);
   const [learnedStatus, setLearnedStatus] = useState(false);
   const [notification, setNotification] = useState('');
-  const [experimentMode, setExperimentMode] = useState(false);
+  const [fontSize, setFontSize] = useState(1.1);
 
   const showNotification = (msg) => {
     setNotification(msg);
@@ -126,25 +126,23 @@ function App() {
   };
 
   // Dynamic Level Adjustment Logic
+  const [struggleCount, setStruggleCount] = useState(0);
+
   const handleWordClick = async (token) => {
     if (!token.cefr) return;
 
+    const uIdx = CEFR_LEVELS.indexOf(userLevel);
     const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
     const isLearned = learnedWords[cleanWord];
 
-    if (!isLearned && !experimentMode) {
-      try {
-        const res = await axios.post(`${API_URL}/api/track_click`, {
-          user_level: userLevel,
-          word_level: token.cefr
-        });
-        
-        if (res.data && res.data.level_changed) {
-          setUserLevel(res.data.user_level_str);
-          showNotification(`We noticed a gap in foundational words. Adjusting level to ${res.data.user_level_str} for better support.`);
-        }
-      } catch (err) {
-        console.error("Failed to track click", err);
+    if (!token.isDifficult && !isLearned && uIdx > 0) {
+      const newCount = struggleCount + 1;
+      setStruggleCount(newCount);
+      if (newCount >= 3) {
+        const newLevel = CEFR_LEVELS[uIdx - 1];
+        setUserLevel(newLevel);
+        setStruggleCount(0);
+        showNotification(`We noticed you're looking up words that should be familiar. Adjusting level to ${newLevel} for better support.`);
       }
     }
 
@@ -376,43 +374,29 @@ function App() {
               <p>Analysis results will appear here.</p>
             </div>
           ) : (
-            <div style={{ lineHeight: '2.0', fontSize: '1.1rem' }}>
+            <div style={{ lineHeight: '2.0', fontSize: `${fontSize}rem` }}>
               {tokens.map((t, i) => {
                 if (t.text === '\n') return <br key={i} />;
 
                 let className = "word";
 
-                // Logic based on requirements:
-                // 1. Difficult + Important -> Bold Purple (word-difficult-important)
-                // 2. Difficult + Not Important -> Purple (word-difficult)
-                // 3. Easy + Important -> Bold Black (word-important)
-                // 4. Easy + Not Important -> "Progressive Fading" Grey (word-low / word-fade-X)
-
                 const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
 
-                if (experimentMode) {
-                  className += " word-experiment";
-                } else {
-                  if (t.isDifficult && !isLearned) {
-                    // DIFFICULT WORDS (Purple)
-                    if (t.importance > 2) {
-                      className += " word-difficult-important";
-                    } else {
-                      className += " word-difficult";
-                    }
-                  } else if (t.importance >= 3) {
-                    // IMPORTANT WORDS (Bold Black) - Easy but Critical
-                    className += " word-important";
+                if (t.isDifficult && !isLearned) {
+                  // DIFFICULT WORDS (Purple)
+                  if (t.importance > 2) {
+                    className += " word-difficult-important";
                   } else {
-                    // NOT IMPORTANT (Greys) - Easy and less critical
-                    if (t.importance === 2) className += " word-fade-2";
-                    else if (t.importance === 1) className += " word-fade-1";
-                    else className += " word-low"; // importance 0
+                    className += " word-difficult";
                   }
-                }
-
-                if (experimentMode && t.importance < skimmingLevel) {
-                  return null;
+                } else if (t.importance >= 3) {
+                  // IMPORTANT WORDS (Bold Black) - Easy but Critical
+                  className += " word-important";
+                } else {
+                  // NOT IMPORTANT (Greys) - Easy and less critical
+                  if (t.importance === 2) className += " word-fade-2";
+                  else if (t.importance === 1) className += " word-fade-1";
+                  else className += " word-low"; // importance 0
                 }
 
                 return (
@@ -421,7 +405,7 @@ function App() {
                     className={className}
                     onClick={() => handleWordClick(t)}
                     animate={{
-                      opacity: (!experimentMode && t.importance < skimmingLevel) ? 0.35 : 1,
+                      opacity: (t.importance < skimmingLevel) ? 0.35 : 1,
                       scale: 1
                     }}
                     transition={{
@@ -749,7 +733,7 @@ function App() {
               <button
                 className="btn"
                 onClick={() => setShowHowToUse(false)}
-                style={{ width: '100%', marginTop: '2rem', padding: '1rem' }}
+                style={{ width: '100%', marginTop: '2rem', padding: '1rem', background: 'var(--text-primary)', color: 'white' }}
               >
                 Got it, let's go!
               </button>
