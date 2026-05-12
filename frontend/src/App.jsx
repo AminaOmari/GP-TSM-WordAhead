@@ -251,10 +251,7 @@ function App() {
           </div>
 
           <div className="header-controls">
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '0.4rem 0.8rem', borderRadius: '8px' }}>
-              <input type="checkbox" checked={experimentMode} onChange={(e) => setExperimentMode(e.target.checked)} />
-              Experiment Mode
-            </label>
+
             <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
               <HelpCircle size={18} /> How to Use
             </button>
@@ -294,6 +291,19 @@ function App() {
                 />
                 <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
               </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', paddingLeft: '1.5rem', borderLeft: '1px solid #e2e8f0' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase' }}>Text Size</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+              <span style={{ fontSize: '0.7rem' }}>A</span>
+              <input
+                type="range" min="0.8" max="1.5" step="0.1"
+                value={fontSize}
+                onChange={(e) => setFontSize(parseFloat(e.target.value))}
+                style={{ width: '100px', accentColor: 'var(--text-secondary)' }}
+              />
+              <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>A</span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
