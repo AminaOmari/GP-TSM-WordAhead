@@ -135,7 +135,8 @@ function App() {
     const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
     const isLearned = learnedWords[cleanWord];
 
-    if (!token.isDifficult && !isLearned && uIdx > 0) {
+    // Trigger level down ONLY on GREY words (importance < 3 and not difficult)
+    if (!token.isDifficult && token.importance < 3 && !isLearned && uIdx > 0) {
       const newCount = struggleCount + 1;
       setStruggleCount(newCount);
       if (newCount >= 3) {
@@ -268,7 +269,7 @@ function App() {
         {notification && (
           <div style={{
             position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-            background: 'var(--accent)', color: 'white', padding: '0.75rem 1.5rem',
+            background: '#1e293b', color: 'white', padding: '0.75rem 1.5rem',
             borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
           }}>
             {notification}
@@ -287,7 +288,7 @@ function App() {
                   type="range" min="0" max="3" step="1"
                   value={skimmingLevel}
                   onChange={(e) => setSkimmingLevel(parseInt(e.target.value))}
-                  style={{ width: '120px', accentColor: 'var(--accent)' }}
+                  style={{ width: '120px', accentColor: 'var(--text-secondary)' }}
                 />
                 <span style={{ fontSize: '0.7rem' }}>Skimmed</span>
               </div>
@@ -409,13 +410,17 @@ function App() {
                   else className += " word-low"; // importance 0
                 }
 
+                if (t.importance < skimmingLevel) {
+                  return null;
+                }
+
                 return (
                   <motion.span
                     key={i}
                     className={className}
                     onClick={() => handleWordClick(t)}
                     animate={{
-                      opacity: (t.importance < skimmingLevel) ? 0.35 : 1,
+                      opacity: 1,
                       scale: 1
                     }}
                     transition={{
@@ -691,7 +696,7 @@ function App() {
               </button>
 
               <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                <div style={{ background: 'var(--accent)', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                <div style={{ background: '#1e293b', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                   <HelpCircle color="white" size={30} />
                 </div>
                 <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>Welcome to WordAhead</h2>
@@ -700,7 +705,7 @@ function App() {
 
               <div className="tutorial-content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <section>
-                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>1. Analysis & Input</h3>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>1. Analysis & Input</h3>
                   <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
                     Paste text or upload a <strong>.txt</strong> file. Click <strong>Analyze</strong> to highlight difficult words and calculate importance levels tailored to your level.
                   </p>
@@ -725,14 +730,14 @@ function App() {
                 </section>
 
                 <section>
-                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>3. The Skimming Slider</h3>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>3. The Skimming Slider</h3>
                   <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
-                    Use the <strong>Condensation</strong> bar to fade out less important words. Moving it to the right helps you focus only on the core meaning of the text.
+                    Use the <strong>Condensation</strong> bar to hide less important words. Moving it to the right helps you focus only on the core meaning of the text.
                   </p>
                 </section>
 
                 <section>
-                  <h3 style={{ fontSize: '1.1rem', color: 'var(--accent)', marginBottom: '0.5rem' }}>4. Interactive Translation</h3>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>4. Interactive Translation</h3>
                   <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
                     Click any word to see its <strong>Hebrew Root (שורש)</strong>, translation, and example.
                     Mark words as <strong>Learned</strong> to stop them from being highlighted in future texts.
