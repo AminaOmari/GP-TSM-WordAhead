@@ -136,7 +136,7 @@ function App() {
     const isLearned = learnedWords[cleanWord];
 
     // Trigger level down ONLY on GREY words (importance < 3 and not difficult)
-    if (!token.isDifficult && token.importance < 3 && !isLearned && uIdx > 0) {
+    if (!token.isDifficult && !isLearned && uIdx > 0) {
       const newCount = struggleCount + 1;
       setStruggleCount(newCount);
       if (newCount >= 3) {
