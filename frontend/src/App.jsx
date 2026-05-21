@@ -443,8 +443,8 @@ function App() {
                   }
                 }
 
-                // If experimentMode is ON, all tokens are visible (none hidden, none set to display:none)
-                if (!experimentMode && t.importance < skimmingLevel) {
+                // Filter tokens by skimming level
+                if (t.importance < skimmingLevel) {
                   return null;
                 }
 
