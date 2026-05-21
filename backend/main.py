@@ -40,6 +40,13 @@ from openai import OpenAI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+# Initialize SQLite database
+from database import init_db, get_db_connection
+try:
+    init_db()
+except Exception as e:
+    print(f"⚠️ Failed to initialize database: {e}")
+
 app = FastAPI()
 
 def clean_rtf(text: str) -> str:
@@ -254,6 +261,24 @@ async def analyze(req: AnalyzeRequest):
                 all_tokens.append({"text": "\n", "importance": -1, "cefr": ""})
 
         print("Analysis complete successfully")
+        
+        # Save to SQLite Database History
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            preview = text[:100] + "..." if len(text) > 100 else text
+            total_words = len([t for t in all_tokens if t.get('text') != '\n'])
+            difficult_words = len([t for t in all_tokens if t.get('isDifficult')])
+            cursor.execute("""
+                INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words)
+                VALUES (?, ?, ?, ?, ?)
+            """, (preview, text, req.user_level, total_words, difficult_words))
+            conn.commit()
+            conn.close()
+            print("✅ Analysis saved to SQLite history.")
+        except Exception as db_err:
+            print(f"⚠️ Error saving to database: {db_err}")
+
         # Trigger garbage collection to clear RAM on tight Render instances
         gc.collect()
         
@@ -262,6 +287,30 @@ async def analyze(req: AnalyzeRequest):
     except Exception as e:
         traceback.print_exc()
         # Return the actual error to frontend
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/history")
+async def get_history():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, text_preview, raw_text, user_level, total_words, difficult_words, created_at FROM text_analyses ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/history/{entry_id}")
+async def delete_history(entry_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM text_analyses WHERE id = ?", (entry_id,))
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 import httpx

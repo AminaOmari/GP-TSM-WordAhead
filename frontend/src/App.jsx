@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle } from 'lucide-react';
+import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle, History, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
@@ -73,6 +73,9 @@ function App() {
   const [notification, setNotification] = useState('');
   const [fontSize, setFontSize] = useState(1.1);
   const [experimentMode, setExperimentMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('words'); // 'words' or 'history'
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const showNotification = (msg) => {
     setNotification(msg);
@@ -96,6 +99,43 @@ function App() {
   useEffect(() => {
     localStorage.setItem('review_list', JSON.stringify(reviewList));
   }, [reviewList]);
+
+  useEffect(() => {
+    if (showDashboard) {
+      fetchHistory();
+    }
+  }, [showDashboard]);
+
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/history`);
+      setHistory(res.data);
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to fetch reading history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleDeleteHistory = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/api/history/${id}`);
+      showNotification("Reading history entry deleted.");
+      fetchHistory();
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to delete history entry.");
+    }
+  };
+
+  const handleLoadHistory = (entry) => {
+    setText(entry.raw_text);
+    setUserLevel(entry.user_level);
+    setShowDashboard(false);
+    handleAnalyze(entry.raw_text, entry.user_level);
+  };
 
   const markLearned = (word) => {
     const cleanWord = word.toLowerCase().replace(/[.,:;?!"()]/g, '');
@@ -171,8 +211,10 @@ function App() {
     }
   };
 
-  const handleAnalyze = async () => {
-    if (!text.trim()) {
+  const handleAnalyze = async (textToAnalyze, overrideLevel) => {
+    const targetText = typeof textToAnalyze === 'string' ? textToAnalyze : text;
+    const targetLevel = typeof overrideLevel === 'string' ? overrideLevel : userLevel;
+    if (!targetText.trim()) {
       showNotification("Please enter some text to analyze.");
       return;
     }
@@ -183,8 +225,8 @@ function App() {
 
     try {
       const res = await axios.post(`${API_URL}/api/analyze`, {
-        text,
-        user_level: userLevel
+        text: targetText,
+        user_level: targetLevel
       }, { signal: controller.signal });
       const processedTokens = res.data.tokens.map(token => {
         const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
@@ -647,50 +689,193 @@ function App() {
                 display: 'flex', flexDirection: 'column', background: 'white', padding: '2rem'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ margin: 0 }}>My Learning Progress</h2>
                 <button className="close-btn" onClick={() => setShowDashboard(false)}><X size={24} /></button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', overflowY: 'auto' }}>
-                {/* Review Section */}
-                <div>
-                  <h3 style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    Study List
-                    <span style={{ fontSize: '0.8rem', background: '#f59e0b', color: 'white', padding: '0.1rem 0.6rem', borderRadius: '12px' }}>
-                      {Object.keys(reviewList).length}
-                    </span>
-                  </h3>
-                  {Object.keys(reviewList).length === 0 ? (
-                    <p style={{ color: '#64748b', textAlign: 'center', marginTop: '2rem' }}>No words saved for review yet.</p>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxHeight: '50vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                      {Object.entries(reviewList).map(([word, data]) => (
-                        <Flashcard
-                          key={word}
-                          word={word}
-                          data={data}
-                          onRemove={removeFromReview}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Learned Section */}
-                <div>
-                  <h3 style={{ borderBottom: '2px solid #22c55e', paddingBottom: '0.5rem' }}>Mastered Words ({Object.keys(learnedWords).length})</h3>
-                  {Object.keys(learnedWords).length === 0 ? <p style={{ color: '#64748b' }}>None yet. Mark words to see them here!</p> : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {Object.keys(learnedWords).map(word => (
-                        <span key={word} style={{ background: '#f0fdf4', color: '#166534', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.9rem', border: '1px solid #bbf7d0' }}>
-                          {word}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {/* Tab Navigation */}
+              <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem', paddingBottom: '0.25rem' }}>
+                <button
+                  onClick={() => setActiveTab('words')}
+                  style={{
+                    background: 'none', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer',
+                    fontSize: '0.95rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    color: activeTab === 'words' ? 'var(--accent)' : 'var(--text-secondary)',
+                    borderBottom: activeTab === 'words' ? '2px solid var(--accent)' : '2px solid transparent',
+                    marginBottom: '-5px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <BookOpen size={18} />
+                  Vocabulary Progress
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  style={{
+                    background: 'none', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer',
+                    fontSize: '0.95rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    color: activeTab === 'history' ? 'var(--accent)' : 'var(--text-secondary)',
+                    borderBottom: activeTab === 'history' ? '2px solid var(--accent)' : '2px solid transparent',
+                    marginBottom: '-5px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <History size={18} />
+                  Reading History
+                </button>
               </div>
+
+              {activeTab === 'words' ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', overflowY: 'auto', flex: 1 }}>
+                  {/* Review Section */}
+                  <div>
+                    <h3 style={{ borderBottom: '2px solid #f59e0b', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      Study List
+                      <span style={{ fontSize: '0.8rem', background: '#f59e0b', color: 'white', padding: '0.1rem 0.6rem', borderRadius: '12px' }}>
+                        {Object.keys(reviewList).length}
+                      </span>
+                    </h3>
+                    {Object.keys(reviewList).length === 0 ? (
+                      <p style={{ color: '#64748b', textAlign: 'center', marginTop: '2rem' }}>No words saved for review yet.</p>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxHeight: '50vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                        {Object.entries(reviewList).map(([word, data]) => (
+                          <Flashcard
+                            key={word}
+                            word={word}
+                            data={data}
+                            onRemove={removeFromReview}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Learned Section */}
+                  <div>
+                    <h3 style={{ borderBottom: '2px solid #22c55e', paddingBottom: '0.5rem' }}>Mastered Words ({Object.keys(learnedWords).length})</h3>
+                    {Object.keys(learnedWords).length === 0 ? <p style={{ color: '#64748b' }}>None yet. Mark words to see them here!</p> : (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', maxHeight: '50vh', overflowY: 'auto' }}>
+                        {Object.keys(learnedWords).map(word => (
+                          <span key={word} style={{ background: '#f0fdf4', color: '#166534', padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.9rem', border: '1px solid #bbf7d0' }}>
+                            {word}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* History Tab */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+                  {historyLoading ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem', gap: '1rem', color: 'var(--text-secondary)' }}>
+                      <Loader2 className="animate-spin" size={32} />
+                      <span>Loading your reading history...</span>
+                    </div>
+                  ) : history.length === 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                      <History size={48} style={{ opacity: 0.3 }} />
+                      <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '500' }}>Your history is empty</p>
+                      <p style={{ margin: 0, fontSize: '0.9rem', maxWidth: '300px' }}>Analyze Hebrew texts using the input panel to automatically save them here!</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {history.map((entry) => {
+                        const date = new Date(entry.created_at + " UTC");
+                        const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                        return (
+                          <div
+                            key={entry.id}
+                            style={{
+                              background: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '12px',
+                              padding: '1.25rem',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.75rem',
+                              transition: 'all 0.2s ease-in-out',
+                              position: 'relative'
+                            }}
+                            className="history-card"
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                                <span style={{ background: '#7c3aed', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                                  Level: {entry.user_level}
+                                </span>
+                                <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.75rem', fontWeight: '600', padding: '0.2rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <Clock size={12} />
+                                  {formattedDate}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteHistory(entry.id)}
+                                style={{
+                                  background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
+                                  padding: '4px', borderRadius: '6px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}
+                                title="Delete from history"
+                                className="delete-history-btn"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: '1rem',
+                                color: 'var(--text-primary)',
+                                fontWeight: '500',
+                                direction: 'rtl',
+                                textAlign: 'right',
+                                lineHeight: '1.5',
+                                fontFamily: 'inherit',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                padding: '0.25rem 0'
+                              }}
+                            >
+                              {entry.text_preview}
+                            </p>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                  Total Words: <strong style={{ color: '#0f172a' }}>{entry.total_words}</strong>
+                                </span>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                  Difficult: <strong style={{ color: '#9333ea' }}>{entry.difficult_words}</strong>
+                                </span>
+                              </div>
+                              
+                              <button
+                                onClick={() => handleLoadHistory(entry)}
+                                className="btn"
+                                style={{
+                                  padding: '0.35rem 0.85rem',
+                                  fontSize: '0.8rem',
+                                  borderRadius: '6px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}
+                              >
+                                <Play size={12} fill="white" />
+                                Reload
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
