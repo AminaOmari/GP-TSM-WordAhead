@@ -296,26 +296,26 @@ function App() {
           </div>
 
           <div className="header-controls">
-            <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.6rem', 
-              cursor: 'pointer', 
-              background: experimentMode ? 'rgba(124, 58, 237, 0.15)' : 'var(--bg-secondary)', 
-              padding: '0.55rem 0.9rem', 
-              borderRadius: '8px', 
-              fontSize: '0.85rem', 
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              cursor: 'pointer',
+              background: experimentMode ? 'rgba(124, 58, 237, 0.15)' : 'var(--bg-secondary)',
+              padding: '0.55rem 0.9rem',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
               border: experimentMode ? '1px solid var(--accent)' : '1px solid rgba(0, 0, 0, 0.08)',
               color: 'var(--text-primary)',
               fontWeight: '500',
               transition: 'all 0.2s ease',
               boxShadow: experimentMode ? '0 0 12px rgba(124, 58, 237, 0.15)' : 'none'
             }}>
-              <input 
-                type="checkbox" 
-                checked={experimentMode} 
-                onChange={(e) => setExperimentMode(e.target.checked)} 
-                style={{ 
+              <input
+                type="checkbox"
+                checked={experimentMode}
+                onChange={(e) => setExperimentMode(e.target.checked)}
+                style={{
                   cursor: 'pointer',
                   accentColor: 'var(--accent)',
                   width: '15px',
@@ -831,8 +831,8 @@ function App() {
                                 fontSize: '1rem',
                                 color: 'var(--text-primary)',
                                 fontWeight: '500',
-                                direction: 'rtl',
-                                textAlign: 'right',
+                                direction: 'ltr',
+                                textAlign: 'left',
                                 lineHeight: '1.5',
                                 fontFamily: 'inherit',
                                 overflow: 'hidden',
@@ -856,7 +856,7 @@ function App() {
                                   Skimmed: <strong style={{ color: '#0284c7' }}>{entry.skimmed_words !== undefined && entry.skimmed_words !== null ? entry.skimmed_words : 0}</strong> ({entry.total_words > 0 && entry.skimmed_words !== undefined && entry.skimmed_words !== null ? ((entry.skimmed_words / entry.total_words) * 100).toFixed(1) : 0}% left)
                                 </span>
                               </div>
-                              
+
                               <button
                                 onClick={() => handleLoadHistory(entry)}
                                 className="btn"
