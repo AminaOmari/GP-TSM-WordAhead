@@ -262,7 +262,7 @@ async def analyze(req: AnalyzeRequest):
 
         print("Analysis complete successfully")
         
-        # Save to SQLite Database History
+        # Save to SQLite Database History (Deduplicated on raw_text)
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -270,13 +270,29 @@ async def analyze(req: AnalyzeRequest):
             total_words = len([t for t in all_tokens if t.get('text') != '\n'])
             difficult_words = len([t for t in all_tokens if t.get('isDifficult')])
             skimmed_words = len([t for t in all_tokens if t.get('text') != '\n' and t.get('importance', 0) >= 3])
-            cursor.execute("""
-                INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (preview, text, req.user_level, total_words, difficult_words, skimmed_words))
+
+            # Check if this exact text already exists in history
+            cursor.execute("SELECT id FROM text_analyses WHERE raw_text = ?", (text,))
+            existing = cursor.fetchone()
+
+            if existing:
+                # Update existing record and bump its timestamp to move it to the top
+                cursor.execute("""
+                    UPDATE text_analyses 
+                    SET text_preview = ?, user_level = ?, total_words = ?, difficult_words = ?, skimmed_words = ?, created_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (preview, req.user_level, total_words, difficult_words, skimmed_words, existing[0]))
+                print(f"🔄 Existing record updated and bumped in history (ID: {existing[0]})")
+            else:
+                # Insert a new record
+                cursor.execute("""
+                    INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (preview, text, req.user_level, total_words, difficult_words, skimmed_words))
+                print("✅ New analysis saved to SQLite history.")
+
             conn.commit()
             conn.close()
-            print("✅ Analysis saved to SQLite history.")
         except Exception as db_err:
             print(f"⚠️ Error saving to database: {db_err}")
 
