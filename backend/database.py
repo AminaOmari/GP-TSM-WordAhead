@@ -34,9 +34,23 @@ def init_db():
             user_level TEXT NOT NULL,
             total_words INTEGER NOT NULL,
             difficult_words INTEGER NOT NULL,
+            skimmed_words INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.commit()
+
+    # Try adding the skimmed_words column if it doesn't exist (for existing DBs)
+    try:
+        cursor.execute("SELECT skimmed_words FROM text_analyses LIMIT 1")
+    except sqlite3.OperationalError:
+        print("Adding skimmed_words column to text_analyses table...")
+        try:
+            cursor.execute("ALTER TABLE text_analyses ADD COLUMN skimmed_words INTEGER DEFAULT 0")
+            conn.commit()
+            print("Successfully added skimmed_words column!")
+        except Exception as alter_err:
+            print(f"Error altering table text_analyses: {alter_err}")
+
     conn.close()
     print(f"✅ SQLite Database initialized at: {DB_PATH}")

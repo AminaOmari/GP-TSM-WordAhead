@@ -269,10 +269,11 @@ async def analyze(req: AnalyzeRequest):
             preview = text[:100] + "..." if len(text) > 100 else text
             total_words = len([t for t in all_tokens if t.get('text') != '\n'])
             difficult_words = len([t for t in all_tokens if t.get('isDifficult')])
+            skimmed_words = len([t for t in all_tokens if t.get('text') != '\n' and t.get('importance', 0) >= 3])
             cursor.execute("""
-                INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words)
-                VALUES (?, ?, ?, ?, ?)
-            """, (preview, text, req.user_level, total_words, difficult_words))
+                INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (preview, text, req.user_level, total_words, difficult_words, skimmed_words))
             conn.commit()
             conn.close()
             print("✅ Analysis saved to SQLite history.")
@@ -294,7 +295,7 @@ async def get_history():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, text_preview, raw_text, user_level, total_words, difficult_words, created_at FROM text_analyses ORDER BY created_at DESC")
+        cursor.execute("SELECT id, text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words, created_at FROM text_analyses ORDER BY created_at DESC")
         rows = cursor.fetchall()
         conn.close()
         return [dict(row) for row in rows]

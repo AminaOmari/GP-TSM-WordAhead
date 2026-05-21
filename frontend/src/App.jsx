@@ -222,6 +222,7 @@ function App() {
     const controller = new AbortController();
     setAbortController(controller);
     setLoading(true);
+    setTokens([]); // Clear previous tokens from sight immediately
 
     try {
       const res = await axios.post(`${API_URL}/api/analyze`, {
@@ -844,12 +845,15 @@ function App() {
                             </p>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
-                              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  Total Words: <strong style={{ color: '#0f172a' }}>{entry.total_words}</strong>
+                                  Total: <strong style={{ color: '#0f172a' }}>{entry.total_words}</strong>
                                 </span>
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                                   Difficult: <strong style={{ color: '#9333ea' }}>{entry.difficult_words}</strong>
+                                </span>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                  Skimmed: <strong style={{ color: '#0284c7' }}>{entry.skimmed_words !== undefined && entry.skimmed_words !== null ? entry.skimmed_words : 0}</strong> ({entry.total_words > 0 && entry.skimmed_words !== undefined && entry.skimmed_words !== null ? ((entry.skimmed_words / entry.total_words) * 100).toFixed(1) : 0}% left)
                                 </span>
                               </div>
                               
