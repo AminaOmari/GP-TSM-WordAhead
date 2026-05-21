@@ -41,7 +41,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 # Initialize SQLite database
-from database import init_db, get_db_connection
+from database import init_db, get_db_connection, DB_PATH
 try:
     init_db()
 except Exception as e:
@@ -300,6 +300,27 @@ async def get_history():
         return [dict(row) for row in rows]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/db-status")
+async def get_db_status():
+    status = {
+        "db_path": DB_PATH,
+        "exists": os.path.exists(DB_PATH),
+        "data_dir_exists": os.path.exists("/data"),
+        "data_dir_writable": os.access("/data", os.W_OK) if os.path.exists("/data") else False,
+    }
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
+        status["tables"] = tables
+        status["connection"] = "success"
+        conn.close()
+    except Exception as e:
+        status["connection"] = "failed"
+        status["error"] = str(e)
+    return status
 
 @app.delete("/api/history/{entry_id}")
 async def delete_history(entry_id: int):

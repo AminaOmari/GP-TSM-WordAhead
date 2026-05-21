@@ -3,7 +3,17 @@ import sqlite3
 
 # Check if we are running on Render with a persistent disk volume mounted at /data
 if os.path.exists("/data") and os.path.isdir("/data"):
-    DB_PATH = "/data/wordahead.db"
+    # Ensure it is actually writable to avoid root-owned read-only directory issues in some containers
+    try:
+        test_file = "/data/.write_test"
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        DB_PATH = "/data/wordahead.db"
+    except Exception as e:
+        print(f"⚠️ /data directory is not writable ({e}). Falling back to local directory.")
+        # Fall back to local folder (within backend folder)
+        DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wordahead.db")
 else:
     # Local development path (within backend folder)
     DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wordahead.db")
