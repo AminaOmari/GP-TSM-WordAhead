@@ -850,7 +850,7 @@ function App() {
                                   Total: <strong style={{ color: '#0f172a' }}>{entry.total_words}</strong>
                                 </span>
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  Difficult: <strong style={{ color: '#9333ea' }}>{entry.difficult_words}</strong>
+                                  Difficult: <strong style={{ color: '#9333ea' }}>{entry.difficult_words}</strong>{entry.skimmed_difficult_words !== undefined && entry.skimmed_difficult_words !== null ? ` (${entry.skimmed_difficult_words} left)` : ''}
                                 </span>
                                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                                   Skimmed: <strong style={{ color: '#0284c7' }}>{entry.skimmed_words !== undefined && entry.skimmed_words !== null ? entry.skimmed_words : 0}</strong> ({entry.total_words > 0 && entry.skimmed_words !== undefined && entry.skimmed_words !== null ? ((entry.skimmed_words / entry.total_words) * 100).toFixed(1) : 0}% left)

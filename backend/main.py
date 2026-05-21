@@ -270,6 +270,7 @@ async def analyze(req: AnalyzeRequest):
             total_words = len([t for t in all_tokens if t.get('text') != '\n'])
             difficult_words = len([t for t in all_tokens if t.get('isDifficult')])
             skimmed_words = len([t for t in all_tokens if t.get('text') != '\n' and t.get('importance', 0) >= 3])
+            skimmed_difficult_words = len([t for t in all_tokens if t.get('text') != '\n' and t.get('importance', 0) >= 3 and t.get('isDifficult')])
 
             # Check if this exact text already exists in history
             cursor.execute("SELECT id FROM text_analyses WHERE raw_text = ?", (text,))
@@ -279,16 +280,16 @@ async def analyze(req: AnalyzeRequest):
                 # Update existing record and bump its timestamp to move it to the top
                 cursor.execute("""
                     UPDATE text_analyses 
-                    SET text_preview = ?, user_level = ?, total_words = ?, difficult_words = ?, skimmed_words = ?, created_at = CURRENT_TIMESTAMP
+                    SET text_preview = ?, user_level = ?, total_words = ?, difficult_words = ?, skimmed_words = ?, skimmed_difficult_words = ?, created_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                """, (preview, req.user_level, total_words, difficult_words, skimmed_words, existing[0]))
+                """, (preview, req.user_level, total_words, difficult_words, skimmed_words, skimmed_difficult_words, existing[0]))
                 print(f"🔄 Existing record updated and bumped in history (ID: {existing[0]})")
             else:
                 # Insert a new record
                 cursor.execute("""
-                    INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (preview, text, req.user_level, total_words, difficult_words, skimmed_words))
+                    INSERT INTO text_analyses (text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words, skimmed_difficult_words)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (preview, text, req.user_level, total_words, difficult_words, skimmed_words, skimmed_difficult_words))
                 print("✅ New analysis saved to SQLite history.")
 
             conn.commit()
@@ -311,7 +312,7 @@ async def get_history():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words, created_at FROM text_analyses ORDER BY created_at DESC")
+        cursor.execute("SELECT id, text_preview, raw_text, user_level, total_words, difficult_words, skimmed_words, skimmed_difficult_words, created_at FROM text_analyses ORDER BY created_at DESC")
         rows = cursor.fetchall()
         conn.close()
         return [dict(row) for row in rows]
