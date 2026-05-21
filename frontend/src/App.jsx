@@ -72,6 +72,7 @@ function App() {
   const [learnedStatus, setLearnedStatus] = useState(false);
   const [notification, setNotification] = useState('');
   const [fontSize, setFontSize] = useState(1.1);
+  const [experimentMode, setExperimentMode] = useState(false);
 
   const showNotification = (msg) => {
     setNotification(msg);
@@ -136,7 +137,7 @@ function App() {
     const isLearned = learnedWords[cleanWord];
 
     // Trigger level down ONLY on GREY words (importance < 3 and not difficult)
-    if (!token.isDifficult && !isLearned && uIdx > 0) {
+    if (!experimentMode && !token.isDifficult && !isLearned && uIdx > 0) {
       const newCount = struggleCount + 1;
       setStruggleCount(newCount);
       if (newCount >= 3) {
@@ -252,6 +253,34 @@ function App() {
           </div>
 
           <div className="header-controls">
+            <label style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.6rem', 
+              cursor: 'pointer', 
+              background: experimentMode ? 'rgba(124, 58, 237, 0.15)' : 'var(--bg-secondary)', 
+              padding: '0.55rem 0.9rem', 
+              borderRadius: '8px', 
+              fontSize: '0.85rem', 
+              border: experimentMode ? '1px solid var(--accent)' : '1px solid rgba(0, 0, 0, 0.08)',
+              color: 'var(--text-primary)',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              boxShadow: experimentMode ? '0 0 12px rgba(124, 58, 237, 0.15)' : 'none'
+            }}>
+              <input 
+                type="checkbox" 
+                checked={experimentMode} 
+                onChange={(e) => setExperimentMode(e.target.checked)} 
+                style={{ 
+                  cursor: 'pointer',
+                  accentColor: 'var(--accent)',
+                  width: '15px',
+                  height: '15px'
+                }}
+              />
+              <span>Experiment Mode</span>
+            </label>
 
             <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
               <HelpCircle size={18} /> How to Use
@@ -391,26 +420,31 @@ function App() {
 
                 let className = "word";
 
-                const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
-
-                if (t.isDifficult && !isLearned) {
-                  // DIFFICULT WORDS (Purple)
-                  if (t.importance > 2) {
-                    className += " word-difficult-important";
-                  } else {
-                    className += " word-difficult";
-                  }
-                } else if (t.importance >= 3) {
-                  // IMPORTANT WORDS (Bold Black) - Easy but Critical
-                  className += " word-important";
+                if (experimentMode) {
+                  className += " word-experiment";
                 } else {
-                  // NOT IMPORTANT (Greys) - Easy and less critical
-                  if (t.importance === 2) className += " word-fade-2";
-                  else if (t.importance === 1) className += " word-fade-1";
-                  else className += " word-low"; // importance 0
+                  const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
+
+                  if (t.isDifficult && !isLearned) {
+                    // DIFFICULT WORDS (Purple)
+                    if (t.importance > 2) {
+                      className += " word-difficult-important";
+                    } else {
+                      className += " word-difficult";
+                    }
+                  } else if (t.importance >= 3) {
+                    // IMPORTANT WORDS (Bold Black) - Easy but Critical
+                    className += " word-important";
+                  } else {
+                    // NOT IMPORTANT (Greys) - Easy and less critical
+                    if (t.importance === 2) className += " word-fade-2";
+                    else if (t.importance === 1) className += " word-fade-1";
+                    else className += " word-low"; // importance 0
+                  }
                 }
 
-                if (t.importance < skimmingLevel) {
+                // If experimentMode is ON, all tokens are visible (none hidden, none set to display:none)
+                if (!experimentMode && t.importance < skimmingLevel) {
                   return null;
                 }
 

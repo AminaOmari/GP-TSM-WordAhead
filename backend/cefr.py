@@ -1,5 +1,6 @@
 import os
 import csv
+import re
 from wordfreq import zipf_frequency
 
 # Global cache to store the EFLLex dictionary in memory so it only loads once
@@ -59,6 +60,10 @@ def load_efllex_dictionary():
     return _efllex_dict
 
 def get_cefr_level(word):
+    # Purely numeric tokens (digits, commas, periods, percent signs) are never difficult (default to A1)
+    if re.match(r'^[0-9.,%]+$', word):
+        return "A1"
+
     word_lower = word.lower()
     
     # 1. First, check the empirical EFLLex dictionary!
