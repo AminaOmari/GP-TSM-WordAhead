@@ -4,7 +4,7 @@ import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, S
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
-const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const CEFR_LEVELS = ["B1", "B2"];
 
 const Flashcard = ({ word, data, onRemove }) => {
   const [flipped, setFlipped] = useState(false);
@@ -132,9 +132,20 @@ function App() {
 
   const handleLoadHistory = (entry) => {
     setText(entry.raw_text);
-    setUserLevel(entry.user_level);
+    let normalizedLevel = 'B2';
+    if (entry.user_level === 'B1' || entry.user_level === 'A1' || entry.user_level === 'A2') {
+      normalizedLevel = 'B1';
+    }
+    setUserLevel(normalizedLevel);
     setShowDashboard(false);
-    handleAnalyze(entry.raw_text, entry.user_level);
+    handleAnalyze(entry.raw_text, normalizedLevel);
+  };
+
+  const handleLevelChange = (newLevel) => {
+    setUserLevel(newLevel);
+    if (tokens.length > 0 && text.trim()) {
+      handleAnalyze(text, newLevel);
+    }
   };
 
   const markLearned = (word) => {
@@ -185,6 +196,9 @@ function App() {
         setUserLevel(newLevel);
         setStruggleCount(0);
         showNotification(`We noticed you're looking up words that should be familiar. Adjusting level to ${newLevel} for better support.`);
+        if (text.trim()) {
+          handleAnalyze(text, newLevel);
+        }
       }
     }
 
@@ -331,9 +345,39 @@ function App() {
             <button className="btn" onClick={() => setShowDashboard(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
               <Settings size={18} /> My Progress
             </button>
-            <div className="glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Language Level:</span>
-              <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{userLevel}</span>
+            <div className="glass" style={{ padding: '0.2rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.2rem', borderRadius: '10px' }}>
+              <button
+                onClick={() => handleLevelChange('B1')}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: userLevel === 'B1' ? 'var(--accent)' : 'transparent',
+                  color: userLevel === 'B1' ? 'white' : 'var(--text-secondary)',
+                  fontWeight: userLevel === 'B1' ? 'bold' : '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '0.85rem'
+                }}
+              >
+                B1
+              </button>
+              <button
+                onClick={() => handleLevelChange('B2')}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: userLevel === 'B2' ? 'var(--accent)' : 'transparent',
+                  color: userLevel === 'B2' ? 'white' : 'var(--text-secondary)',
+                  fontWeight: userLevel === 'B2' ? 'bold' : '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '0.85rem'
+                }}
+              >
+                B2
+              </button>
             </div>
           </div>
         </header>
