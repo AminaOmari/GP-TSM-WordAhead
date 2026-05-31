@@ -5,6 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
 const CEFR_LEVELS = ["B1", "B2"];
+const ALL_CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const checkIsDifficult = (wordCefr, targetLevel) => {
+  if (!wordCefr) return false;
+  const wIdx = ALL_CEFR_LEVELS.indexOf(wordCefr);
+  const uIdx = ALL_CEFR_LEVELS.indexOf(targetLevel);
+  if (wIdx === -1 || uIdx === -1) return false;
+  return wIdx > uIdx;
+};
 
 const Flashcard = ({ word, data, onRemove }) => {
   const [flipped, setFlipped] = useState(false);
@@ -138,13 +146,46 @@ function App() {
     }
     setUserLevel(normalizedLevel);
     setShowDashboard(false);
-    handleAnalyze(entry.raw_text, normalizedLevel);
+
+    if (entry.analysis_results) {
+      try {
+        const parsedTokens = typeof entry.analysis_results === 'string'
+          ? JSON.parse(entry.analysis_results)
+          : entry.analysis_results;
+        
+        const processed = parsedTokens.map(token => {
+          const isDifficult = checkIsDifficult(token.cefr, normalizedLevel);
+          const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+          const isLearned = learnedWords[cleanWord];
+          return {
+            ...token,
+            isDifficult: isDifficult && !isLearned,
+            isLearned: isLearned
+          };
+        });
+        setTokens(processed);
+      } catch (e) {
+        console.error("Failed to parse cached analysis results:", e);
+        handleAnalyze(entry.raw_text, normalizedLevel);
+      }
+    } else {
+      handleAnalyze(entry.raw_text, normalizedLevel);
+    }
   };
 
   const handleLevelChange = (newLevel) => {
     setUserLevel(newLevel);
-    if (tokens.length > 0 && text.trim()) {
-      handleAnalyze(text, newLevel);
+    if (tokens.length > 0) {
+      setTokens(prev => prev.map(token => {
+        const isDifficult = checkIsDifficult(token.cefr, newLevel);
+        const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+        const isLearned = learnedWords[cleanWord];
+        return {
+          ...token,
+          isDifficult: isDifficult && !isLearned,
+          isLearned: isLearned
+        };
+      }));
     }
   };
 
@@ -196,9 +237,16 @@ function App() {
         setUserLevel(newLevel);
         setStruggleCount(0);
         showNotification(`We noticed you're looking up words that should be familiar. Adjusting level to ${newLevel} for better support.`);
-        if (text.trim()) {
-          handleAnalyze(text, newLevel);
-        }
+        setTokens(prev => prev.map(t => {
+          const isDifficult = checkIsDifficult(t.cefr, newLevel);
+          const clean = t.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+          const learned = learnedWords[clean];
+          return {
+            ...t,
+            isDifficult: isDifficult && !learned,
+            isLearned: learned
+          };
+        }));
       }
     }
 

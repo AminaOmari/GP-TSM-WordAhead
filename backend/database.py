@@ -36,6 +36,7 @@ def init_db():
             difficult_words INTEGER NOT NULL,
             skimmed_words INTEGER DEFAULT 0,
             skimmed_difficult_words INTEGER DEFAULT 0,
+            analysis_results TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -62,6 +63,18 @@ def init_db():
             cursor.execute("ALTER TABLE text_analyses ADD COLUMN skimmed_difficult_words INTEGER DEFAULT 0")
             conn.commit()
             print("Successfully added skimmed_difficult_words column!")
+        except Exception as alter_err:
+            print(f"Error altering table text_analyses: {alter_err}")
+
+    # Try adding the analysis_results column if it doesn't exist (for existing DBs)
+    try:
+        cursor.execute("SELECT analysis_results FROM text_analyses LIMIT 1")
+    except sqlite3.OperationalError:
+        print("Adding analysis_results column to text_analyses table...")
+        try:
+            cursor.execute("ALTER TABLE text_analyses ADD COLUMN analysis_results TEXT")
+            conn.commit()
+            print("Successfully added analysis_results column!")
         except Exception as alter_err:
             print(f"Error altering table text_analyses: {alter_err}")
 
