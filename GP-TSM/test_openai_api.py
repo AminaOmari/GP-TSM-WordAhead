@@ -117,7 +117,7 @@ def test_response_extraction():
         # Mock response in the format that would come from gen_responses
         mock_response = {
             "prompt": "Test prompt",
-            "query": {"model": "gpt-3.5-turbo", "messages": []},
+            "query": {"model": "gpt-4o-mini", "messages": []},
             "response": {
                 "choices": [
                     {"message": {"content": "Hello, World!"}},
