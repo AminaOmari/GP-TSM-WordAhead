@@ -4,6 +4,14 @@ import traceback
 import gc
 import re
 from typing import List, Dict, Any
+import cefr
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 # Add GP-TSM to path
 # We use absolute path to be sure
@@ -30,15 +38,6 @@ try:
 except Exception as e:
     print(f"CRITICAL ERROR: Failed to import llm: {e}")
     traceback.print_exc()
-
-import cefr
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
-
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 
 # Initialize SQLite database
 from database import init_db, get_db_connection, DB_PATH
@@ -147,16 +146,6 @@ def is_equal(w1, w2):
         tmp2 = w2[:-1]
     return (tmp1.lower() == tmp2.lower())
 
-def is_equal(w1, w2):
-    punc = ['.', ',', ':', '?', '!', ';', '"', '(', ')']
-    tmp1 = w1
-    tmp2 = w2
-    if len(w1) > 0 and w1[-1] in punc:
-        tmp1 = w1[:-1]
-    if len(w2) > 0 and w2[-1] in punc:
-        tmp2 = w2[:-1]
-    return (tmp1.lower() == tmp2.lower())
-
 def analyze_importance(l0, l1, l2, l3, l4):
     l0_lst = l0.split()
     l1_lst = l1.split() if l1 else []
@@ -177,9 +166,12 @@ def analyze_importance(l0, l1, l2, l3, l4):
             p1 += 1
             if p4 < len(l4_lst) and is_equal(w, l4_lst[p4]):
                 p4 += 1
+                p3 += 1
+                p2 += 1
                 importance = 4
             elif p3 < len(l3_lst) and is_equal(w, l3_lst[p3]):
                 p3 += 1
+                p2 += 1
                 importance = 3
             elif p2 < len(l2_lst) and is_equal(w, l2_lst[p2]):
                 p2 += 1
