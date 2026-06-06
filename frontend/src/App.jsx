@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle, History, Clock } from 'lucide-react';
+import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle, History, Clock, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
@@ -12,6 +12,113 @@ const checkIsDifficult = (wordCefr, targetLevel) => {
   const uIdx = ALL_CEFR_LEVELS.indexOf(targetLevel);
   if (wIdx === -1 || uIdx === -1) return false;
   return wIdx > uIdx;
+};
+
+const getHistoryEntryStats = (entry, learnedWords) => {
+  let tokens = [];
+  if (entry.analysis_results) {
+    try {
+      tokens = typeof entry.analysis_results === 'string'
+        ? JSON.parse(entry.analysis_results)
+        : entry.analysis_results;
+    } catch (e) {
+      console.error("Failed to parse analysis_results", e);
+    }
+  }
+
+  // Fallback if no tokens
+  if (!tokens || tokens.length === 0) {
+    const rawText = entry.raw_text || '';
+    const rawWords = rawText.split(/\s+/).filter(Boolean);
+    const rawSentences = rawText.match(/[^.!?]*[.!?]/g) || [rawText];
+    const sCount = Math.max(1, rawSentences.filter(s => s.trim().length > 0).length);
+    const avgLen = rawWords.length / sCount;
+
+    return {
+      detailed: {
+        words: entry.total_words || rawWords.length,
+        difficult: entry.difficult_words || 0,
+        diffPercentage: entry.total_words > 0 ? (entry.difficult_words / entry.total_words) * 100 : 0,
+        sentences: sCount,
+        avgSentenceLength: avgLen
+      },
+      skimmed: {
+        words: entry.skimmed_words || 0,
+        difficult: entry.skimmed_difficult_words || 0,
+        diffPercentage: entry.skimmed_words > 0 ? (entry.skimmed_difficult_words / entry.skimmed_words) * 100 : 0,
+        sentences: sCount,
+        avgSentenceLength: entry.skimmed_words / sCount
+      }
+    };
+  }
+
+  // Helper to check if token is difficult, taking learned words into account
+  const isTokenDifficult = (t) => {
+    const isDiff = checkIsDifficult(t.cefr, entry.user_level);
+    if (!isDiff) return false;
+    const cleanWord = t.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+    return !learnedWords[cleanWord];
+  };
+
+  // Group tokens into sentences
+  const sentencesList = [];
+  let currentSentence = [];
+  tokens.forEach(t => {
+    if (t.text === '\n') return;
+    currentSentence.push(t);
+    if (/[.!?]/.test(t.text)) {
+      sentencesList.push(currentSentence);
+      currentSentence = [];
+    }
+  });
+  if (currentSentence.length > 0) {
+    sentencesList.push(currentSentence);
+  }
+
+  // Calculate detailed
+  let detailedWords = 0;
+  let detailedDifficult = 0;
+  let detailedSentences = 0;
+
+  sentencesList.forEach(s => {
+    const sWords = s.length;
+    if (sWords > 0) {
+      detailedWords += sWords;
+      detailedSentences++;
+      detailedDifficult += s.filter(t => isTokenDifficult(t)).length;
+    }
+  });
+
+  // Calculate skimmed (importance >= 3)
+  let skimmedWords = 0;
+  let skimmedDifficult = 0;
+  let skimmedSentences = 0;
+
+  sentencesList.forEach(s => {
+    const sSkimmedWords = s.filter(t => t.importance >= 3).length;
+    if (sSkimmedWords > 0) {
+      skimmedWords += sSkimmedWords;
+      skimmedSentences++;
+      skimmedDifficult += s.filter(t => t.importance >= 3 && isTokenDifficult(t)).length;
+    }
+  });
+
+  return {
+    detailed: {
+      words: detailedWords,
+      difficult: detailedDifficult,
+      diffPercentage: detailedWords > 0 ? (detailedDifficult / detailedWords) * 100 : 0,
+      sentences: detailedSentences,
+      avgSentenceLength: detailedSentences > 0 ? (detailedWords / detailedSentences) : 0
+    },
+    skimmed: {
+      words: skimmedWords,
+      difficult: skimmedDifficult,
+      diffPercentage: skimmedWords > 0 ? (skimmedDifficult / skimmedWords) * 100 : 0,
+      sentences: skimmedSentences,
+      avgSentenceLength: skimmedSentences > 0 ? (skimmedWords / skimmedSentences) : 0
+    }
+  };
 };
 
 const Flashcard = ({ word, data, onRemove }) => {
@@ -84,6 +191,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('words'); // 'words' or 'history'
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [cardViewModes, setCardViewModes] = useState({});
 
   const showNotification = (msg) => {
     setNotification(msg);
@@ -862,6 +971,44 @@ function App() {
               ) : (
                 /* History Tab */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+                  {/* Search Bar */}
+                  {!historyLoading && history.length > 0 && (
+                    <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                        <Search size={18} />
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search saved texts by keywords or level..."
+                        value={historySearchQuery}
+                        onChange={(e) => setHistorySearchQuery(e.target.value)}
+                        style={{
+                          padding: '0.75rem 1rem 0.75rem 2.5rem',
+                          borderRadius: '8px',
+                          border: '1px solid #e2e8f0',
+                          width: '100%',
+                          fontSize: '0.95rem',
+                          outline: 'none',
+                          background: '#f8fafc',
+                          color: 'var(--text-primary)',
+                          transition: 'all 0.2s'
+                        }}
+                      />
+                      {historySearchQuery && (
+                        <button
+                          onClick={() => setHistorySearchQuery('')}
+                          style={{
+                            position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                            background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', padding: '4px'
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {historyLoading ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem', gap: '1rem', color: 'var(--text-secondary)' }}>
                       <Loader2 className="animate-spin" size={32} />
@@ -874,100 +1021,187 @@ function App() {
                       <p style={{ margin: 0, fontSize: '0.9rem', maxWidth: '300px' }}>Analyze Hebrew texts using the input panel to automatically save them here!</p>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {history.map((entry) => {
-                        const date = new Date(entry.created_at + " UTC");
-                        const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-                        return (
-                          <div
-                            key={entry.id}
-                            style={{
-                              background: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '12px',
-                              padding: '1.25rem',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.75rem',
-                              transition: 'all 0.2s ease-in-out',
-                              position: 'relative'
-                            }}
-                            className="history-card"
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-                                <span style={{ background: '#7c3aed', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
-                                  Level: {entry.user_level}
-                                </span>
-                                <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.75rem', fontWeight: '600', padding: '0.2rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                  <Clock size={12} />
-                                  {formattedDate}
-                                </span>
-                              </div>
-                              <button
-                                onClick={() => handleDeleteHistory(entry.id)}
-                                style={{
-                                  background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
-                                  padding: '4px', borderRadius: '6px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}
-                                title="Delete from history"
-                                className="delete-history-btn"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      {(() => {
+                        const filteredHistory = history.filter(entry => {
+                          const query = historySearchQuery.toLowerCase().trim();
+                          if (!query) return true;
+                          return (
+                            (entry.raw_text && entry.raw_text.toLowerCase().includes(query)) ||
+                            (entry.text_preview && entry.text_preview.toLowerCase().includes(query)) ||
+                            (entry.user_level && entry.user_level.toLowerCase().includes(query))
+                          );
+                        });
 
-                            <p
+                        if (filteredHistory.length === 0) {
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem', gap: '1rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                              <p style={{ margin: 0, fontSize: '1rem', fontWeight: '500' }}>No matching history entries found</p>
+                              <p style={{ margin: 0, fontSize: '0.85rem' }}>Try searching for a different keyword or level.</p>
+                            </div>
+                          );
+                        }
+
+                        return filteredHistory.map((entry) => {
+                          const date = new Date(entry.created_at + " UTC");
+                          const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                          
+                          // Calculate stats dynamically
+                          const stats = getHistoryEntryStats(entry, learnedWords);
+                          const currentMode = cardViewModes[entry.id] || 'detailed';
+                          const activeStats = currentMode === 'detailed' ? stats.detailed : stats.skimmed;
+
+                          return (
+                            <div
+                              key={entry.id}
                               style={{
-                                margin: 0,
-                                fontSize: '1rem',
-                                color: 'var(--text-primary)',
-                                fontWeight: '500',
-                                direction: 'ltr',
-                                textAlign: 'left',
-                                lineHeight: '1.5',
-                                fontFamily: 'inherit',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                padding: '0.25rem 0'
+                                background: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                padding: '1.25rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.75rem',
+                                transition: 'all 0.2s ease-in-out',
+                                position: 'relative'
                               }}
+                              className="history-card"
                             >
-                              {entry.text_preview}
-                            </p>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
-                              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  Total: <strong style={{ color: '#0f172a' }}>{entry.total_words}</strong>
-                                </span>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  Difficult: <strong style={{ color: '#9333ea' }}>{entry.difficult_words}</strong>{entry.skimmed_difficult_words !== undefined && entry.skimmed_difficult_words !== null ? ` (${entry.skimmed_difficult_words} left)` : ''}
-                                </span>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                  Skimmed: <strong style={{ color: '#0284c7' }}>{entry.skimmed_words !== undefined && entry.skimmed_words !== null ? entry.skimmed_words : 0}</strong> ({entry.total_words > 0 && entry.skimmed_words !== undefined && entry.skimmed_words !== null ? ((entry.skimmed_words / entry.total_words) * 100).toFixed(1) : 0}% left)
-                                </span>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                                  <span style={{ background: '#7c3aed', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                                    Level: {entry.user_level}
+                                  </span>
+                                  <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.75rem', fontWeight: '600', padding: '0.2rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <Clock size={12} />
+                                    {formattedDate}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteHistory(entry.id)}
+                                  style={{
+                                    background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444',
+                                    padding: '4px', borderRadius: '6px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                  }}
+                                  title="Delete from history"
+                                  className="delete-history-btn"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
                               </div>
 
-                              <button
-                                onClick={() => handleLoadHistory(entry)}
-                                className="btn"
+                              <p
                                 style={{
-                                  padding: '0.35rem 0.85rem',
-                                  fontSize: '0.8rem',
-                                  borderRadius: '6px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem'
+                                  margin: 0,
+                                  fontSize: '1rem',
+                                  color: 'var(--text-primary)',
+                                  fontWeight: '500',
+                                  direction: 'ltr',
+                                  textAlign: 'left',
+                                  lineHeight: '1.5',
+                                  fontFamily: 'inherit',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  padding: '0.25rem 0'
                                 }}
                               >
-                                <Play size={12} fill="white" />
-                                Reload
-                              </button>
+                                {entry.text_preview}
+                              </p>
+
+                              {/* Toggle Pill and Reload Button Row */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                                <div style={{ display: 'flex', background: '#cbd5e1', padding: '2px', borderRadius: '8px', width: 'fit-content' }}>
+                                  <button
+                                    onClick={() => setCardViewModes(prev => ({ ...prev, [entry.id]: 'detailed' }))}
+                                    style={{
+                                      padding: '0.3rem 0.75rem',
+                                      fontSize: '0.75rem',
+                                      fontWeight: '700',
+                                      borderRadius: '6px',
+                                      border: 'none',
+                                      background: currentMode === 'detailed' ? 'white' : 'transparent',
+                                      color: currentMode === 'detailed' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                      cursor: 'pointer',
+                                      boxShadow: currentMode === 'detailed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    Detailed
+                                  </button>
+                                  <button
+                                    onClick={() => setCardViewModes(prev => ({ ...prev, [entry.id]: 'skimmed' }))}
+                                    style={{
+                                      padding: '0.3rem 0.75rem',
+                                      fontSize: '0.75rem',
+                                      fontWeight: '700',
+                                      borderRadius: '6px',
+                                      border: 'none',
+                                      background: currentMode === 'skimmed' ? 'white' : 'transparent',
+                                      color: currentMode === 'skimmed' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                      cursor: 'pointer',
+                                      boxShadow: currentMode === 'skimmed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    Skimmed
+                                  </button>
+                                </div>
+
+                                <button
+                                  onClick={() => handleLoadHistory(entry)}
+                                  className="btn"
+                                  style={{
+                                    padding: '0.4rem 1rem',
+                                    fontSize: '0.8rem',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem'
+                                  }}
+                                >
+                                  <Play size={12} fill="white" />
+                                  Reload
+                                </button>
+                              </div>
+
+                              {/* Responsive Stats Grid */}
+                              <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                                gap: '0.5rem',
+                                marginTop: '0.25rem'
+                              }}>
+                                {/* Words count */}
+                                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Words</div>
+                                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>{activeStats.words}</div>
+                                </div>
+                                {/* Difficult count */}
+                                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Difficult</div>
+                                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#9333ea', marginTop: '2px' }}>{activeStats.difficult}</div>
+                                </div>
+                                {/* Percentage of difficult words */}
+                                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Difficult %</div>
+                                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#7c3aed', marginTop: '2px' }}>{activeStats.diffPercentage.toFixed(1)}%</div>
+                                </div>
+                                {/* Sentence count */}
+                                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Sentences</div>
+                                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{activeStats.sentences}</div>
+                                </div>
+                                {/* Average sentence length */}
+                                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                                  <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.02em' }}>Avg. Length</div>
+                                  <div style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0284c7', marginTop: '2px' }}>{activeStats.avgSentenceLength.toFixed(1)}</div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                 </div>
