@@ -19,3 +19,7 @@ yarn-error.log*
 
 # Databases
 *.db
+
+# Qualtrics Sync folder
+qualtrics-sync-analysis-main/
+

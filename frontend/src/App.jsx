@@ -171,6 +171,103 @@ const Flashcard = ({ word, data, onRemove }) => {
 };
 
 
+const LEXTALE_ITEMS = [
+  // 3 warm-up items
+  { word: "platery", correct: 0, isPractice: true },
+  { word: "denial", correct: 1, isPractice: true },
+  { word: "generic", correct: 1, isPractice: true },
+  // 60 scored items
+  { word: "mensible", correct: 0 },
+  { word: "scornful", correct: 1 },
+  { word: "stoutly", correct: 1 },
+  { word: "ablaze", correct: 1 },
+  { word: "kermshaw", correct: 0 },
+  { word: "moonlit", correct: 1 },
+  { word: "lofty", correct: 1 },
+  { word: "hurricane", correct: 1 },
+  { word: "flaw", correct: 1 },
+  { word: "alberation", correct: 0 },
+  { word: "unkempt", correct: 1 },
+  { word: "breeding", correct: 1 },
+  { word: "festivity", correct: 1 },
+  { word: "screech", correct: 1 },
+  { word: "savoury", correct: 1 },
+  { word: "plaudate", correct: 0 },
+  { word: "shin", correct: 1 },
+  { word: "fluid", correct: 1 },
+  { word: "spaunch", correct: 0 },
+  { word: "allied", correct: 1 },
+  { word: "slain", correct: 1 },
+  { word: "recipient", correct: 1 },
+  { word: "exprate", correct: 0 },
+  { word: "eloquence", correct: 1 },
+  { word: "cleanliness", correct: 1 },
+  { word: "dispatch", correct: 1 },
+  { word: "rebondicate", correct: 0 },
+  { word: "ingenious", correct: 1 },
+  { word: "bewitch", correct: 1 },
+  { word: "skave", correct: 0 },
+  { word: "plaintively", correct: 1 },
+  { word: "kilp", correct: 0 },
+  { word: "interfate", correct: 0 },
+  { word: "hasty", correct: 1 },
+  { word: "lengthy", correct: 1 },
+  { word: "fray", correct: 1 },
+  { word: "crumper", correct: 0 },
+  { word: "upkeep", correct: 1 },
+  { word: "majestic", correct: 1 },
+  { word: "magrity", correct: 0 },
+  { word: "nourishment", correct: 1 },
+  { word: "abergy", correct: 0 },
+  { word: "proom", correct: 0 },
+  { word: "turmoil", correct: 1 },
+  { word: "carbohydrate", correct: 1 },
+  { word: "scholar", correct: 1 },
+  { word: "turtle", correct: 1 },
+  { word: "fellick", correct: 0 },
+  { word: "destription", correct: 0 },
+  { word: "cylinder", correct: 1 },
+  { word: "censorship", correct: 1 },
+  { word: "celestial", correct: 1 },
+  { word: "rascal", correct: 1 },
+  { word: "purrage", correct: 0 },
+  { word: "pulsh", correct: 0 },
+  { word: "muddy", correct: 1 },
+  { word: "quirty", correct: 0 },
+  { word: "pudour", correct: 0 },
+  { word: "listless", correct: 1 },
+  { word: "wrought", correct: 1 }
+];
+
+const SUS_QUESTIONS = [
+  "I think that I would like to use this system frequently.",
+  "I found the system unnecessarily complex.",
+  "I thought the system was easy to use.",
+  "I think that I would need the support of a technical person to be able to use this system.",
+  "I found the various functions in this system were well integrated.",
+  "I thought there was too much inconsistency in this system.",
+  "I would imagine that most people would learn to use this system very quickly.",
+  "I found the system very cumbersome to use.",
+  "I felt very confident using the system.",
+  "I needed to learn a lot of things before I could get going with this system."
+];
+
+const NASA_TLX_QUESTIONS = [
+  { key: "mental_demand", label: "Mental Demand", description: "How mentally demanding was the reading task?" },
+  { key: "hurriedness", label: "Hurriedness", description: "How hurried or rushed was the pace of the reading?" },
+  { key: "success", label: "Success", description: "How successful do you think you were in understanding the texts?" },
+  { key: "frustration", label: "Frustration", description: "How discouraged, irritated, or stressed did you feel?" }
+];
+
+const WA_SPECIFIC_QUESTIONS = [
+  { key: "q1", label: "I understood why some words were highlighted." },
+  { key: "q2", label: "The translations helped without interrupting reading." },
+  { key: "q3", label: "The highlighted words matched words I found difficult." },
+  { key: "q4", label: "I would use this system when reading academic English." },
+  { key: "q5", label: "The skimmed version preserved enough meaning." },
+  { key: "q6", label: "The system made me too dependent on translation." }
+];
+
 function App() {
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B2'); // Start at Higher Intermediate
@@ -187,19 +284,60 @@ function App() {
   const [learnedStatus, setLearnedStatus] = useState(false);
   const [notification, setNotification] = useState('');
   const [fontSize, setFontSize] = useState(1.1);
-  const [experimentMode, setExperimentMode] = useState(false);
+  const [experimentMode, setExperimentMode] = useState(true);
   const [activeTab, setActiveTab] = useState('words'); // 'words' or 'history'
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [cardViewModes, setCardViewModes] = useState({});
 
+  // --- Experiment Flow States ---
+  const [inExperiment, setInExperiment] = useState(true);
+  const [prolificId, setProlificId] = useState('');
+  const [expStep, setExpStep] = useState('consent'); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
+  const [lextaleAnswers, setLextaleAnswers] = useState({});
+  const [lextaleCurrentIdx, setLextaleCurrentIdx] = useState(0);
+  const [lextaleScore, setLextaleScore] = useState(0);
+  const [expCondition, setExpCondition] = useState(null);
+  const [expTexts, setExpTexts] = useState(null);
+  const [readingStartTime, setReadingStartTime] = useState(0);
+  const [hoverEvents, setHoverEvents] = useState([]);
+  const [hoverEvents1, setHoverEvents1] = useState([]);
+  const [hoverEvents2, setHoverEvents2] = useState([]);
+  const [readingTime1, setReadingTime1] = useState(0);
+  const [readingTime2, setReadingTime2] = useState(0);
+  const [quizAnswers1, setQuizAnswers1] = useState(new Array(5).fill(undefined));
+  const [quizAnswers2, setQuizAnswers2] = useState(new Array(5).fill(undefined));
+  const [quiz1Results, setQuiz1Results] = useState([]);
+  const [quiz2Results, setQuiz2Results] = useState([]);
+  const [surveySUS, setSurveySUS] = useState({});
+  const [surveyNASA, setSurveyNASA] = useState({});
+  const [surveyWA, setSurveyWA] = useState({});
+  const [surveyDemographics, setSurveyDemographics] = useState({
+    age: '',
+    gender: '',
+    native_language: '',
+    other_languages: '',
+    years_studying_english: '',
+    course_level: '',
+    self_rated_english: '3',
+    academic_year: '',
+    field_of_study: '',
+    prior_topic_exposure: '3',
+    frequency_academic_english: '3',
+    use_translation_tools: '3'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState(null);
+  const [hoverTooltip, setHoverTooltip] = useState(null);
+  const hoverTimers = React.useRef({});
+
   const showNotification = (msg) => {
     setNotification(msg);
     setTimeout(() => setNotification(''), 4000);
   };
 
-  // Persistence State
+  // Persistence State for Standalone mode
   const [learnedWords, setLearnedWords] = useState(() => {
     const saved = localStorage.getItem('learned_words');
     return saved ? JSON.parse(saved) : {};
@@ -222,6 +360,18 @@ function App() {
       fetchHistory();
     }
   }, [showDashboard]);
+
+  // Check URL parameters for Prolific entry on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('PROLIFIC_PID');
+    if (pid) {
+      setProlificId(pid);
+      setInExperiment(true);
+      setExperimentMode(true);
+      setExpStep('consent');
+    }
+  }, []);
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -332,6 +482,7 @@ function App() {
 
   const handleWordClick = async (token) => {
     if (!token.cefr) return;
+    if (experimentMode && currentReadingCondition === 'plain') return; // Disable hover translations in plain mode
 
     const uIdx = CEFR_LEVELS.indexOf(userLevel);
     const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
@@ -364,10 +515,11 @@ function App() {
     setTranslation(null);
 
     try {
-      const sentences = text.match(/[^.!?]*[.!?]/g) || [text];
+      const textToUse = experimentMode ? currentTextData.text : text;
+      const sentences = textToUse.match(/[^.!?]*[.!?]/g) || [textToUse];
       const relevantSentence = sentences.find(s =>
         s.toLowerCase().includes(token.text.toLowerCase())
-      ) || text.substring(0, 300);
+      ) || textToUse.substring(0, 300);
 
       const res = await axios.post(`${API_URL}/api/translate`, {
         word: token.text,
@@ -450,6 +602,1080 @@ function App() {
     reader.readAsText(file);
   };
 
+  // --- Experiment Event Logging Helpers ---
+  const logExperimentEvent = async (eventType, payload) => {
+    try {
+      await axios.post(`${API_URL}/api/experiment/log_event`, {
+        session_id: prolificId,
+        event_type: eventType,
+        payload
+      });
+    } catch (err) {
+      console.error(`Failed to log experiment event ${eventType}:`, err);
+    }
+  };
+
+  const handleLexTaleAnswer = async (answer) => {
+    const updatedAnswers = { ...lextaleAnswers, [lextaleCurrentIdx]: answer };
+    setLextaleAnswers(updatedAnswers);
+
+    if (lextaleCurrentIdx + 1 < LEXTALE_ITEMS.length) {
+      setLextaleCurrentIdx(lextaleCurrentIdx + 1);
+    } else {
+      // LexTALE completed. Calculate score
+      let correctReal = 0;
+      let correctNon = 0;
+      
+      for (let i = 3; i < LEXTALE_ITEMS.length; i++) {
+        const item = LEXTALE_ITEMS[i];
+        const isCorrect = (updatedAnswers[i] === item.correct);
+        if (item.correct === 1) {
+          if (isCorrect) correctReal++;
+        } else {
+          if (isCorrect) correctNon++;
+        }
+      }
+      
+      const computedScore = (correctReal / 40 * 100 + correctNon / 20 * 100) / 2;
+      setLextaleScore(computedScore);
+
+      setLoading(true);
+      try {
+        // Send to backend condition assignment
+        const assignRes = await axios.post(`${API_URL}/api/experiment/assign`, {
+          prolific_pid: prolificId,
+          lextale_score: computedScore
+        });
+        setExpCondition(assignRes.data);
+        
+        await logExperimentEvent("lextale_completed", { score: computedScore, cefr_level: assignRes.data.cefr_level });
+        setExpStep('assigned');
+      } catch (err) {
+        console.error(err);
+        showNotification("Failed to submit vocabulary test screening.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const startReadingSessions = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/experiment/session/${prolificId}`);
+      setExpTexts(res.data.texts);
+      
+      const firstTextId = res.data.assignment.text_order[0];
+      const textData = res.data.texts[firstTextId];
+      
+      setExpStep('reading_1');
+      await loadExperimentText(firstTextId, textData.text, res.data.assignment.cefr_level);
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to fetch reading session configuration.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadExperimentText = async (textId, textContent, userLevel) => {
+    setLoading(true);
+    setTokens([]);
+    setSelectedWord(null);
+    setTranslation(null);
+    try {
+      const res = await axios.post(`${API_URL}/api/analyze`, {
+        text: textContent,
+        user_level: userLevel
+      });
+      setTokens(res.data.tokens);
+      setReadingStartTime(Date.now());
+      
+      await axios.post(`${API_URL}/api/experiment/log_event`, {
+        session_id: prolificId,
+        event_type: "reading_start",
+        payload: { text_id: textId, timestamp: Date.now() }
+      });
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to load text analysis.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finishReadingSession = async () => {
+    const duration = Date.now() - readingStartTime;
+    const textId = expCondition.text_order[expStep === 'reading_1' ? 0 : 1];
+
+    await axios.post(`${API_URL}/api/experiment/log_event`, {
+      session_id: prolificId,
+      event_type: "reading_end",
+      payload: { text_id: textId, duration_ms: duration, timestamp: Date.now() }
+    });
+
+    if (expStep === 'reading_1') {
+      setReadingTime1(duration);
+      setHoverEvents1(hoverEvents);
+      setHoverEvents([]);
+      setExpStep('quiz_1');
+    } else {
+      setReadingTime2(duration);
+      setHoverEvents2(hoverEvents);
+      setHoverEvents([]);
+      setExpStep('quiz_2');
+    }
+  };
+
+  const handleWordMouseEnter = (e, token) => {
+    if (!experimentMode || currentReadingCondition !== 'wordahead') return;
+    if (!token.cefr) return;
+    
+    const wordText = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+    hoverTimers.current[wordText] = {
+      start: Date.now(),
+      target: e.currentTarget
+    };
+    
+    const timerId = setTimeout(async () => {
+      if (hoverTimers.current[wordText]) {
+        try {
+          const textToUse = currentTextData.text;
+          const sentences = textToUse.match(/[^.!?]*[.!?]/g) || [textToUse];
+          const relevantSentence = sentences.find(s =>
+            s.toLowerCase().includes(token.text.toLowerCase())
+          ) || textToUse.substring(0, 300);
+
+          const res = await axios.post(`${API_URL}/api/translate`, {
+            word: token.text,
+            context: relevantSentence
+          });
+          
+          if (hoverTimers.current[wordText]) {
+            const rect = hoverTimers.current[wordText].target.getBoundingClientRect();
+            setHoverTooltip({
+              word: token.text,
+              translation: res.data.translation,
+              transliteration: res.data.transliteration,
+              x: rect.left + window.scrollX,
+              y: rect.top + window.scrollY - 10
+            });
+            hoverTimers.current[wordText].translation_shown = true;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }, 150);
+    
+    hoverTimers.current[wordText].timerId = timerId;
+  };
+
+  const handleWordMouseLeave = async (token) => {
+    if (!experimentMode || currentReadingCondition !== 'wordahead') return;
+    if (!token.cefr) return;
+    
+    const wordText = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+    const hoverInfo = hoverTimers.current[wordText];
+    if (hoverInfo) {
+      clearTimeout(hoverInfo.timerId);
+      const dwellMs = Date.now() - hoverInfo.start;
+      
+      if (dwellMs >= 150) {
+        const eventData = {
+          word: token.text,
+          timestamp: Date.now(),
+          dwell_ms: dwellMs,
+          translation_shown: !!hoverInfo.translation_shown
+        };
+        
+        setHoverEvents(prev => [...prev, eventData]);
+        
+        try {
+          await axios.post(`${API_URL}/api/experiment/log_event`, {
+            session_id: prolificId,
+            event_type: "hover",
+            payload: eventData
+          });
+        } catch (err) {
+          console.error("Failed to log hover event:", err);
+        }
+      }
+      
+      delete hoverTimers.current[wordText];
+    }
+    setHoverTooltip(null);
+  };
+
+  const handleQuizSelect = (idx, oIdx) => {
+    if (expStep === 'quiz_1') {
+      setQuizAnswers1(prev => {
+        const next = [...prev];
+        next[idx] = oIdx;
+        return next;
+      });
+    } else {
+      setQuizAnswers2(prev => {
+        const next = [...prev];
+        next[idx] = oIdx;
+        return next;
+      });
+    }
+  };
+
+  const submitQuiz = async () => {
+    const textId = expCondition.text_order[expStep === 'quiz_1' ? 0 : 1];
+    const mcqs = expTexts[textId].mcqs;
+    const answers = expStep === 'quiz_1' ? quizAnswers1 : quizAnswers2;
+    
+    const results = mcqs.map((q, idx) => ({
+      question_id: q.id,
+      selected: answers[idx] !== undefined ? q.options[answers[idx]] : "",
+      correct: answers[idx] === q.correct
+    }));
+
+    if (expStep === 'quiz_1') {
+      setQuiz1Results(results);
+      await logExperimentEvent("quiz_completed", { text_id: textId, results });
+      
+      const textId2 = expCondition.text_order[1];
+      const textData2 = expTexts[textId2];
+      setExpStep('reading_2');
+      await loadExperimentText(textId2, textData2.text, expCondition.cefr_level);
+    } else {
+      setQuiz2Results(results);
+      await logExperimentEvent("quiz_completed", { text_id: textId, results });
+      setExpStep('survey_sus');
+    }
+  };
+
+  const submitExperiment = async () => {
+    setIsSubmitting(true);
+    const payload = {
+      prolific_pid: prolificId,
+      lextale_score: lextaleScore,
+      cefr_level: expCondition.cefr_level,
+      text_format: expCondition.text_format,
+      sequence: expCondition.sequence,
+      text_pair: expCondition.text_pair,
+      readings: [
+        {
+          text_id: expCondition.text_order[0],
+          condition: expCondition.sequence === 'A' ? 'plain' : 'wordahead',
+          reading_time_ms: readingTime1,
+          hover_events: hoverEvents1,
+          comprehension: quiz1Results
+        },
+        {
+          text_id: expCondition.text_order[1],
+          condition: expCondition.sequence === 'A' ? 'wordahead' : 'plain',
+          reading_time_ms: readingTime2,
+          hover_events: hoverEvents2,
+          comprehension: quiz2Results
+        }
+      ],
+      surveys: {
+        sus: surveySUS,
+        nasa_tlx: surveyNASA,
+        wa_specific: surveyWA,
+        demographics: surveyDemographics
+      }
+    };
+
+    try {
+      const res = await axios.post(`${API_URL}/api/experiment/submit`, payload);
+      setSubmitResult(res.data);
+      setExpStep('completed');
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to submit experiment data to server.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const currentReadingCondition = expCondition
+    ? (expStep === 'reading_1'
+        ? (expCondition.sequence === 'A' ? 'plain' : 'wordahead')
+        : (expCondition.sequence === 'A' ? 'wordahead' : 'plain'))
+    : '';
+
+  const currentTextId = expCondition
+    ? (expStep === 'reading_1' || expStep === 'quiz_1'
+        ? expCondition.text_order[0]
+        : expCondition.text_order[1])
+    : '';
+
+  const currentTextData = expTexts && currentTextId ? expTexts[currentTextId] : null;
+  const currentQuizAnswers = expStep === 'quiz_1' ? quizAnswers1 : quizAnswers2;
+
+  // --- Render Experiment Steps ---
+  const renderExperimentFlow = () => {
+    switch (expStep) {
+      case 'consent':
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Research Consent Form</h2>
+            <p>Welcome to the WordAhead Academic Reading Experiment!</p>
+            <p>This study evaluates the effectiveness of an adaptive, structure-aware reading assistant designed to help English language learners read authentic academic texts. By participating, you will complete a short English vocabulary test, read two academic texts, and answer a few questions about your reading experience.</p>
+            <p>All data collected will be completely anonymous and used solely for academic research. You may withdraw at any time.</p>
+            <div style={{ margin: '2rem 0' }}>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Prolific Participant ID</label>
+              <input
+                type="text"
+                className="input"
+                value={prolificId}
+                onChange={(e) => setProlificId(e.target.value)}
+                placeholder="Enter your Prolific ID"
+                disabled={!!new URLSearchParams(window.location.search).get('PROLIFIC_PID')}
+                style={{ fontSize: '1.1rem' }}
+              />
+            </div>
+            <button
+              className="btn"
+              disabled={!prolificId.trim()}
+              onClick={() => {
+                logExperimentEvent("consent_given", { timestamp: Date.now() });
+                setExpStep('lextale');
+              }}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+            >
+              I Consent & Agree to Participate
+            </button>
+          </div>
+        );
+
+      case 'lextale':
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+              <span style={{ fontWeight: 'bold' }}>English Vocabulary Test (LexTALE)</span>
+              <span>{lextaleCurrentIdx + 1} of {LEXTALE_ITEMS.length}</span>
+            </div>
+            
+            {lextaleCurrentIdx === 0 && (
+              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'left', fontSize: '0.9rem', lineHeight: '1.5', borderLeft: '3px solid var(--accent)' }}>
+                <strong>Instructions:</strong> This test consists of 63 items. The first 3 items are practice. For each item, decide if it is a real English word. If it is a real English word (even if you are not 100% sure of its meaning), click <strong>YES</strong>. If it is not a real English word, click <strong>NO</strong>. Please respond as accurately as possible.
+              </div>
+            )}
+            
+            <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '2rem 0' }}>
+              <span style={{ fontSize: '3rem', fontWeight: 'bold', letterSpacing: '0.05em', color: 'var(--text-primary)' }}>
+                {LEXTALE_ITEMS[lextaleCurrentIdx].word}
+              </span>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', margin: '2rem 0' }}>
+              <button
+                className="btn"
+                style={{ background: '#22c55e', padding: '1.25rem', fontSize: '1.2rem' }}
+                onClick={() => handleLexTaleAnswer(1)}
+              >
+                YES (Real Word)
+              </button>
+              <button
+                className="btn"
+                style={{ background: '#ef4444', padding: '1.25rem', fontSize: '1.2rem' }}
+                onClick={() => handleLexTaleAnswer(0)}
+              >
+                NO (Not a Word)
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'assigned':
+        if (expCondition?.cefr_level === 'exclude') {
+          return (
+            <div className="glass" style={{ maxWidth: '600px', margin: '4rem auto', padding: '3rem', textAlign: 'center' }}>
+              <h2 style={{ color: '#ef4444', marginTop: 0 }}>Exclusion Notice</h2>
+              <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
+                Thank you for your interest. Based on your vocabulary screening test score of <strong>{lextaleScore.toFixed(1)}%</strong>, you do not meet the eligibility criteria for this study.
+              </p>
+              <button
+                className="btn"
+                onClick={() => window.location.href = `https://app.prolific.co/submissions/complete?cc=not_eligible`}
+                style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
+              >
+                Return to Prolific
+              </button>
+            </div>
+          );
+        }
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Screening Complete!</h2>
+            <p>Your screening score is <strong>{lextaleScore.toFixed(1)}%</strong>, which assigns you to <strong>Pool: {expCondition?.cefr_level}</strong>.</p>
+            <p>In the next phase, you will read two English academic texts. Depending on the counterbalancing sequence, one text will be read in plain format, and the other will include WordAhead highlights and hover translations.</p>
+            <p>After each text, you will answer 5 multiple-choice questions about the content. Please read at your normal pace.</p>
+            <button
+              className="btn"
+              onClick={startReadingSessions}
+              style={{ width: '100%', marginTop: '2rem', padding: '1rem', fontSize: '1.1rem' }}
+            >
+              Start Reading Phase
+            </button>
+          </div>
+        );
+
+      case 'reading_1':
+      case 'reading_2':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1000px', margin: '0 auto', textAlign: 'left' }}>
+            <div className="glass" style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, color: 'var(--accent)' }}>Reading Session - Text {expStep === 'reading_1' ? '1' : '2'} of 2</h3>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Format: {expCondition.text_format === 'TF' ? 'Full Text' : 'Skimmed Text'} | Mode: {currentReadingCondition === 'plain' ? 'Plain Reading' : 'WordAhead Assistance'}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Text Size:</span>
+                <input
+                  type="range" min="0.9" max="1.6" step="0.1"
+                  value={fontSize}
+                  onChange={(e) => setFontSize(parseFloat(e.target.value))}
+                  style={{ width: '80px', accentColor: 'var(--accent)' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: currentReadingCondition === 'wordahead' ? '1fr 320px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+              <div className="glass content-panel" style={{ padding: '2.5rem', background: 'white' }}>
+                <h2 style={{ marginTop: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                  {currentTextData?.title}
+                </h2>
+                {loading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+                    <Loader2 className="loader" style={{ width: '48px', height: '48px' }} />
+                  </div>
+                ) : (
+                  <div style={{ lineHeight: '2.0', fontSize: `${fontSize}rem`, margin: '2rem 0' }}>
+                    {tokens.map((t, i) => {
+                      if (t.text === '\n') return <br key={i} />;
+                      
+                      let className = "word";
+                      if (currentReadingCondition === 'plain') {
+                        className += " word-experiment";
+                      } else {
+                        if (t.isDifficult) {
+                          if (t.importance > 2) className += " word-difficult-important";
+                          else className += " word-difficult";
+                        } else if (t.importance >= 3) {
+                          className += " word-important";
+                        } else {
+                          if (t.importance === 2) className += " word-fade-2";
+                          else if (t.importance === 1) className += " word-fade-1";
+                          else className += " word-low";
+                        }
+                      }
+                      
+                      if (expCondition.text_format === 'TS' && t.importance < 3) {
+                        return null;
+                      }
+                      
+                      return (
+                        <span
+                          key={i}
+                          className={className}
+                          onClick={() => handleWordClick(t)}
+                          onMouseEnter={(e) => handleWordMouseEnter(e, t)}
+                          onMouseLeave={() => handleWordMouseLeave(t)}
+                          style={{ cursor: currentReadingCondition === 'wordahead' ? 'pointer' : 'default' }}
+                        >
+                          {t.text}{" "}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                <button
+                  className="btn"
+                  onClick={finishReadingSession}
+                  style={{ display: 'block', width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
+                >
+                  Continue to Comprehension Questions
+                </button>
+              </div>
+              
+              {currentReadingCondition === 'wordahead' && (
+                <div className="glass translation-panel" style={{ height: 'fit-content', background: 'white', position: 'sticky', top: '1rem' }}>
+                  <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                    Translation
+                  </h3>
+                  {!selectedWord ? (
+                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '2rem', fontSize: '0.9rem' }}>
+                      Hover over or click a highlighted word to see its translation here.
+                    </p>
+                  ) : (
+                    <div>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', color: 'var(--accent)' }}>{selectedWord.text}</h4>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                        <span style={{ background: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>CEFR: {selectedWord.cefr}</span>
+                        <span style={{ background: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Imp: {selectedWord.importance}</span>
+                      </div>
+                      {transLoading ? (
+                        <Loader2 className="loader" style={{ margin: '1rem auto', display: 'block' }} />
+                      ) : translation ? (
+                        translation.error ? (
+                          <div style={{ color: '#991b1b', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>{translation.error}</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                                {translation.translation}
+                              </div>
+                              {translation.transliteration && (
+                                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>({translation.transliteration})</span>
+                              )}
+                            </div>
+                            {translation.root && translation.root !== 'N/A' && (
+                              <div>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Root (Shoresh):</span>
+                                <div style={{ fontSize: '1.1rem', fontFamily: 'serif', fontWeight: 'bold' }}>{translation.root}</div>
+                              </div>
+                            )}
+                            {translation.example && (
+                              <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                                "{translation.example}"
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {hoverTooltip && (
+              <div style={{
+                position: 'absolute',
+                left: `${hoverTooltip.x}px`,
+                top: `${hoverTooltip.y}px`,
+                background: '#1e293b',
+                color: '#ffffff',
+                padding: '0.4rem 0.8rem',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                zIndex: 1000,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
+                transform: 'translate(-50%, -100%)',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+                direction: 'rtl',
+                fontFamily: 'sans-serif'
+              }}>
+                <div style={{ fontWeight: 'bold' }}>{hoverTooltip.translation}</div>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'quiz_1':
+      case 'quiz_2':
+        return (
+          <div className="glass" style={{ maxWidth: '700px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Comprehension Questions</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please answer the following 5 questions about the text you just read.</p>
+            
+            {currentTextData?.mcqs.map((q, idx) => {
+              const selectedOption = currentQuizAnswers[idx];
+              return (
+                <div key={q.id} style={{ marginBottom: '2rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1.5rem' }}>
+                  <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', lineHeight: '1.5' }}>
+                    {idx + 1}. {q.question}
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {q.options.map((opt, oIdx) => (
+                      <label
+                        key={oIdx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          border: selectedOption === oIdx ? '2px solid var(--accent)' : '1px solid #e2e8f0',
+                          background: selectedOption === oIdx ? 'rgba(124,58,237,0.05)' : 'white',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name={`question_${q.id}`}
+                          checked={selectedOption === oIdx}
+                          onChange={() => handleQuizSelect(idx, oIdx)}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            
+            <button
+              className="btn"
+              disabled={currentQuizAnswers.length < 5 || currentQuizAnswers.includes(undefined)}
+              onClick={submitQuiz}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
+            >
+              Submit Answers & Continue
+            </button>
+          </div>
+        );
+
+      case 'survey_sus':
+        return (
+          <div className="glass" style={{ maxWidth: '800px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>System Usability Scale (SUS)</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please rate your agreement with the following statements regarding the WordAhead reading assistant.</p>
+            
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ padding: '0.75rem 0', textAlign: 'left' }}>Statement</th>
+                  {["1\n(Strongly Disagree)", "2", "3", "4", "5\n(Strongly Agree)"].map((val, i) => (
+                    <th key={i} style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>{val}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {SUS_QUESTIONS.map((q, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '1rem 0.5rem 1rem 0', maxWidth: '350px', fontSize: '0.95rem' }}>
+                      {idx + 1}. {q}
+                    </td>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <td key={val} style={{ textAlign: 'center', padding: '1rem 0' }}>
+                        <input
+                          type="radio"
+                          name={`sus_${idx}`}
+                          checked={surveySUS[idx] === val}
+                          onChange={() => setSurveySUS(prev => ({ ...prev, [idx]: val }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)', width: '18px', height: '18px' }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <button
+              className="btn"
+              disabled={Object.keys(surveySUS).length < 10}
+              onClick={() => {
+                logExperimentEvent("survey_sus_completed", surveySUS);
+                setExpStep('survey_nasa');
+              }}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
+            >
+              Continue
+            </button>
+          </div>
+        );
+
+      case 'survey_nasa':
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Reading Task Workload (NASA-TLX)</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please rate the mental workload you experienced during the reading tasks.</p>
+            
+            {NASA_TLX_QUESTIONS.map((q) => (
+              <div key={q.key} style={{ marginBottom: '2rem' }}>
+                <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem' }}>{q.label}</h4>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{q.description}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Low</span>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name={`nasa_${q.key}`}
+                          checked={surveyNASA[q.key] === val}
+                          onChange={() => setSurveyNASA(prev => ({ ...prev, [q.key]: val }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>High</span>
+                </div>
+              </div>
+            ))}
+            
+            <button
+              className="btn"
+              disabled={Object.keys(surveyNASA).length < 4}
+              onClick={() => {
+                logExperimentEvent("survey_nasa_completed", surveyNASA);
+                setExpStep('survey_wa');
+              }}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
+            >
+              Continue
+            </button>
+          </div>
+        );
+
+      case 'survey_wa':
+        return (
+          <div className="glass" style={{ maxWidth: '800px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>WordAhead Experience Survey</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please rate your agreement with the following statements regarding the dynamic scaffolding and tools in WordAhead.</p>
+            
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ padding: '0.75rem 0', textAlign: 'left' }}>Statement</th>
+                  {["1\n(Strongly Disagree)", "2", "3", "4", "5\n(Strongly Agree)"].map((val, i) => (
+                    <th key={i} style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>{val}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {WA_SPECIFIC_QUESTIONS.map((q, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '1rem 0.5rem 1rem 0', maxWidth: '350px', fontSize: '0.95rem' }}>
+                      {q.label}
+                    </td>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <td key={val} style={{ textAlign: 'center', padding: '1rem 0' }}>
+                        <input
+                          type="radio"
+                          name={`wa_${q.key}`}
+                          checked={surveyWA[q.key] === val}
+                          onChange={() => setSurveyWA(prev => ({ ...prev, [q.key]: val }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)', width: '18px', height: '18px' }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <button
+              className="btn"
+              disabled={Object.keys(surveyWA).length < 6}
+              onClick={() => {
+                logExperimentEvent("survey_wa_completed", surveyWA);
+                setExpStep('survey_demographics');
+              }}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
+            >
+              Continue to Demographics
+            </button>
+          </div>
+        );
+
+      case 'survey_demographics':
+        return (
+          <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Demographics Form</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please fill out the final background information questions.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Age Range</label>
+                <select
+                  className="input"
+                  value={surveyDemographics.age}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, age: e.target.value }))}
+                >
+                  <option value="">Select Age Range</option>
+                  <option value="under_18">Under 18</option>
+                  <option value="18_24">18-24</option>
+                  <option value="25_34">25-34</option>
+                  <option value="35_44">35-44</option>
+                  <option value="45_54">45-54</option>
+                  <option value="55_plus">55+</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Gender (Optional)</label>
+                <select
+                  className="input"
+                  value={surveyDemographics.gender}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, gender: e.target.value }))}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="non_binary">Non-binary</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Native Language</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={surveyDemographics.native_language}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, native_language: e.target.value }))}
+                  placeholder="e.g. Hebrew, Arabic, Russian"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Other Languages</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={surveyDemographics.other_languages}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, other_languages: e.target.value }))}
+                  placeholder="e.g. English, French, Spanish"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Years Studying English</label>
+                <input
+                  type="number"
+                  className="input"
+                  value={surveyDemographics.years_studying_english}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, years_studying_english: e.target.value }))}
+                  placeholder="e.g. 8"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Course Level</label>
+                <select
+                  className="input"
+                  value={surveyDemographics.course_level}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, course_level: e.target.value }))}
+                >
+                  <option value="">Select Course Level</option>
+                  <option value="undergrad">Undergraduate</option>
+                  <option value="grad">Graduate</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Academic Year</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={surveyDemographics.academic_year}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, academic_year: e.target.value }))}
+                  placeholder="e.g. 1st Year, 2nd Year, etc."
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Field of Study</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={surveyDemographics.field_of_study}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, field_of_study: e.target.value }))}
+                  placeholder="e.g. Computer Science, Medicine"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Self-Rated English Level</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Beginner (1)</span>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="demographics_level"
+                          checked={surveyDemographics.self_rated_english === String(val)}
+                          onChange={() => setSurveyDemographics(prev => ({ ...prev, self_rated_english: String(val) }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fluent (5)</span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Prior Topic Exposure</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>None (1)</span>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="demographics_exposure"
+                          checked={surveyDemographics.prior_topic_exposure === String(val)}
+                          onChange={() => setSurveyDemographics(prev => ({ ...prev, prior_topic_exposure: String(val) }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>High (5)</span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Frequency of Academic Reading in English</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rarely (1)</span>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="demographics_freq"
+                          checked={surveyDemographics.frequency_academic_english === String(val)}
+                          onChange={() => setSurveyDemographics(prev => ({ ...prev, frequency_academic_english: String(val) }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Daily (5)</span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Frequency of Translation Tool Usage</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rarely (1)</span>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="demographics_translation"
+                          checked={surveyDemographics.use_translation_tools === String(val)}
+                          onChange={() => setSurveyDemographics(prev => ({ ...prev, use_translation_tools: String(val) }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Always (5)</span>
+                </div>
+              </div>
+            </div>
+            
+            <button
+              className="btn"
+              disabled={
+                isSubmitting ||
+                !surveyDemographics.age ||
+                !surveyDemographics.native_language.trim() ||
+                !surveyDemographics.years_studying_english.trim() ||
+                !surveyDemographics.course_level ||
+                !surveyDemographics.academic_year.trim() ||
+                !surveyDemographics.field_of_study.trim()
+              }
+              onClick={submitExperiment}
+              style={{ width: '100%', padding: '1.2rem', fontSize: '1.2rem', marginTop: '3rem', background: 'var(--accent)' }}
+            >
+              {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & Submit Results'}
+            </button>
+          </div>
+        );
+
+      case 'completed':
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '4rem auto', padding: '3.5rem', textAlign: 'center' }}>
+            <h2 style={{ color: '#22c55e', marginTop: 0 }}>Experiment Completed Successfully!</h2>
+            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
+              Thank you very much for your time and contribution to our research study. Your responses have been saved and synchronized with Qualtrics.
+            </p>
+            {submitResult?.qualtrics_sync?.success ? (
+              <p style={{ color: '#166534', background: '#f0fdf4', padding: '0.75rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                ✓ Server sync status: Data uploaded successfully.
+              </p>
+            ) : (
+              <p style={{ color: '#854d0e', background: '#fefce8', padding: '0.75rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                ℹ Server sync status: Logged locally. (Dry-run mode / API offline)
+              </p>
+            )}
+            <button
+              className="btn"
+              onClick={() => window.location.href = `https://app.prolific.co/submissions/complete?cc=XXXXXXXX`}
+              style={{ padding: '1rem 2.5rem', fontSize: '1.1rem', background: 'var(--accent)' }}
+            >
+              Redirect to Prolific to Complete
+            </button>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  if (inExperiment && expStep) {
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
+        {notification && (
+          <div style={{
+            position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+            background: '#1e293b', color: 'white', padding: '0.75rem 1.5rem',
+            borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          }}>
+            {notification}
+          </div>
+        )}
+        {renderExperimentFlow()}
+        {(expStep === 'consent' || expStep === 'lextale') && (
+          <button
+            onClick={() => {
+              setInExperiment(false);
+              setExperimentMode(false);
+              setExpStep('');
+            }}
+            style={{
+              position: 'fixed',
+              bottom: '1.5rem',
+              right: '1.5rem',
+              background: 'rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: 'var(--text-secondary)',
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              zIndex: 1000,
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+              e.target.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.08)';
+              e.target.style.color = 'var(--text-secondary)';
+            }}
+          >
+            Skip test →
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // --- Normal App Rendering (Fallback) ---
   return (
     <div className="app-container">
       <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
@@ -485,7 +1711,16 @@ function App() {
               <input
                 type="checkbox"
                 checked={experimentMode}
-                onChange={(e) => setExperimentMode(e.target.checked)}
+                onChange={(e) => {
+                  setExperimentMode(e.target.checked);
+                  if (e.target.checked) {
+                    setInExperiment(true);
+                    setExpStep('consent');
+                  } else {
+                    setInExperiment(false);
+                    setExpStep('');
+                  }
+                }}
                 style={{
                   cursor: 'pointer',
                   accentColor: 'var(--accent)',
@@ -663,28 +1898,23 @@ function App() {
                 if (t.text === '\n') return <br key={i} />;
 
                 let className = "word";
+                const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
 
-                if (experimentMode) {
-                  className += " word-experiment";
-                } else {
-                  const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
-
-                  if (t.isDifficult && !isLearned) {
-                    // DIFFICULT WORDS (Purple)
-                    if (t.importance > 2) {
-                      className += " word-difficult-important";
-                    } else {
-                      className += " word-difficult";
-                    }
-                  } else if (t.importance >= 3) {
-                    // IMPORTANT WORDS (Bold Black) - Easy but Critical
-                    className += " word-important";
+                if (t.isDifficult && !isLearned) {
+                  // DIFFICULT WORDS (Purple)
+                  if (t.importance > 2) {
+                    className += " word-difficult-important";
                   } else {
-                    // NOT IMPORTANT (Greys) - Easy and less critical
-                    if (t.importance === 2) className += " word-fade-2";
-                    else if (t.importance === 1) className += " word-fade-1";
-                    else className += " word-low"; // importance 0
+                    className += " word-difficult";
                   }
+                } else if (t.importance >= 3) {
+                  // IMPORTANT WORDS (Bold Black) - Easy but Critical
+                  className += " word-important";
+                } else {
+                  // NOT IMPORTANT (Greys) - Easy and less critical
+                  if (t.importance === 2) className += " word-fade-2";
+                  else if (t.importance === 1) className += " word-fade-1";
+                  else className += " word-low"; // importance 0
                 }
 
                 // Filter tokens by skimming level
@@ -759,18 +1989,6 @@ function App() {
                         {translation.part_of_speech}
                       </span>
                     )}
-                    {/*
-                    // Temporarily hiding "Confidence" badge
-                    translation.confidence && (
-                      <span style={{
-                        background: translation.confidence === 'High' ? '#f0fdf4' : translation.confidence === 'Low' ? '#fef2f2' : '#fefce8',
-                        color: translation.confidence === 'High' ? '#166534' : translation.confidence === 'Low' ? '#991b1b' : '#854d0e',
-                        padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem'
-                      }}>
-                        Confidence: {translation.confidence}
-                      </span>
-                    )
-                    */}
                   </div>
                 )}
 
@@ -832,22 +2050,6 @@ function App() {
                               {translation.root_meaning}
                             </div>
                           )}
-                          {/* 
-                          // Temporarily hiding root source indicators ("AI estimate" and "Verified")
-                          translation.root_source && (
-                            <span style={{
-                              fontSize: '0.7rem',
-                              background: translation.root_source === 'Wiktionary' ? '#f0fdf4' : '#fefce8',
-                              color: translation.root_source === 'Wiktionary' ? '#166534' : '#854d0e',
-                              padding: '0.1rem 0.4rem',
-                              borderRadius: '4px',
-                              marginTop: '0.3rem',
-                              display: 'inline-block'
-                            }}>
-                              {translation.root_source === 'Wiktionary' ? '✓ Verified' : 'AI estimate'}
-                            </span>
-                          )
-                          */}
                         </div>
                       )}
 

@@ -40,6 +40,27 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS experiment_participants (
+            prolific_pid TEXT PRIMARY KEY,
+            lextale_score REAL NOT NULL,
+            cefr_level TEXT NOT NULL,
+            text_format TEXT NOT NULL,
+            sequence TEXT NOT NULL,
+            text_pair TEXT NOT NULL,
+            text_order TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS experiment_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prolific_pid TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
 
     # Try adding the skimmed_words column if it doesn't exist (for existing DBs)

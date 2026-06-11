@@ -8,3 +8,4 @@ wordfreq
 numpy
 gunicorn
 httpx
+python-dotenv
