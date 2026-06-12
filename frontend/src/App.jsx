@@ -1625,7 +1625,60 @@ function App() {
 
   if (inExperiment && expStep) {
     return (
-      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', justifyContent: 'center' }}>
+      <div className="app-container">
+        {/* Sticky Header inside Experiment Flow */}
+        <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
+          <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
+          <header className="glass header-container">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '50px', width: '100px', objectFit: 'contain', borderRadius: '8px' }} />
+              </div>
+              <div>
+                <h1 style={{ margin: 0, fontSize: '1.5rem' }}>WordAhead</h1>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Adaptive Reading Assistant</p>
+              </div>
+            </div>
+
+            <div className="header-controls">
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                cursor: 'pointer',
+                background: 'rgba(124, 58, 237, 0.15)',
+                padding: '0.55rem 0.9rem',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                border: '1px solid var(--accent)',
+                color: 'var(--text-primary)',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 0 12px rgba(124, 58, 237, 0.15)'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={experimentMode}
+                  onChange={(e) => {
+                    setExperimentMode(e.target.checked);
+                    if (!e.target.checked) {
+                      setInExperiment(false);
+                      setExpStep('');
+                    }
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    accentColor: 'var(--accent)',
+                    width: '15px',
+                    height: '15px'
+                  }}
+                />
+                <span>Experiment Mode</span>
+              </label>
+            </div>
+          </header>
+        </div>
+
         {notification && (
           <div style={{
             position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
@@ -1635,7 +1688,11 @@ function App() {
             {notification}
           </div>
         )}
-        {renderExperimentFlow()}
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, width: '100%' }}>
+          {renderExperimentFlow()}
+        </div>
+
         {(expStep === 'consent' || expStep === 'lextale') && (
           <button
             onClick={() => {

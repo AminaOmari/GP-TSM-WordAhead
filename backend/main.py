@@ -749,7 +749,8 @@ async def experiment_assign(req: AssignRequest):
     # Resolve the index suffix
     suffix = "1" if text_pair == "pair_1" else "2" if text_pair == "pair_2" else "3" if text_pair == "pair_3" else "4"
     
-    if sequence == "A":
+    # Decouple text presentation order from Sequence to fully counterbalance order/text effects
+    if random.choice([True, False]):
         text_order = [f"textA{suffix}", f"textB{suffix}"]
     else:
         text_order = [f"textB{suffix}", f"textA{suffix}"]
