@@ -12,6 +12,7 @@ from openai import OpenAI
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import uvicorn
 
 # Add GP-TSM and Qualtrics Sync to path
 # We use absolute path to be sure
@@ -1039,7 +1040,6 @@ async def serve_spa(full_path: str):
     }
 
 if __name__ == "__main__":
-    import uvicorn
     port = int(os.environ.get("PORT", 5000))
     print(f"Starting server on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port)
