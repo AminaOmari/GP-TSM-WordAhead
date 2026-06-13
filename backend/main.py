@@ -712,7 +712,7 @@ async def experiment_assign(req: AssignRequest):
     
     # 2. Determine CEFR level based on approved thresholds
     score = req.lextale_score
-    if score < 55:
+    if score < 55 or score >= 80:
         cefr_level = "exclude"
     elif score < 60:
         cefr_level = "B1"
