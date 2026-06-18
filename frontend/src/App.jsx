@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { t } from './i18n';
 import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle, History, Clock, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -239,34 +240,225 @@ const LEXTALE_ITEMS = [
   { word: "wrought", correct: 1 }
 ];
 
-const SUS_QUESTIONS = [
-  "I think that I would like to use this system frequently.",
-  "I found the system unnecessarily complex.",
-  "I thought the system was easy to use.",
-  "I think that I would need the support of a technical person to be able to use this system.",
-  "I found the various functions in this system were well integrated.",
-  "I thought there was too much inconsistency in this system.",
-  "I would imagine that most people would learn to use this system very quickly.",
-  "I found the system very cumbersome to use.",
-  "I felt very confident using the system.",
-  "I needed to learn a lot of things before I could get going with this system."
-];
+const PER_TASK_QUESTIONS = {
+  blockA: [
+    { id: "pt_a1", label: t('survey.blocks.a1', "How would you rate your overall experience reading this text?"), leftAnchor: t('survey.anchors.very_poor'), rightAnchor: t('survey.anchors.very_good') },
+    { id: "pt_a2", label: t('survey.blocks.a2', "How mentally demanding was the task?"), leftAnchor: t('survey.anchors.very_low'), rightAnchor: t('survey.anchors.very_high'), lowerIsBetter: true },
+    { id: "pt_a3", label: t('survey.blocks.a3', "How physically demanding was the task?"), leftAnchor: t('survey.anchors.very_low'), rightAnchor: t('survey.anchors.very_high'), lowerIsBetter: true },
+    { id: "pt_a4", label: t('survey.blocks.a4', "How hurried or rushed was the pace of the task?"), leftAnchor: t('survey.anchors.very_low'), rightAnchor: t('survey.anchors.very_high'), lowerIsBetter: true },
+    { id: "pt_a5", label: t('survey.blocks.a5', "How successful do you think you were in accomplishing the task?"), leftAnchor: t('survey.anchors.not_successful'), rightAnchor: t('survey.anchors.very_successful') },
+    { id: "pt_a6", label: t('survey.blocks.a6', "How hard did you have to work to accomplish your performance?"), leftAnchor: t('survey.anchors.very_low'), rightAnchor: t('survey.anchors.very_high'), lowerIsBetter: true },
+    { id: "pt_a7", label: t('survey.blocks.a7', "How insecure, discouraged, irritated, stressed, or annoyed were you during the task?"), leftAnchor: t('survey.anchors.very_low'), rightAnchor: t('survey.anchors.very_high'), lowerIsBetter: true },
+    { id: "pt_a8", label: t('survey.blocks.a8', "I could recognize the key points in the passage."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_a9", label: t('survey.blocks.a9', "I could recognize how the key points are supported by additional detail in the passage."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') }
+  ],
+  blockB: [
+    { id: "pt_b10", label: t('survey.blocks.b10', "The system's choice of what to gray out and what to keep at full weight made sense to me."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b11", label: t('survey.blocks.b11', "I think I know why certain words were lighter than others."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b12", label: t('survey.blocks.b12', "I found it helpful that certain words were lighter than others."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b13", label: t('survey.blocks.b13', "The different levels of gray helped me see the relationships between parts of sentences."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b14", label: t('survey.blocks.b14', "I understood why some words were highlighted."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b15", label: t('survey.blocks.b15', "The translations helped without interrupting my reading."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b16", label: t('survey.blocks.b16', "The highlighted words matched the words I found difficult."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b17", label: t('survey.blocks.b17', "I would use this system when reading academic English."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b18", label: t('survey.blocks.b18', "The system made me too dependent on translation."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree'), lowerIsBetter: true }
+  ],
+  blockC: [
+    { id: "pt_c19", label: t('survey.blocks.c19', "The shortened (skimmed) version preserved enough of the meaning."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') }
+  ]
+};
 
-const NASA_TLX_QUESTIONS = [
-  { key: "mental_demand", label: "Mental Demand", description: "How mentally demanding was the reading task?" },
-  { key: "hurriedness", label: "Hurriedness", description: "How hurried or rushed was the pace of the reading?" },
-  { key: "success", label: "Success", description: "How successful do you think you were in understanding the texts?" },
-  { key: "frustration", label: "Frustration", description: "How discouraged, irritated, or stressed did you feel?" }
-];
+const LikertScale = ({ id, label, value, onChange, leftAnchor, rightAnchor }) => {
+  return (
+    <div style={{ marginBottom: '2rem' }}>
+      <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', lineHeight: '1.5' }}>{label}</h4>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '80px', textAlign: 'right' }}>{leftAnchor}</span>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {[1, 2, 3, 4, 5, 6, 7].map((val) => (
+            <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name={id}
+                checked={value === val}
+                onChange={() => onChange(val)}
+                style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+              />
+              <span style={{ fontSize: '0.85rem' }}>{val}</span>
+            </label>
+          ))}
+        </div>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '80px', textAlign: 'left' }}>{rightAnchor}</span>
+      </div>
+    </div>
+  );
+};
 
-const WA_SPECIFIC_QUESTIONS = [
-  { key: "q1", label: "I understood why some words were highlighted." },
-  { key: "q2", label: "The translations helped without interrupting reading." },
-  { key: "q3", label: "The highlighted words matched words I found difficult." },
-  { key: "q4", label: "I would use this system when reading academic English." },
-  { key: "q5", label: "The skimmed version preserved enough meaning." },
-  { key: "q6", label: "The system made me too dependent on translation." }
-];
+const PerTaskSurvey = ({ condition, textFormat, isFirstTask, onSubmit }) => {
+  const [responses, setResponses] = useState({});
+
+  const showBlockB = condition === 'wordahead';
+  const showBlockC = textFormat === 'TS';
+
+  const questions = [
+    ...PER_TASK_QUESTIONS.blockA,
+    ...(showBlockB ? PER_TASK_QUESTIONS.blockB : []),
+    ...(showBlockC ? PER_TASK_QUESTIONS.blockC : [])
+  ];
+
+  const attentionCheck = isFirstTask ? {
+    id: "ac_mid",
+    label: t('survey.attention.check1'),
+    leftAnchor: t('survey.anchors.strongly_disagree'),
+    rightAnchor: t('survey.anchors.strongly_agree'),
+    isAttentionCheck: true
+  } : {
+    id: "ac_late",
+    label: t('survey.attention.check3'),
+    leftAnchor: t('survey.freq_anchors.never'),
+    rightAnchor: t('survey.freq_anchors.always'),
+    isAttentionCheck: true
+  };
+
+  const allQuestions = [...questions, attentionCheck];
+
+  const allAnswered = allQuestions.every(q => responses[q.id] !== undefined);
+
+  return (
+    <div className="glass" style={{ maxWidth: '800px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+      <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('survey.per_task_title')}</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{t('survey.per_task_desc')}</p>
+      
+      {questions.map(q => (
+        <LikertScale
+          key={q.id}
+          id={q.id}
+          label={q.label}
+          value={responses[q.id]}
+          onChange={(val) => setResponses(prev => ({ ...prev, [q.id]: val }))}
+          leftAnchor={q.leftAnchor}
+          rightAnchor={q.rightAnchor}
+        />
+      ))}
+      <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px dashed var(--border-color)' }}>
+        <LikertScale
+          id={attentionCheck.id}
+          label={attentionCheck.label}
+          value={responses[attentionCheck.id]}
+          onChange={(val) => setResponses(prev => ({ ...prev, [attentionCheck.id]: val }))}
+          leftAnchor={attentionCheck.leftAnchor}
+          rightAnchor={attentionCheck.rightAnchor}
+        />
+      </div>
+      
+      <button
+        className="btn"
+        disabled={!allAnswered}
+        onClick={() => onSubmit(responses)}
+        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
+      >
+        {t('survey.submit')}
+      </button>
+    </div>
+  );
+};
+
+const PostStudySurvey = ({ conditionsSeen, onSubmit }) => {
+  const [responses, setResponses] = useState({});
+  const [ranking, setRanking] = useState('');
+  const [openText1, setOpenText1] = useState('');
+  const [openText2, setOpenText2] = useState('');
+
+  const likertQuestions = [];
+  conditionsSeen.forEach((cond) => {
+    likertQuestions.push({
+      id: `ps_use_${cond.condition}`,
+      label: t('survey.post.use_system').replace('[XXX]', cond.label),
+      leftAnchor: t('survey.anchors.strongly_disagree'),
+      rightAnchor: t('survey.anchors.strongly_agree')
+    });
+  });
+
+  const allLikertAnswered = likertQuestions.every(q => responses[q.id] !== undefined);
+  const isValid = allLikertAnswered && ranking !== '';
+
+  const handleSubmit = () => {
+    onSubmit({
+      responses,
+      open_text_responses: {
+        "ps_open1": openText1,
+        "ps_open2": openText2
+      },
+      ranking: {
+        "most_helpful": ranking
+      }
+    });
+  };
+
+  return (
+    <div className="glass" style={{ maxWidth: '800px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+      <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('survey.post_study_title')}</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{t('survey.post_study_desc')}</p>
+      
+      <div style={{ marginBottom: '2.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+        <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', lineHeight: '1.5' }}>{t('survey.post.ranking')}</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
+            <input type="radio" name="ranking" checked={ranking === 'first'} onChange={() => setRanking('first')} style={{ accentColor: 'var(--accent)' }} />
+            <span>{t('survey.options.first_passage')}</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
+            <input type="radio" name="ranking" checked={ranking === 'second'} onChange={() => setRanking('second')} style={{ accentColor: 'var(--accent)' }} />
+            <span>{t('survey.options.second_passage')}</span>
+          </label>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', lineHeight: '1.5' }}>{t('survey.post.like_most', 'What did you like most about the version you found most helpful?')}</h4>
+        <textarea
+          className="input"
+          value={openText1}
+          onChange={(e) => setOpenText1(e.target.value)}
+          rows="3"
+          style={{ width: '100%', resize: 'vertical' }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', lineHeight: '1.5' }}>{t('survey.post.missing_features', 'Were there any features missing that you\'d like to see?')}</h4>
+        <textarea
+          className="input"
+          value={openText2}
+          onChange={(e) => setOpenText2(e.target.value)}
+          rows="3"
+          style={{ width: '100%', resize: 'vertical' }}
+        />
+      </div>
+
+      {likertQuestions.map(q => (
+        <LikertScale
+          key={q.id}
+          id={q.id}
+          label={q.label}
+          value={responses[q.id]}
+          onChange={(val) => setResponses(prev => ({ ...prev, [q.id]: val }))}
+          leftAnchor={q.leftAnchor}
+          rightAnchor={q.rightAnchor}
+        />
+      ))}
+      
+      <button
+        className="btn"
+        disabled={!isValid}
+        onClick={handleSubmit}
+        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
+      >
+        Submit Feedback & Continue
+      </button>
+    </div>
+  );
+};
 
 function App() {
   const [text, setText] = useState(''); // Start empty
@@ -304,15 +496,20 @@ function App() {
   const [hoverEvents, setHoverEvents] = useState([]);
   const [hoverEvents1, setHoverEvents1] = useState([]);
   const [hoverEvents2, setHoverEvents2] = useState([]);
+  const [clickEvents1, setClickEvents1] = useState([]);
+  const [clickEvents2, setClickEvents2] = useState([]);
+  const [clickEvents, setClickEvents] = useState([]);
+  const [priorExposure1, setPriorExposure1] = useState('4');
+  const [priorExposure2, setPriorExposure2] = useState('4');
   const [readingTime1, setReadingTime1] = useState(0);
   const [readingTime2, setReadingTime2] = useState(0);
   const [quizAnswers1, setQuizAnswers1] = useState(new Array(5).fill(undefined));
   const [quizAnswers2, setQuizAnswers2] = useState(new Array(5).fill(undefined));
   const [quiz1Results, setQuiz1Results] = useState([]);
   const [quiz2Results, setQuiz2Results] = useState([]);
-  const [surveySUS, setSurveySUS] = useState({});
-  const [surveyNASA, setSurveyNASA] = useState({});
-  const [surveyWA, setSurveyWA] = useState({});
+  const [perTaskSurvey1, setPerTaskSurvey1] = useState({});
+  const [perTaskSurvey2, setPerTaskSurvey2] = useState({});
+  const [postStudySurvey, setPostStudySurvey] = useState({ responses: {}, open_text_responses: {}, ranking: {} });
   const [surveyDemographics, setSurveyDemographics] = useState({
     age: '',
     gender: '',
@@ -320,12 +517,12 @@ function App() {
     other_languages: '',
     years_studying_english: '',
     course_level: '',
-    self_rated_english: '3',
+    self_rated_english: '5',
     academic_year: '',
     field_of_study: '',
-    prior_topic_exposure: '3',
     frequency_academic_english: '3',
-    use_translation_tools: '3'
+    use_translation_tools: '3',
+    ac_early: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
@@ -510,6 +707,13 @@ function App() {
       }
     }
 
+
+    const eventData = {
+      word: token.text,
+      timestamp: Date.now()
+    };
+    setClickEvents(prev => [...prev, eventData]);
+
     setSelectedWord(token);
     setTransLoading(true);
     setTranslation(null);
@@ -649,7 +853,7 @@ function App() {
         setExpCondition(assignRes.data);
         
         await logExperimentEvent("lextale_completed", { score: computedScore, cefr_level: assignRes.data.cefr_level });
-        setExpStep('assigned');
+        setExpStep('survey_demographics');
       } catch (err) {
         console.error(err);
         showNotification("Failed to submit vocabulary test screening.");
@@ -668,7 +872,7 @@ function App() {
       const firstTextId = res.data.assignment.text_order[0];
       const textData = res.data.texts[firstTextId];
       
-      setExpStep('reading_1');
+      setExpStep('pre_reading_1');
       await loadExperimentText(firstTextId, textData.text, res.data.assignment.cefr_level);
     } catch (err) {
       console.error(err);
@@ -717,12 +921,16 @@ function App() {
     if (expStep === 'reading_1') {
       setReadingTime1(duration);
       setHoverEvents1(hoverEvents);
+      setClickEvents1(clickEvents);
       setHoverEvents([]);
+      setClickEvents([]);
       setExpStep('quiz_1');
     } else {
       setReadingTime2(duration);
       setHoverEvents2(hoverEvents);
+      setClickEvents2(clickEvents);
       setHoverEvents([]);
+      setClickEvents([]);
       setExpStep('quiz_2');
     }
   };
@@ -837,15 +1045,78 @@ function App() {
     if (expStep === 'quiz_1') {
       setQuiz1Results(results);
       await logExperimentEvent("quiz_completed", { text_id: textId, results });
-      
-      const textId2 = expCondition.text_order[1];
-      const textData2 = expTexts[textId2];
-      setExpStep('reading_2');
-      await loadExperimentText(textId2, textData2.text, expCondition.cefr_level);
+      setExpStep('per_task_survey_1');
     } else {
       setQuiz2Results(results);
       await logExperimentEvent("quiz_completed", { text_id: textId, results });
-      setExpStep('survey_sus');
+      setExpStep('per_task_survey_2');
+    }
+  };
+
+  const submitPerTaskSurvey = async (surveyData) => {
+    const isFirst = expStep === 'per_task_survey_1';
+    const textId = expCondition.text_order[isFirst ? 0 : 1];
+    const condition = isFirst
+      ? (expCondition.sequence === 'A' ? 'plain' : 'wordahead')
+      : (expCondition.sequence === 'A' ? 'wordahead' : 'plain');
+      
+    let conditionStr = condition;
+    if (expCondition.text_format === 'TF' && condition === 'plain') conditionStr = 'TF';
+    if (expCondition.text_format === 'TF' && condition === 'wordahead') conditionStr = 'TF_WA';
+    if (expCondition.text_format === 'TS' && condition === 'plain') conditionStr = 'TS';
+    if (expCondition.text_format === 'TS' && condition === 'wordahead') conditionStr = 'TS_WA';
+
+    const payload = {
+      prolific_pid: prolificId,
+      survey_type: "per_task",
+      condition: conditionStr,
+      text_id: textId,
+      sequence_position: isFirst ? 1 : 2,
+      responses: surveyData,
+      open_text_responses: {},
+      ranking: {}
+    };
+
+    try {
+      await axios.post(`${API_URL}/api/survey`, payload);
+      await logExperimentEvent(`per_task_survey_${isFirst ? 1 : 2}_completed`, payload);
+      
+      if (isFirst) {
+        setPerTaskSurvey1(surveyData);
+        const textId2 = expCondition.text_order[1];
+        const textData2 = expTexts[textId2];
+        setExpStep('pre_reading_2');
+        await loadExperimentText(textId2, textData2.text, expCondition.cefr_level);
+      } else {
+        setPerTaskSurvey2(surveyData);
+        setExpStep('post_study_survey');
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to save survey. Please try again.");
+    }
+  };
+
+  const submitPostStudySurvey = async (surveyData) => {
+    const payload = {
+      prolific_pid: prolificId,
+      survey_type: "post_study",
+      condition: null,
+      text_id: null,
+      sequence_position: null,
+      responses: surveyData.responses,
+      open_text_responses: surveyData.open_text_responses,
+      ranking: surveyData.ranking
+    };
+
+    try {
+      await axios.post(`${API_URL}/api/survey`, payload);
+      await logExperimentEvent("post_study_survey_completed", payload);
+      setPostStudySurvey(surveyData);
+      await submitExperiment();
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to save survey. Please try again.");
     }
   };
 
@@ -864,6 +1135,12 @@ function App() {
           condition: expCondition.sequence === 'A' ? 'plain' : 'wordahead',
           reading_time_ms: readingTime1,
           hover_events: hoverEvents1,
+          click_events: clickEvents1,
+          click_count: clickEvents1.length,
+          unique_words_translated: Array.from(new Set([
+            ...hoverEvents1.filter(e => e.translation_shown).map(e => e.word.toLowerCase()),
+            ...clickEvents1.map(e => e.word.toLowerCase())
+          ])).length,
           comprehension: quiz1Results
         },
         {
@@ -871,13 +1148,19 @@ function App() {
           condition: expCondition.sequence === 'A' ? 'wordahead' : 'plain',
           reading_time_ms: readingTime2,
           hover_events: hoverEvents2,
+          click_events: clickEvents2,
+          click_count: clickEvents2.length,
+          unique_words_translated: Array.from(new Set([
+            ...hoverEvents2.filter(e => e.translation_shown).map(e => e.word.toLowerCase()),
+            ...clickEvents2.map(e => e.word.toLowerCase())
+          ])).length,
           comprehension: quiz2Results
         }
       ],
       surveys: {
-        sus: surveySUS,
-        nasa_tlx: surveyNASA,
-        wa_specific: surveyWA,
+        per_task_1: perTaskSurvey1,
+        per_task_2: perTaskSurvey2,
+        post_study: postStudySurvey,
         demographics: surveyDemographics
       }
     };
@@ -934,9 +1217,21 @@ function App() {
             <button
               className="btn"
               disabled={!prolificId.trim()}
-              onClick={() => {
-                logExperimentEvent("consent_given", { timestamp: Date.now() });
-                setExpStep('lextale');
+              onClick={async () => {
+                logExperimentEvent("consent_agreed", {});
+                try {
+                  const resp = await axios.post(`${API_URL}/api/experiment/assign`, {
+                    prolific_pid: prolificId,
+                    lextale_score: 60
+                  });
+                  setLextaleScore(60);
+                  setExpCondition(resp.data.condition);
+                  setExpTexts(resp.data.texts);
+                  setExpStep('survey_demographics');
+                } catch (err) {
+                  console.error(err);
+                  showNotification("Failed to assign experiment condition.");
+                }
               }}
               style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
             >
@@ -1018,10 +1313,52 @@ function App() {
           </div>
         );
 
+      case 'pre_reading_1':
+      case 'pre_reading_2':
+        const isFirstPre = expStep === 'pre_reading_1';
+        return (
+          <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="rtl">
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('pre_reading.title')}</h2>
+            
+            <div style={{ marginTop: '2rem' }}>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem' }}>{t('pre_reading.prior_exposure')}</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.not_familiar')}</span>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  {[1, 2, 3, 4, 5, 6, 7].map((val) => (
+                    <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name={`pre_reading_exposure_${isFirstPre ? '1' : '2'}`}
+                        checked={(isFirstPre ? priorExposure1 : priorExposure2) === String(val)}
+                        onChange={() => isFirstPre ? setPriorExposure1(String(val)) : setPriorExposure2(String(val))}
+                        style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                      />
+                      <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                    </label>
+                  ))}
+                </div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.very_familiar')}</span>
+              </div>
+            </div>
+            
+            <button
+              className="btn"
+              onClick={() => {
+                 setExpStep(isFirstPre ? 'reading_1' : 'reading_2');
+                 setStartTime(Date.now());
+              }}
+              style={{ width: '100%', marginTop: '3rem', padding: '1rem', fontSize: '1.1rem' }}
+            >
+              {t('pre_reading.continue')}
+            </button>
+          </div>
+        );
+
       case 'reading_1':
       case 'reading_2':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1000px', margin: '0 auto', textAlign: 'left' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '2rem auto', textAlign: 'left' }} dir="ltr">
             <div className="glass" style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, color: 'var(--accent)' }}>Reading Session - Text {expStep === 'reading_1' ? '1' : '2'} of 2</h3>
@@ -1176,7 +1513,7 @@ function App() {
       case 'quiz_1':
       case 'quiz_2':
         return (
-          <div className="glass" style={{ maxWidth: '700px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+          <div className="glass" style={{ maxWidth: '700px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="ltr">
             <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Comprehension Questions</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please answer the following 5 questions about the text you just read.</p>
             
@@ -1229,201 +1566,95 @@ function App() {
           </div>
         );
 
-      case 'survey_sus':
+      case 'per_task_survey_1':
+      case 'per_task_survey_2': {
+        const isFirst = expStep === 'per_task_survey_1';
+        const condition = isFirst
+          ? (expCondition.sequence === 'A' ? 'plain' : 'wordahead')
+          : (expCondition.sequence === 'A' ? 'wordahead' : 'plain');
         return (
-          <div className="glass" style={{ maxWidth: '800px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
-            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>System Usability Scale (SUS)</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please rate your agreement with the following statements regarding the WordAhead reading assistant.</p>
-            
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ padding: '0.75rem 0', textAlign: 'left' }}>Statement</th>
-                  {["1\n(Strongly Disagree)", "2", "3", "4", "5\n(Strongly Agree)"].map((val, i) => (
-                    <th key={i} style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>{val}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {SUS_QUESTIONS.map((q, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '1rem 0.5rem 1rem 0', maxWidth: '350px', fontSize: '0.95rem' }}>
-                      {idx + 1}. {q}
-                    </td>
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <td key={val} style={{ textAlign: 'center', padding: '1rem 0' }}>
-                        <input
-                          type="radio"
-                          name={`sus_${idx}`}
-                          checked={surveySUS[idx] === val}
-                          onChange={() => setSurveySUS(prev => ({ ...prev, [idx]: val }))}
-                          style={{ cursor: 'pointer', accentColor: 'var(--accent)', width: '18px', height: '18px' }}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <button
-              className="btn"
-              disabled={Object.keys(surveySUS).length < 10}
-              onClick={() => {
-                logExperimentEvent("survey_sus_completed", surveySUS);
-                setExpStep('survey_nasa');
-              }}
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
-            >
-              Continue
-            </button>
-          </div>
+          <PerTaskSurvey 
+            key={expStep}
+            condition={condition} 
+            textFormat={expCondition.text_format} 
+            onSubmit={submitPerTaskSurvey} 
+          />
         );
+      }
 
-      case 'survey_nasa':
+      case 'post_study_survey': {
+        const conditionsSeen = [
+          { label: "The first passage you read", condition: expCondition.sequence === 'A' ? 'plain' : 'wordahead' },
+          { label: "The second passage you read", condition: expCondition.sequence === 'A' ? 'wordahead' : 'plain' }
+        ];
         return (
-          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
-            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Reading Task Workload (NASA-TLX)</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please rate the mental workload you experienced during the reading tasks.</p>
-            
-            {NASA_TLX_QUESTIONS.map((q) => (
-              <div key={q.key} style={{ marginBottom: '2rem' }}>
-                <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem' }}>{q.label}</h4>
-                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{q.description}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Low</span>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
-                        <input
-                          type="radio"
-                          name={`nasa_${q.key}`}
-                          checked={surveyNASA[q.key] === val}
-                          onChange={() => setSurveyNASA(prev => ({ ...prev, [q.key]: val }))}
-                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-                        />
-                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>High</span>
-                </div>
-              </div>
-            ))}
-            
-            <button
-              className="btn"
-              disabled={Object.keys(surveyNASA).length < 4}
-              onClick={() => {
-                logExperimentEvent("survey_nasa_completed", surveyNASA);
-                setExpStep('survey_wa');
-              }}
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
-            >
-              Continue
-            </button>
-          </div>
+          <PostStudySurvey 
+            conditionsSeen={conditionsSeen} 
+            onSubmit={submitPostStudySurvey} 
+          />
         );
-
-      case 'survey_wa':
-        return (
-          <div className="glass" style={{ maxWidth: '800px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
-            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>WordAhead Experience Survey</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please rate your agreement with the following statements regarding the dynamic scaffolding and tools in WordAhead.</p>
-            
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ padding: '0.75rem 0', textAlign: 'left' }}>Statement</th>
-                  {["1\n(Strongly Disagree)", "2", "3", "4", "5\n(Strongly Agree)"].map((val, i) => (
-                    <th key={i} style={{ textAlign: 'center', padding: '0.5rem', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>{val}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {WA_SPECIFIC_QUESTIONS.map((q, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '1rem 0.5rem 1rem 0', maxWidth: '350px', fontSize: '0.95rem' }}>
-                      {q.label}
-                    </td>
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <td key={val} style={{ textAlign: 'center', padding: '1rem 0' }}>
-                        <input
-                          type="radio"
-                          name={`wa_${q.key}`}
-                          checked={surveyWA[q.key] === val}
-                          onChange={() => setSurveyWA(prev => ({ ...prev, [q.key]: val }))}
-                          style={{ cursor: 'pointer', accentColor: 'var(--accent)', width: '18px', height: '18px' }}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <button
-              className="btn"
-              disabled={Object.keys(surveyWA).length < 6}
-              onClick={() => {
-                logExperimentEvent("survey_wa_completed", surveyWA);
-                setExpStep('survey_demographics');
-              }}
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
-            >
-              Continue to Demographics
-            </button>
-          </div>
-        );
+      }
 
       case 'survey_demographics':
         return (
           <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
-            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Demographics Form</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please fill out the final background information questions.</p>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('demographics.title')}</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{t('demographics.desc')}</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Age Range</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.age')}</label>
                 <select
                   className="input"
                   value={surveyDemographics.age}
                   onChange={(e) => setSurveyDemographics(prev => ({ ...prev, age: e.target.value }))}
                 >
-                  <option value="">Select Age Range</option>
-                  <option value="under_18">Under 18</option>
-                  <option value="18_24">18-24</option>
-                  <option value="25_34">25-34</option>
-                  <option value="35_44">35-44</option>
-                  <option value="45_54">45-54</option>
-                  <option value="55_plus">55+</option>
+                  <option value="">{t('demographics.options.select')}</option>
+                  <option value="under_18">{t('demographics.options.under_18')}</option>
+                  <option value="18_24">{t('demographics.options.18_24')}</option>
+                  <option value="25_34">{t('demographics.options.25_34')}</option>
+                  <option value="35_44">{t('demographics.options.35_44')}</option>
+                  <option value="45_54">{t('demographics.options.45_54')}</option>
+                  <option value="55_plus">{t('demographics.options.55_plus')}</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Gender (Optional)</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.gender')}</label>
                 <select
                   className="input"
                   value={surveyDemographics.gender}
                   onChange={(e) => setSurveyDemographics(prev => ({ ...prev, gender: e.target.value }))}
                 >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="non_binary">Non-binary</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
+                  <option value="">{t('demographics.options.select')}</option>
+                  <option value="male">{t('demographics.options.male')}</option>
+                  <option value="female">{t('demographics.options.female')}</option>
+                  <option value="non_binary">{t('demographics.options.non_binary')}</option>
+                  <option value="prefer_not_to_say">{t('demographics.options.prefer_not')}</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Native Language</label>
-                <input
-                  type="text"
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.native_language')}</label>
+                <select
                   className="input"
-                  value={surveyDemographics.native_language}
-                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, native_language: e.target.value }))}
-                  placeholder="e.g. Hebrew, Arabic, Russian"
-                />
+                  value={surveyDemographics.native_language === 'Hebrew' ? 'Hebrew' : (surveyDemographics.native_language === '' ? '' : 'Other')}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, native_language: e.target.value === 'Other' ? ' ' : e.target.value }))}
+                  style={{ marginBottom: '0.5rem' }}
+                >
+                  <option value="">{t('demographics.options.select')}</option>
+                  <option value="Hebrew">{t('demographics.options.hebrew')}</option>
+                  <option value="Other">{t('demographics.options.other')}</option>
+                </select>
+                {surveyDemographics.native_language !== 'Hebrew' && surveyDemographics.native_language !== '' && (
+                  <input
+                    type="text"
+                    className="input"
+                    value={surveyDemographics.native_language.trim()}
+                    onChange={(e) => setSurveyDemographics(prev => ({ ...prev, native_language: e.target.value }))}
+                    placeholder={t('demographics.options.other')}
+                  />
+                )}
               </div>
 
               <div>
@@ -1438,7 +1669,7 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Years Studying English</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.years_studying_english')}</label>
                 <input
                   type="number"
                   className="input"
@@ -1449,7 +1680,7 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Course Level</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.course_level')}</label>
                 <select
                   className="input"
                   value={surveyDemographics.course_level}
@@ -1458,12 +1689,12 @@ function App() {
                   <option value="">Select Course Level</option>
                   <option value="undergrad">Undergraduate</option>
                   <option value="grad">Graduate</option>
-                  <option value="other">Other</option>
+                  <option value="other">{t('demographics.options.other_course')}</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Academic Year</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.academic_year')}</label>
                 <input
                   type="text"
                   className="input"
@@ -1474,7 +1705,7 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Field of Study</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.field_of_study')}</label>
                 <input
                   type="text"
                   className="input"
@@ -1489,7 +1720,7 @@ function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Beginner (1)</span>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    {[1, 2, 3, 4, 5].map((val) => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => (
                       <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="radio"
@@ -1529,9 +1760,9 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Frequency of Academic Reading in English</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('demographics.reads_academic_english')}</label>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rarely (1)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5].map((val) => (
                       <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
@@ -1546,14 +1777,14 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Daily (5)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.daily')}</span>
                 </div>
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Frequency of Translation Tool Usage</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('demographics.uses_translation_tools')}</label>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rarely (1)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5].map((val) => (
                       <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
@@ -1568,7 +1799,28 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Always (5)</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.always')}</span>
+                </div>
+              </div>
+              <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px dashed var(--border-color)' }}>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('survey.attention.check2')}</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>1</span>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <label key={`ac_${val}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="demographics_ac"
+                          checked={surveyDemographics.ac_early === String(val)}
+                          onChange={() => setSurveyDemographics(prev => ({ ...prev, ac_early: String(val) }))}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5</span>
                 </div>
               </div>
             </div>
@@ -1584,10 +1836,10 @@ function App() {
                 !surveyDemographics.academic_year.trim() ||
                 !surveyDemographics.field_of_study.trim()
               }
-              onClick={submitExperiment}
+              onClick={() => setExpStep('assigned')}
               style={{ width: '100%', padding: '1.2rem', fontSize: '1.2rem', marginTop: '3rem', background: 'var(--accent)' }}
             >
-              {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & Submit Results'}
+              {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & {t('demographics.submit')}'}
             </button>
           </div>
         );
@@ -1625,7 +1877,7 @@ function App() {
 
   if (inExperiment && expStep) {
     return (
-      <div className="app-container">
+      <div className="app-container" dir="rtl">
         {/* Sticky Header inside Experiment Flow */}
         <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
           <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
@@ -1673,7 +1925,7 @@ function App() {
                     height: '15px'
                   }}
                 />
-                <span>Experiment Mode</span>
+                <span>Plain Text Mode</span>
               </label>
             </div>
           </header>
@@ -1734,7 +1986,7 @@ function App() {
 
   // --- Normal App Rendering (Fallback) ---
   return (
-    <div className="app-container">
+    <div className="app-container" dir="rtl">
       <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
         <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
         {/* Header */}
@@ -1785,7 +2037,7 @@ function App() {
                   height: '15px'
                 }}
               />
-              <span>Experiment Mode</span>
+              <span>Plain Text Mode</span>
             </label>
 
             <button className="btn" onClick={() => setShowHowToUse(true)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>

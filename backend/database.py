@@ -61,6 +61,40 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS survey_responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            prolific_pid TEXT NOT NULL,
+            survey_type TEXT NOT NULL,
+            condition TEXT,
+            text_id TEXT,
+            sequence_position INTEGER,
+            responses TEXT NOT NULL,
+            open_text_responses TEXT,
+            ranking TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS participant_meta (
+            prolific_pid TEXT PRIMARY KEY,
+            age TEXT,
+            gender TEXT,
+            native_language TEXT,
+            other_languages TEXT,
+            years_studying_english TEXT,
+            course_level TEXT,
+            self_rated_english TEXT,
+            academic_year TEXT,
+            field_of_study TEXT,
+            frequency_academic_english TEXT,
+            use_translation_tools TEXT,
+            ac_early TEXT,
+            ac_mid_pass BOOLEAN,
+            ac_late_pass BOOLEAN,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
 
     # Try adding the skimmed_words column if it doesn't exist (for existing DBs)
