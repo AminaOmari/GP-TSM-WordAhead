@@ -87,6 +87,39 @@ WordAhead includes built-in academic evaluation scripts to measure the accuracy 
 
 ---
 
+## 🧪 Test Automation & Quality Assurance
+
+WordAhead includes a robust, end-to-end automated testing system to verify the participant flow, counterbalancing routing, and behavioral data pipeline.
+
+### 1. Backend Integration & Permutation Tests (Pytest)
+The backend test suite covers participant assignment rules, LexTALE score classifications, counterbalancing permutations, database updates, and Qualtrics CSV generation.
+
+To run the backend tests:
+```bash
+# From the root directory
+source venv/bin/activate
+cd backend
+pytest
+```
+
+### 2. Frontend E2E Participant Flow (Playwright)
+The frontend tests simulate the complete E2E participant journey: from consent and vocabulary screening (LexTALE), through demographics, pre-reading topic exposure, reading tasks (WordAhead / Plain), comprehension quizzes, per-task/post-study surveys, and finally the Prolific completion redirect.
+
+To run the E2E browser tests:
+```bash
+# Install Playwright browser dependencies (first time only)
+cd frontend
+npx playwright install chromium
+
+# Run the Playwright test suite
+npx playwright test
+```
+
+### 3. Manual Verification Checklist
+Subjective and visual quality aspects (such as Hebrew RTL layouts, color contrast, and GP-TSM text gray-levels) are audited using the [manual_qa_checklist.md](file:///Users/omari/Desktop/VSC/GP-TSM%20WordAhead/manual_qa_checklist.md) file in the workspace root.
+
+---
+
 ## 📦 Deployment
 
 The project is pre-configured for **Render** using `render.yaml`. It is specifically optimized for memory-constrained environments, using a single-worker Gunicorn/Uvicorn setup and automated garbage collection.

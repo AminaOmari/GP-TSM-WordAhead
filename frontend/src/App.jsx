@@ -1113,14 +1113,14 @@ function App() {
       await axios.post(`${API_URL}/api/survey`, payload);
       await logExperimentEvent("post_study_survey_completed", payload);
       setPostStudySurvey(surveyData);
-      await submitExperiment();
+      await submitExperiment(surveyData);
     } catch (err) {
       console.error(err);
       showNotification("Failed to save survey. Please try again.");
     }
   };
 
-  const submitExperiment = async () => {
+  const submitExperiment = async (postStudyData = postStudySurvey) => {
     setIsSubmitting(true);
     const payload = {
       prolific_pid: prolificId,
@@ -1160,7 +1160,7 @@ function App() {
       surveys: {
         per_task_1: perTaskSurvey1,
         per_task_2: perTaskSurvey2,
-        post_study: postStudySurvey,
+        post_study: postStudyData,
         demographics: surveyDemographics
       }
     };
@@ -1217,21 +1217,9 @@ function App() {
             <button
               className="btn"
               disabled={!prolificId.trim()}
-              onClick={async () => {
+              onClick={() => {
                 logExperimentEvent("consent_agreed", {});
-                try {
-                  const resp = await axios.post(`${API_URL}/api/experiment/assign`, {
-                    prolific_pid: prolificId,
-                    lextale_score: 60
-                  });
-                  setLextaleScore(60);
-                  setExpCondition(resp.data.condition);
-                  setExpTexts(resp.data.texts);
-                  setExpStep('survey_demographics');
-                } catch (err) {
-                  console.error(err);
-                  showNotification("Failed to assign experiment condition.");
-                }
+                setExpStep('lextale');
               }}
               style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
             >
@@ -1346,7 +1334,7 @@ function App() {
               className="btn"
               onClick={() => {
                  setExpStep(isFirstPre ? 'reading_1' : 'reading_2');
-                 setStartTime(Date.now());
+                 setReadingStartTime(Date.now());
               }}
               style={{ width: '100%', marginTop: '3rem', padding: '1rem', fontSize: '1.1rem' }}
             >
@@ -1577,6 +1565,7 @@ function App() {
             key={expStep}
             condition={condition} 
             textFormat={expCondition.text_format} 
+            isFirstTask={isFirst}
             onSubmit={submitPerTaskSurvey} 
           />
         );
@@ -1839,7 +1828,7 @@ function App() {
               onClick={() => setExpStep('assigned')}
               style={{ width: '100%', padding: '1.2rem', fontSize: '1.2rem', marginTop: '3rem', background: 'var(--accent)' }}
             >
-              {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & {t('demographics.submit')}'}
+              {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & ' + t('demographics.submit')}
             </button>
           </div>
         );
@@ -1860,13 +1849,13 @@ function App() {
                 ℹ Server sync status: Logged locally. (Dry-run mode / API offline)
               </p>
             )}
-            <button
+            <a
               className="btn"
-              onClick={() => window.location.href = `https://app.prolific.co/submissions/complete?cc=XXXXXXXX`}
-              style={{ padding: '1rem 2.5rem', fontSize: '1.1rem', background: 'var(--accent)' }}
+              href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
+              style={{ display: 'inline-block', textDecoration: 'none', padding: '1rem 2.5rem', fontSize: '1.1rem', background: 'var(--accent)', color: '#ffffff' }}
             >
               Redirect to Prolific to Complete
-            </button>
+            </a>
           </div>
         );
 

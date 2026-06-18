@@ -915,17 +915,25 @@ async def experiment_submit(req: SubmitRequest):
     conn.close()
     
     # Construct CSV payload
-    headers = [
-        "prolific_pid", "lextale_score", "cefr_level", "text_format", "sequence", "text_pair",
-        "reading_1_text_id", "reading_1_condition", "reading_1_time_ms", "reading_1_hovers",
-        "reading_1_clicks", "reading_1_click_count", "reading_1_unique_words_translated", "reading_1_comprehension",
-        "reading_2_text_id", "reading_2_condition", "reading_2_time_ms", "reading_2_hovers",
-        "reading_2_clicks", "reading_2_click_count", "reading_2_unique_words_translated", "reading_2_comprehension",
-        "survey_per_task_1", "survey_per_task_2", "survey_post_study", "survey_demographics"
-    ]
-    
     reading1 = payload_data["readings"][0] if len(payload_data["readings"]) > 0 else {}
     reading2 = payload_data["readings"][1] if len(payload_data["readings"]) > 1 else {}
+
+    r1_hover_events = reading1.get("hover_events", [])
+    r1_hover_count = len(r1_hover_events)
+    r1_dwell_ms = sum(int(e.get("dwell_ms", 0)) for e in r1_hover_events if isinstance(e, dict))
+
+    r2_hover_events = reading2.get("hover_events", [])
+    r2_hover_count = len(r2_hover_events)
+    r2_dwell_ms = sum(int(e.get("dwell_ms", 0)) for e in r2_hover_events if isinstance(e, dict))
+
+    headers = [
+        "prolific_pid", "lextale_score", "cefr_level", "text_format", "sequence", "text_pair",
+        "trial1_text_id", "trial1_condition", "trial1_time_ms", "trial1_hovers", "trial1_clicks",
+        "trial1_click_count", "trial1_unique_words_translated", "trial1_hover_count", "trial1_dwell_ms", "trial1_comprehension",
+        "trial2_text_id", "trial2_condition", "trial2_time_ms", "trial2_hovers", "trial2_clicks",
+        "trial2_click_count", "trial2_unique_words_translated", "trial2_hover_count", "trial2_dwell_ms", "trial2_comprehension",
+        "survey_per_task_1", "survey_per_task_2", "survey_post_study", "survey_demographics"
+    ]
     
     row = [
         payload_data["prolific_pid"],
@@ -941,6 +949,8 @@ async def experiment_submit(req: SubmitRequest):
         json.dumps(reading1.get("click_events", [])),
         reading1.get("click_count", 0),
         reading1.get("unique_words_translated", 0),
+        r1_hover_count,
+        r1_dwell_ms,
         json.dumps(reading1.get("comprehension", [])),
         reading2.get("text_id", ""),
         reading2.get("condition", ""),
@@ -949,6 +959,8 @@ async def experiment_submit(req: SubmitRequest):
         json.dumps(reading2.get("click_events", [])),
         reading2.get("click_count", 0),
         reading2.get("unique_words_translated", 0),
+        r2_hover_count,
+        r2_dwell_ms,
         json.dumps(reading2.get("comprehension", [])),
         json.dumps(payload_data["surveys"]["per_task_1"]),
         json.dumps(payload_data["surveys"]["per_task_2"]),
