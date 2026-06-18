@@ -1,0 +1,145 @@
+{
+  "nav": {
+    "plain_text_mode": "Plain Text Mode",
+    "how_to_use": "How to Use"
+  },
+  "consent": {
+    "title": "Research Consent Form",
+    "agree": "I Consent & Agree to Participate",
+    "lextale_note": "(Note: This part is in English)"
+  },
+  "assigned": {
+    "title": "Group Assignment",
+    "lextale_score": "Your score was",
+    "assigned_to": "You have been assigned to level group",
+    "start_reading": "Start Reading Phase"
+  },
+  "reading": {
+    "start_text": "Start Reading Text",
+    "finished_reading": "Continue to Comprehension Questions",
+    "translation_hint": "Hover over or click a highlighted word to see its translation here.",
+    "hover_hint": "Hover over highlighted words to see translation."
+  },
+  "quiz": {
+    "title": "Comprehension Questions",
+    "submit": "Submit Answers & Continue",
+    "alertness1": {
+      "question": "This is an alertness check. To show you are reading carefully, please choose the second option (Option B) below.",
+      "opt0": "Option A",
+      "opt1": "Option B",
+      "opt2": "Option C",
+      "opt3": "Option D"
+    },
+    "alertness2": {
+      "question": "Attention check: please select the fourth option (Option D) from the choices below to confirm you are paying attention.",
+      "opt0": "Option A",
+      "opt1": "Option B",
+      "opt2": "Option C",
+      "opt3": "Option D"
+    }
+  },
+  "survey": {
+    "per_task_title": "Reading Task Feedback",
+    "per_task_desc": "Please answer the following questions about your reading experience with this text.",
+    "post_study_title": "Post-Study Survey",
+    "post_study_desc": "Please answer the following final summary questions.",
+    "submit": "Submit Survey & Continue",
+    "anchors": {
+      "very_poor": "Very Poor",
+      "very_good": "Very Good",
+      "very_low": "Very Low",
+      "very_high": "Very High",
+      "not_successful": "Not at all successful",
+      "very_successful": "Very successful",
+      "strongly_disagree": "Strongly Disagree",
+      "strongly_agree": "Strongly Agree",
+      "not_familiar": "Not at all familiar",
+      "very_familiar": "Very familiar"
+    },
+    "freq_anchors": {
+      "never": "Never",
+      "rarely": "Rarely",
+      "sometimes": "Sometimes",
+      "often": "Often",
+      "daily": "Daily",
+      "always": "Always"
+    },
+    "blocks": {
+      "a1": "How would you rate your overall experience reading this text?",
+      "a2": "How mentally demanding was the task?",
+      "a3": "How physically demanding was the task?",
+      "a4": "How hurried or rushed was the pace of the task?",
+      "a5": "How successful do you think you were in accomplishing the task?",
+      "a6": "How hard did you have to work to accomplish your performance?",
+      "a7": "How insecure, discouraged, irritated, stressed, or annoyed were you during the task?",
+      "a8": "I could recognize the key points in the passage.",
+      "a9": "I could recognize how the key points are supported by additional detail in the passage.",
+      "b10": "The system's choice of what to gray out and what to keep at full weight made sense to me.",
+      "b11": "I think I know why certain words were lighter than others.",
+      "b12": "I found it helpful that certain words were lighter than others.",
+      "b13": "The different levels of gray helped me see the relationships between parts of sentences.",
+      "b14": "I understood why some words were highlighted.",
+      "b15": "The translations helped without interrupting my reading.",
+      "b16": "The highlighted words matched the words I found difficult.",
+      "b17": "I would use this system when reading academic English.",
+      "b18": "The system made me too dependent on translation.",
+      "c19": "The shortened (skimmed) version preserved enough of the meaning."
+    },
+    "post": {
+      "use_system": "I would like to use [XXX] to read online texts that interest me in the future.",
+      "ranking": "Which version did you find more helpful for answering the comprehension questions?",
+      "like_most": "What did you like most about the version you found most helpful?",
+      "missing_features": "Were there any features missing that you'd like to see?"
+    },
+    "options": {
+      "first_passage": "The first passage I read",
+      "second_passage": "The second passage I read"
+    },
+    "attention": {
+      "check1": "This is an attention check - to show you are reading carefully, please select 'Strongly Agree' for this question.",
+      "check2": "To ensure the system is working properly, please select the number '1' ('Very Low' or equivalent) for this question.",
+      "check3": "Please select 'Never' for this question to show you read it in full."
+    }
+  },
+  "demographics": {
+    "title": "Demographics Form",
+    "desc": "Please fill out the final background information questions.",
+    "age": "Age Range",
+    "gender": "Gender (Optional)",
+    "native_language": "Native Language",
+    "other_languages": "Other Languages (besides English and Native)",
+    "years_studying_english": "Years Studying English",
+    "course_level": "Course Level",
+    "academic_year": "Academic Year",
+    "field_of_study": "Field of Study",
+    "self_rated_english": "Self-Rated English Reading Proficiency",
+    "reads_academic_english": "Frequency of Academic Reading in English",
+    "uses_translation_tools": "Frequency of Translation Tool Usage",
+    "submit": "Submit Results",
+    "options": {
+      "select": "Select...",
+      "hebrew": "Hebrew",
+      "arabic": "Arabic",
+      "russian": "Russian",
+      "other": "Other (please specify)",
+      "male": "Male",
+      "female": "Female",
+      "non_binary": "Non-binary",
+      "prefer_not": "Prefer not to say",
+      "under_18": "Under 18",
+      "18_24": "18-24",
+      "25_34": "25-34",
+      "35_44": "35-44",
+      "45_54": "45-54",
+      "55_plus": "55+",
+      "undergrad": "Undergraduate",
+      "grad": "Graduate",
+      "other_course": "Other"
+    }
+  },
+  "pre_reading": {
+    "title": "Pre-Reading",
+    "prior_exposure": "Before reading, how familiar were you with this topic?",
+    "continue": "Continue to Text"
+  }
+}

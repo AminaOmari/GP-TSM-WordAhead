@@ -88,9 +88,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // 2. Open the page
     await page.goto('/');
 
-    // Check Hebrew UI elements direction (RTL container)
+    // Check English UI elements direction (LTR container)
     const appContainer = page.locator('.app-container');
-    await expect(appContainer).toHaveAttribute('dir', 'rtl');
+    await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
     // 3. Consent Page Check
     const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
@@ -143,14 +143,14 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await startReadingButton.dispatchEvent('click');
 
     // 7. Pre-reading 1 (Topic Familiarity for Passage 1)
-    const preContinueButton1 = page.locator('button:has-text("המשך לטקסט")');
+    const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
     // Select familiarity option 4 (which is index 3 of 7 options)
     await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
     // 8. Reading 1 (WordAhead condition because Sequence = B)
     // Verify LTR direction for English text passage container
-    const readingPassageContainer = page.locator('div[dir="ltr"]');
+    const readingPassageContainer = page.locator('div:not(.app-container)[dir="ltr"]');
     await expect(readingPassageContainer).toBeVisible();
 
     const completeReadingButton1 = page.locator('button:has-text("Continue to Comprehension Questions")');
@@ -158,7 +158,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 9. Quiz 1 (Comprehension MCQs)
     // Verify LTR direction for English questions container
-    const quizContainer = page.locator('div[dir="ltr"]');
+    const quizContainer = page.locator('div:not(.app-container)[dir="ltr"]');
     await expect(quizContainer).toBeVisible();
 
     // Check submit is disabled until all 5 are answered
@@ -176,14 +176,14 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 10. Per-Task Survey 1 (Condition: wordahead, Text Format: TS)
     // Verify Block B questions render (since WordAhead condition)
-    // Look for a Block B specific question (which is translated to Hebrew - pt_b10 has "להאפיר")
-    await expect(page.locator('h4:has-text("להאפיר")')).toBeVisible();
+    // Look for a Block B specific question (pt_b10 contains "gray out")
+    await expect(page.locator('h4:has-text("gray out")')).toBeVisible();
 
-    // Verify Block C questions render (since Text Format is TS - Skimmed, pt_c19 has "מקוצרת")
-    await expect(page.locator('h4:has-text("מקוצרת")')).toBeVisible();
+    // Verify Block C questions render (since Text Format is TS - Skimmed, pt_c19 contains "shortened")
+    await expect(page.locator('h4:has-text("shortened")')).toBeVisible();
 
     // Click submit should be disabled initially
-    const ptSubmitButton1 = page.locator('button:has-text("הגש סקר")');
+    const ptSubmitButton1 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton1).toBeDisabled();
 
     // Answer all questions
@@ -201,7 +201,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await ptSubmitButton1.dispatchEvent('click');
 
     // 11. Pre-reading 2 (Topic Familiarity for Passage 2)
-    const preContinueButton2 = page.locator('button:has-text("המשך לטקסט")');
+    const preContinueButton2 = page.locator('button:has-text("Continue to Text")');
     await page.locator('input[name="pre_reading_exposure_2"]').nth(4).dispatchEvent('click'); // value 5 (index 4)
     await preContinueButton2.dispatchEvent('click');
 
@@ -220,13 +220,13 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await quizSubmitButton2.dispatchEvent('click');
 
     // 14. Per-Task Survey 2 (Condition: plain, Text Format: TS)
-    // Verify Block B questions do NOT render (since plain condition, pt_b10 has "להאפיר")
-    await expect(page.locator('h4:has-text("להאפיר")')).not.toBeVisible();
+    // Verify Block B questions do NOT render (since plain condition, pt_b10 contains "gray out")
+    await expect(page.locator('h4:has-text("gray out")')).not.toBeVisible();
 
-    // Verify Block C questions DO render (since TS format, pt_c19 has "מקוצרת")
-    await expect(page.locator('h4:has-text("מקוצרת")')).toBeVisible();
+    // Verify Block C questions DO render (since TS format, pt_c19 contains "shortened")
+    await expect(page.locator('h4:has-text("shortened")')).toBeVisible();
 
-    const ptSubmitButton2 = page.locator('button:has-text("הגש סקר")');
+    const ptSubmitButton2 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton2).toBeDisabled();
 
     // Answer questions: 9 Block A + 1 Block C = 10 questions total
@@ -344,9 +344,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // 2. Open the page
     await page.goto('/');
 
-    // Check Hebrew UI elements direction (RTL container)
+    // Check English UI elements direction (LTR container)
     const appContainer = page.locator('.app-container');
-    await expect(appContainer).toHaveAttribute('dir', 'rtl');
+    await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
     // 3. Consent Page Check
     const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
@@ -395,12 +395,12 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await startReadingButton.dispatchEvent('click');
 
     // 7. Pre-reading 1 (Topic Familiarity for Passage 1)
-    const preContinueButton1 = page.locator('button:has-text("המשך לטקסט")');
+    const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
     await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
     // 8. Reading 1 (WordAhead condition because Sequence = B)
-    const readingPassageContainer = page.locator('div[dir="ltr"]');
+    const readingPassageContainer = page.locator('div:not(.app-container)[dir="ltr"]');
     await expect(readingPassageContainer).toBeVisible();
 
     const completeReadingButton1 = page.locator('button:has-text("Continue to Comprehension Questions")');
@@ -418,12 +418,12 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 10. Per-Task Survey 1 (Condition: wordahead, Text Format: TF)
     // Verify Block B questions DO render (since WordAhead condition)
-    await expect(page.locator('h4:has-text("להאפיר")')).toBeVisible();
+    await expect(page.locator('h4:has-text("gray out")')).toBeVisible();
 
     // Verify Block C questions do NOT render (since Text Format is TF - Full)
-    await expect(page.locator('h4:has-text("מקוצרת")')).not.toBeVisible();
+    await expect(page.locator('h4:has-text("shortened")')).not.toBeVisible();
 
-    const ptSubmitButton1 = page.locator('button:has-text("הגש סקר")');
+    const ptSubmitButton1 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton1).toBeDisabled();
 
     // Answer questions: 9 Block A + 9 Block B = 18 questions total
@@ -438,7 +438,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await ptSubmitButton1.dispatchEvent('click');
 
     // 11. Pre-reading 2 (Topic Familiarity for Passage 2)
-    const preContinueButton2 = page.locator('button:has-text("המשך לטקסט")');
+    const preContinueButton2 = page.locator('button:has-text("Continue to Text")');
     await page.locator('input[name="pre_reading_exposure_2"]').nth(4).dispatchEvent('click');
     await preContinueButton2.dispatchEvent('click');
 
@@ -458,12 +458,12 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 14. Per-Task Survey 2 (Condition: plain, Text Format: TF)
     // Verify Block B questions do NOT render
-    await expect(page.locator('h4:has-text("להאפיר")')).not.toBeVisible();
+    await expect(page.locator('h4:has-text("gray out")')).not.toBeVisible();
 
     // Verify Block C questions do NOT render
-    await expect(page.locator('h4:has-text("מקוצרת")')).not.toBeVisible();
+    await expect(page.locator('h4:has-text("shortened")')).not.toBeVisible();
 
-    const ptSubmitButton2 = page.locator('button:has-text("הגש סקר")');
+    const ptSubmitButton2 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton2).toBeDisabled();
 
     // Answer questions: 9 Block A = 9 total
@@ -610,7 +610,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await startReadingButton.dispatchEvent('click');
 
     // 7. Pre-reading 1
-    const preContinueButton1 = page.locator('button:has-text("המשך לטקסט")');
+    const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
     await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
@@ -626,7 +626,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await quizSubmitButton1.dispatchEvent('click');
 
     // 10. Survey 1
-    const ptSubmitButton1 = page.locator('button:has-text("הגש סקר")');
+    const ptSubmitButton1 = page.locator('button:has-text("Submit Survey & Continue")');
     for (let i = 1; i <= 9; i++) {
       await page.locator(`input[name="pt_a${i}"]`).nth(3).dispatchEvent('click');
     }
@@ -637,7 +637,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await ptSubmitButton1.dispatchEvent('click');
 
     // 11. Pre-reading 2
-    const preContinueButton2 = page.locator('button:has-text("המשך לטקסט")');
+    const preContinueButton2 = page.locator('button:has-text("Continue to Text")');
     await page.locator('input[name="pre_reading_exposure_2"]').nth(4).dispatchEvent('click');
     await preContinueButton2.dispatchEvent('click');
 
@@ -653,7 +653,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await quizSubmitButton2.dispatchEvent('click');
 
     // 14. Survey 2
-    const ptSubmitButton2 = page.locator('button:has-text("הגש סקר")');
+    const ptSubmitButton2 = page.locator('button:has-text("Submit Survey & Continue")');
     for (let i = 1; i <= 9; i++) {
       await page.locator(`input[name="pt_a${i}"]`).nth(4).dispatchEvent('click');
     }

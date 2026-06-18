@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { t } from './i18n';
+import { t, setLocale } from './i18n';
 import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle, History, Clock, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = ''; // Relative to the domain serving the app
+const CONSENT_DIR = 'ltr'; // Configurable layout direction for consent screen ('ltr' or 'rtl')
+const CONSENT_LOCALE = 'en'; // Configurable locale for consent screen ('en' or 'he')
 const CEFR_LEVELS = ["B1", "B2"];
 const ALL_CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const checkIsDifficult = (wordCefr, targetLevel) => {
@@ -545,6 +547,14 @@ function App() {
       setExpStep('consent');
     }
   }, []);
+
+  useEffect(() => {
+    if (expStep === 'consent') {
+      setLocale(CONSENT_LOCALE);
+    } else {
+      setLocale('en');
+    }
+  }, [expStep]);
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -1316,7 +1326,7 @@ function App() {
       case 'pre_reading_2':
         const isFirstPre = expStep === 'pre_reading_1';
         return (
-          <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="rtl">
+          <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="ltr">
             <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('pre_reading.title')}</h2>
             
             <div style={{ marginTop: '2rem' }}>
@@ -1906,7 +1916,7 @@ function App() {
 
   if (inExperiment && expStep) {
     return (
-      <div className="app-container" dir="rtl">
+      <div className="app-container" dir={expStep === 'consent' ? CONSENT_DIR : 'ltr'}>
         {/* Sticky Header inside Experiment Flow */}
         <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
           <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
@@ -2015,7 +2025,7 @@ function App() {
 
   // --- Normal App Rendering (Fallback) ---
   return (
-    <div className="app-container" dir="rtl">
+    <div className="app-container" dir="ltr">
       <div className="top-sticky-wrapper" style={{ position: 'sticky', top: '1rem', zIndex: 100, marginBottom: '2rem' }}>
         <div style={{ position: 'absolute', top: '-1rem', left: '-1rem', right: '-1rem', bottom: '-1rem', background: 'var(--bg-primary)', zIndex: -1 }}></div>
         {/* Header */}
