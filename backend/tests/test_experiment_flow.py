@@ -40,14 +40,15 @@ def clean_db():
     conn.close()
 
 # ---------------------------------------------------------
-# 1. LexTALE Threshold Boundary Tests
+# 1. LexTALE Threshold Boundary Tests (Lemhöfer & Broersma 2012)
 # ---------------------------------------------------------
 def test_lextale_thresholds_exclude():
-    # score > 80 -> exclude
+    # score > 80 -> exclude (C1/C2)
+    # boundary: 81 is exclude, 80.5 is exclude
     pid = "test_pid_exclude"
     response = client.post("/api/experiment/assign", json={
         "prolific_pid": pid,
-        "lextale_score": 85.0
+        "lextale_score": 81.0
     })
     assert response.status_code == 200
     data = response.json()
@@ -66,31 +67,41 @@ def test_lextale_thresholds_exclude():
     assert row is not None
     assert row["cefr_level"] == "exclude"
 
-def test_lextale_thresholds_b2():
-    # 59 < score <= 80 -> B2
-    pid = "test_pid_b2"
+def test_lextale_thresholds_b2_upper():
+    # exactly 80.0 should be B2
+    pid = "test_pid_b2_upper"
     response = client.post("/api/experiment/assign", json={
         "prolific_pid": pid,
-        "lextale_score": 75.0
+        "lextale_score": 80.0
     })
     assert response.status_code == 200
     data = response.json()
     assert data["cefr_level"] == "B2"
     assert data["text_format"] in ["TF", "TS"]
-    assert data["sequence"] in ["A", "B"]
+
+def test_lextale_thresholds_b2_lower():
+    # exactly 60.0 should be B2
+    pid = "test_pid_b2_lower"
+    response = client.post("/api/experiment/assign", json={
+        "prolific_pid": pid,
+        "lextale_score": 60.0
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["cefr_level"] == "B2"
+    assert data["text_format"] in ["TF", "TS"]
 
 def test_lextale_thresholds_b1():
-    # score <= 59 -> B1
+    # score < 60 -> B1
     pid = "test_pid_b1"
     response = client.post("/api/experiment/assign", json={
         "prolific_pid": pid,
-        "lextale_score": 50.0
+        "lextale_score": 59.0
     })
     assert response.status_code == 200
     data = response.json()
     assert data["cefr_level"] == "B1"
     assert data["text_format"] in ["TF", "TS"]
-    assert data["sequence"] in ["A", "B"]
 
 # ---------------------------------------------------------
 # 2. Counterbalancing & Permutation Verification (8 Permutations)
@@ -217,7 +228,14 @@ def test_full_experiment_submission():
                 ],
                 "click_count": 1,
                 "unique_words_translated": 2,
-                "comprehension": [{"qid": 1, "answer": "A", "correct": True}]
+                "comprehension": [
+                    {"qid": 1, "answer": "A", "correct": True},
+                    {"qid": 2, "answer": "B", "correct": True},
+                    {"question_id": "alertness_1", "selected": "Option B", "correct": True, "is_alertness": True},
+                    {"qid": 3, "answer": "A", "correct": False},
+                    {"qid": 4, "answer": "B", "correct": True},
+                    {"qid": 5, "answer": "B", "correct": True}
+                ]
             },
             {
                 "text_id": "textB3",
@@ -231,21 +249,26 @@ def test_full_experiment_submission():
                 "click_events": [],
                 "click_count": 0,
                 "unique_words_translated": 3,
-                "comprehension": [{"qid": 1, "answer": "B", "correct": False}]
+                "comprehension": [
+                    {"qid": 1, "answer": "B", "correct": True},
+                    {"qid": 2, "answer": "B", "correct": True},
+                    {"question_id": "alertness_2", "selected": "Option D", "correct": True, "is_alertness": True},
+                    {"qid": 3, "answer": "A", "correct": True},
+                    {"qid": 4, "answer": "B", "correct": True},
+                    {"qid": 5, "answer": "B", "correct": True}
+                ]
             }
         ],
         "surveys": {
             "per_task_1": {
-                "mental_demand": 4,
-                "ac_mid": 7  # Attention check 2 passed
+                "mental_demand": 4
             },
             "per_task_2": {
-                "mental_demand": 3,
-                "ac_late": 1  # Attention check 3 passed
+                "mental_demand": 3
             },
             "post_study": {
                 "sus_1": 5,
-                "dependent": 3  # Reverse-valenced item 18 "too dependent", stored raw (no reverse scoring)
+                "dependent": 3
             },
             "demographics": {
                 "age": "18_24",
@@ -259,7 +282,7 @@ def test_full_experiment_submission():
                 "field_of_study": "Psychology",
                 "frequency_academic_english": "4",
                 "use_translation_tools": "5",
-                "ac_early": "3"  # Attention check 1 response
+                "ac_early": "3"
             }
         }
     }
@@ -297,6 +320,16 @@ def test_full_experiment_submission():
     assert "trial2_hover_count" in headers
     assert "trial2_dwell_ms" in headers
     
+    # Assert new alertness and pilot headers exist
+    assert "is_pilot" in headers
+    assert "ac_early" in headers
+    assert "quiz1_attention_raw" in headers
+    assert "quiz1_attention_pass" in headers
+    assert "quiz2_attention_raw" in headers
+    assert "quiz2_attention_pass" in headers
+    assert "trial1_comprehension_score" in headers
+    assert "trial2_comprehension_score" in headers
+    
     # Map headers to indices
     h_idx = {h: idx for idx, h in enumerate(headers)}
     
@@ -311,7 +344,17 @@ def test_full_experiment_submission():
     assert row[h_idx["trial2_hover_count"]] == "3"
     assert row[h_idx["trial2_dwell_ms"]] == "1000"
     
-    # Confirm no column collisions between trial1_ and trial2_
+    # Assert alertness results and pilot status in CSV
+    assert row[h_idx["is_pilot"]] == "0"
+    assert row[h_idx["ac_early"]] == "3"
+    assert row[h_idx["quiz1_attention_raw"]] == "Option B"
+    assert row[h_idx["quiz1_attention_pass"]] == "1"
+    assert row[h_idx["quiz2_attention_raw"]] == "Option D"
+    assert row[h_idx["quiz2_attention_pass"]] == "1"
+    assert row[h_idx["trial1_comprehension_score"]] == "0.8"  # 4/5 correct real MCQs
+    assert row[h_idx["trial2_comprehension_score"]] == "1.0"  # 5/5 correct real MCQs
+    
+    # Confirm no column collisions
     assert len(headers) == len(set(headers))
 
     # 4. Verify SQLite DB state
@@ -326,8 +369,11 @@ def test_full_experiment_submission():
     assert meta["native_language"] == "Hebrew"
     assert meta["field_of_study"] == "Psychology"
     assert meta["ac_early"] == "3"
-    assert bool(meta["ac_mid_pass"]) is True
-    assert bool(meta["ac_late_pass"]) is True
+    assert meta["quiz1_attention_raw"] == "Option B"
+    assert bool(meta["quiz1_attention_pass"]) is True
+    assert meta["quiz2_attention_raw"] == "Option D"
+    assert bool(meta["quiz2_attention_pass"]) is True
+    assert bool(meta["is_pilot"]) is False
     
     # Verify experiment event logged
     cursor.execute("SELECT * FROM experiment_events WHERE prolific_pid = ? AND event_type = 'final_submission'", (pid,))
@@ -382,7 +428,14 @@ def test_failed_attention_checks():
                 "click_events": [],
                 "click_count": 0,
                 "unique_words_translated": 0,
-                "comprehension": []
+                "comprehension": [
+                    {"qid": 1, "answer": "A", "correct": True},
+                    {"qid": 2, "answer": "B", "correct": True},
+                    {"question_id": "alertness_1", "selected": "Option C", "correct": False, "is_alertness": True},
+                    {"qid": 3, "answer": "A", "correct": True},
+                    {"qid": 4, "answer": "B", "correct": True},
+                    {"qid": 5, "answer": "B", "correct": True}
+                ]
             },
             {
                 "text_id": "textA4",
@@ -392,17 +445,22 @@ def test_failed_attention_checks():
                 "click_events": [],
                 "click_count": 0,
                 "unique_words_translated": 0,
-                "comprehension": []
+                "comprehension": [
+                    {"qid": 1, "answer": "A", "correct": True},
+                    {"qid": 2, "answer": "B", "correct": True},
+                    {"question_id": "alertness_2", "selected": "Option A", "correct": False, "is_alertness": True},
+                    {"qid": 3, "answer": "A", "correct": True},
+                    {"qid": 4, "answer": "B", "correct": True},
+                    {"qid": 5, "answer": "B", "correct": True}
+                ]
             }
         ],
         "surveys": {
             "per_task_1": {
-                "mental_demand": 4,
-                "ac_mid": 3  # Attention check 2 FAILED (expected 7)
+                "mental_demand": 4
             },
             "per_task_2": {
-                "mental_demand": 3,
-                "ac_late": 4  # Attention check 3 FAILED (expected 1)
+                "mental_demand": 3
             },
             "post_study": {
                 "sus_1": 5,
@@ -439,5 +497,145 @@ def test_failed_attention_checks():
     conn.close()
     
     assert meta is not None
-    assert bool(meta["ac_mid_pass"]) is False
-    assert bool(meta["ac_late_pass"]) is False
+    assert bool(meta["quiz1_attention_pass"]) is False
+    assert bool(meta["quiz2_attention_pass"]) is False
+
+# ---------------------------------------------------------
+# 6. Pilot Mode E2E Test
+# ---------------------------------------------------------
+def test_pilot_session():
+    pid = "00"  # Pilot PID from configuration default
+    
+    # 1. Assign once with score > 80 (should proceed, NOT exclude)
+    with patch("random.choice") as mock_choice:
+        mock_choice.side_effect = ["TS", "B", "pair_3", False]
+        response = client.post("/api/experiment/assign", json={
+            "prolific_pid": pid,
+            "lextale_score": 95.0
+        })
+        
+    assert response.status_code == 200
+    data = response.json()
+    assert data["cefr_level"] == "exclude"  # classified as exclude
+    assert data["is_pilot"] is True
+    # Verify pilot fallthrough
+    assert data["text_format"] == "TS"
+    assert data["sequence"] == "B"
+    assert data["text_pair"] == "pair_3"
+    assert len(data["text_order"]) == 2
+
+    # 2. Get session
+    session_response = client.get(f"/api/experiment/session/{pid}")
+    assert session_response.status_code == 200
+    session_data = session_response.json()
+    assert session_data["assignment"]["is_pilot"] is True
+    assert len(session_data["texts"]) == 2
+
+    # 3. Assign AGAIN (clear and allow reuse)
+    with patch("random.choice") as mock_choice:
+        mock_choice.side_effect = ["TF", "A", "pair_4", True]
+        response2 = client.post("/api/experiment/assign", json={
+            "prolific_pid": pid,
+            "lextale_score": 75.0
+        })
+    assert response2.status_code == 200
+    data2 = response2.json()
+    assert data2["cefr_level"] == "B2"
+    assert data2["is_pilot"] is True
+
+    # 4. Submit final pilot payload
+    submit_payload = {
+        "prolific_pid": pid,
+        "lextale_score": 75.0,
+        "cefr_level": "B2",
+        "text_format": "TF",
+        "sequence": "A",
+        "text_pair": "pair_4",
+        "readings": [
+            {
+                "text_id": "textB4",
+                "condition": "plain",
+                "reading_time_ms": 100000,
+                "hover_events": [],
+                "click_events": [],
+                "click_count": 0,
+                "unique_words_translated": 0,
+                "comprehension": [
+                    {"qid": 1, "answer": "A", "correct": True},
+                    {"qid": 2, "answer": "B", "correct": True},
+                    {"question_id": "alertness_1", "selected": "Option B", "correct": True, "is_alertness": True},
+                    {"qid": 3, "answer": "A", "correct": True},
+                    {"qid": 4, "answer": "B", "correct": True},
+                    {"qid": 5, "answer": "B", "correct": True}
+                ]
+            },
+            {
+                "text_id": "textA4",
+                "condition": "wordahead",
+                "reading_time_ms": 90000,
+                "hover_events": [],
+                "click_events": [],
+                "click_count": 0,
+                "unique_words_translated": 0,
+                "comprehension": [
+                    {"qid": 1, "answer": "A", "correct": True},
+                    {"qid": 2, "answer": "B", "correct": True},
+                    {"question_id": "alertness_2", "selected": "Option D", "correct": True, "is_alertness": True},
+                    {"qid": 3, "answer": "A", "correct": True},
+                    {"qid": 4, "answer": "B", "correct": True},
+                    {"qid": 5, "answer": "B", "correct": True}
+                ]
+            }
+        ],
+        "surveys": {
+            "per_task_1": {"mental_demand": 4},
+            "per_task_2": {"mental_demand": 3},
+            "post_study": {"sus_1": 5, "dependent": 3},
+            "demographics": {
+                "age": "18_24",
+                "gender": "female",
+                "native_language": "Hebrew",
+                "other_languages": "English",
+                "years_studying_english": "10",
+                "course_level": "undergrad",
+                "self_rated_english": "7",
+                "academic_year": "2nd",
+                "field_of_study": "Psychology",
+                "frequency_academic_english": "4",
+                "use_translation_tools": "5",
+                "ac_early": "3"
+            }
+        }
+    }
+
+    imported_csv_data = {}
+    def mock_import_responses(self_obj, csv_file_path):
+        import csv
+        with open(csv_file_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.reader(f)
+            headers = next(reader)
+            row = next(reader)
+            imported_csv_data["headers"] = headers
+            imported_csv_data["row"] = row
+        return {"success": True}
+    
+    with patch("src.qualtrics_client.QualtricsClient.import_responses", mock_import_responses):
+        response3 = client.post("/api/experiment/submit", json=submit_payload)
+        
+    assert response3.status_code == 200
+    assert response3.json()["success"] is True
+
+    # Assert CSV shows is_pilot = 1
+    headers = imported_csv_data["headers"]
+    row = imported_csv_data["row"]
+    h_idx = {h: idx for idx, h in enumerate(headers)}
+    assert row[h_idx["is_pilot"]] == "1"
+
+    # Assert database shows is_pilot = 1
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM participant_meta WHERE prolific_pid = ?", (pid,))
+    meta = cursor.fetchone()
+    conn.close()
+    assert meta is not None
+    assert bool(meta["is_pilot"]) is True

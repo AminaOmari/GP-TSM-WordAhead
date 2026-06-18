@@ -22,7 +22,21 @@
   },
   "quiz": {
     "title": "בוחן הבנת הנקרא",
-    "submit": "הגש תשובות והמשך"
+    "submit": "הגש תשובות והמשך",
+    "alertness1": {
+      "question": "This is an alertness check. To show you are reading carefully, please choose the second option (Option B) below.",
+      "opt0": "Option A",
+      "opt1": "Option B",
+      "opt2": "Option C",
+      "opt3": "Option D"
+    },
+    "alertness2": {
+      "question": "Attention check: please select the fourth option (Option D) from the choices below to confirm you are paying attention.",
+      "opt0": "Option A",
+      "opt1": "Option B",
+      "opt2": "Option C",
+      "opt3": "Option D"
+    }
   },
   "survey": {
     "per_task_title": "משוב על משימת הקריאה",

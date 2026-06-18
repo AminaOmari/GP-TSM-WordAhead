@@ -294,7 +294,7 @@ const LikertScale = ({ id, label, value, onChange, leftAnchor, rightAnchor }) =>
   );
 };
 
-const PerTaskSurvey = ({ condition, textFormat, isFirstTask, onSubmit }) => {
+const PerTaskSurvey = ({ condition, textFormat, onSubmit }) => {
   const [responses, setResponses] = useState({});
 
   const showBlockB = condition === 'wordahead';
@@ -306,21 +306,7 @@ const PerTaskSurvey = ({ condition, textFormat, isFirstTask, onSubmit }) => {
     ...(showBlockC ? PER_TASK_QUESTIONS.blockC : [])
   ];
 
-  const attentionCheck = isFirstTask ? {
-    id: "ac_mid",
-    label: t('survey.attention.check1'),
-    leftAnchor: t('survey.anchors.strongly_disagree'),
-    rightAnchor: t('survey.anchors.strongly_agree'),
-    isAttentionCheck: true
-  } : {
-    id: "ac_late",
-    label: t('survey.attention.check3'),
-    leftAnchor: t('survey.freq_anchors.never'),
-    rightAnchor: t('survey.freq_anchors.always'),
-    isAttentionCheck: true
-  };
-
-  const allQuestions = [...questions, attentionCheck];
+  const allQuestions = questions;
 
   const allAnswered = allQuestions.every(q => responses[q.id] !== undefined);
 
@@ -340,16 +326,6 @@ const PerTaskSurvey = ({ condition, textFormat, isFirstTask, onSubmit }) => {
           rightAnchor={q.rightAnchor}
         />
       ))}
-      <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px dashed var(--border-color)' }}>
-        <LikertScale
-          id={attentionCheck.id}
-          label={attentionCheck.label}
-          value={responses[attentionCheck.id]}
-          onChange={(val) => setResponses(prev => ({ ...prev, [attentionCheck.id]: val }))}
-          leftAnchor={attentionCheck.leftAnchor}
-          rightAnchor={attentionCheck.rightAnchor}
-        />
-      </div>
       
       <button
         className="btn"
@@ -503,8 +479,8 @@ function App() {
   const [priorExposure2, setPriorExposure2] = useState('4');
   const [readingTime1, setReadingTime1] = useState(0);
   const [readingTime2, setReadingTime2] = useState(0);
-  const [quizAnswers1, setQuizAnswers1] = useState(new Array(5).fill(undefined));
-  const [quizAnswers2, setQuizAnswers2] = useState(new Array(5).fill(undefined));
+  const [quizAnswers1, setQuizAnswers1] = useState(new Array(6).fill(undefined));
+  const [quizAnswers2, setQuizAnswers2] = useState(new Array(6).fill(undefined));
   const [quiz1Results, setQuiz1Results] = useState([]);
   const [quiz2Results, setQuiz2Results] = useState([]);
   const [perTaskSurvey1, setPerTaskSurvey1] = useState({});
@@ -517,7 +493,7 @@ function App() {
     other_languages: '',
     years_studying_english: '',
     course_level: '',
-    self_rated_english: '5',
+    self_rated_english: '',
     academic_year: '',
     field_of_study: '',
     frequency_academic_english: '3',
@@ -1031,18 +1007,53 @@ function App() {
     }
   };
 
-  const submitQuiz = async () => {
-    const textId = expCondition.text_order[expStep === 'quiz_1' ? 0 : 1];
-    const mcqs = expTexts[textId].mcqs;
-    const answers = expStep === 'quiz_1' ? quizAnswers1 : quizAnswers2;
+  const getQuizQuestions = (textId, isFirstQuiz) => {
+    if (!expTexts || !expTexts[textId]) return [];
+    const realMcqs = expTexts[textId].mcqs || [];
     
-    const results = mcqs.map((q, idx) => ({
+    const alertnessQuestion = isFirstQuiz ? {
+      id: "alertness_1",
+      question: t('quiz.alertness1.question', "This is an alertness check. To show you are reading carefully, please choose the second option (Option B) below."),
+      options: [
+        t('quiz.alertness1.opt0', "Option A"),
+        t('quiz.alertness1.opt1', "Option B"),
+        t('quiz.alertness1.opt2', "Option C"),
+        t('quiz.alertness1.opt3', "Option D")
+      ],
+      correct: 1, // Option B
+      isAlertness: true
+    } : {
+      id: "alertness_2",
+      question: t('quiz.alertness2.question', "Attention check: please select the fourth option (Option D) from the choices below to confirm you are paying attention."),
+      options: [
+        t('quiz.alertness2.opt0', "Option A"),
+        t('quiz.alertness2.opt1', "Option B"),
+        t('quiz.alertness2.opt2', "Option C"),
+        t('quiz.alertness2.opt3', "Option D")
+      ],
+      correct: 3, // Option D
+      isAlertness: true
+    };
+    
+    const combined = [...realMcqs];
+    combined.splice(2, 0, alertnessQuestion);
+    return combined;
+  };
+
+  const submitQuiz = async () => {
+    const isFirst = expStep === 'quiz_1';
+    const textId = expCondition.text_order[isFirst ? 0 : 1];
+    const combinedQuestions = getQuizQuestions(textId, isFirst);
+    const answers = isFirst ? quizAnswers1 : quizAnswers2;
+    
+    const results = combinedQuestions.map((q, idx) => ({
       question_id: q.id,
       selected: answers[idx] !== undefined ? q.options[answers[idx]] : "",
-      correct: answers[idx] === q.correct
+      correct: answers[idx] === q.correct,
+      is_alertness: !!q.isAlertness
     }));
 
-    if (expStep === 'quiz_1') {
+    if (isFirst) {
       setQuiz1Results(results);
       await logExperimentEvent("quiz_completed", { text_id: textId, results });
       setExpStep('per_task_survey_1');
@@ -1268,7 +1279,7 @@ function App() {
         );
 
       case 'assigned':
-        if (expCondition?.cefr_level === 'exclude') {
+        if (expCondition?.cefr_level === 'exclude' && !expCondition?.is_pilot) {
           return (
             <div className="glass" style={{ maxWidth: '600px', margin: '4rem auto', padding: '3rem', textAlign: 'center' }}>
               <h2 style={{ color: '#ef4444', marginTop: 0 }}>Exclusion Notice</h2>
@@ -1499,13 +1510,14 @@ function App() {
         );
 
       case 'quiz_1':
-      case 'quiz_2':
+      case 'quiz_2': {
+        const quizQuestions = getQuizQuestions(currentTextId, expStep === 'quiz_1');
         return (
           <div className="glass" style={{ maxWidth: '700px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="ltr">
             <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Comprehension Questions</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please answer the following 5 questions about the text you just read.</p>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Please answer the following questions about the text you just read.</p>
             
-            {currentTextData?.mcqs.map((q, idx) => {
+            {quizQuestions.map((q, idx) => {
               const selectedOption = currentQuizAnswers[idx];
               return (
                 <div key={q.id} style={{ marginBottom: '2rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1.5rem' }}>
@@ -1545,7 +1557,7 @@ function App() {
             
             <button
               className="btn"
-              disabled={currentQuizAnswers.length < 5 || currentQuizAnswers.includes(undefined)}
+              disabled={currentQuizAnswers.length < 6 || currentQuizAnswers.includes(undefined)}
               onClick={submitQuiz}
               style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
             >
@@ -1553,6 +1565,7 @@ function App() {
             </button>
           </div>
         );
+      }
 
       case 'per_task_survey_1':
       case 'per_task_survey_2': {
@@ -1565,7 +1578,6 @@ function App() {
             key={expStep}
             condition={condition} 
             textFormat={expCondition.text_format} 
-            isFirstTask={isFirst}
             onSubmit={submitPerTaskSurvey} 
           />
         );
@@ -1822,6 +1834,7 @@ function App() {
                 !surveyDemographics.native_language.trim() ||
                 !surveyDemographics.years_studying_english.trim() ||
                 !surveyDemographics.course_level ||
+                !surveyDemographics.self_rated_english ||
                 !surveyDemographics.academic_year.trim() ||
                 !surveyDemographics.field_of_study.trim()
               }
@@ -1833,13 +1846,25 @@ function App() {
           </div>
         );
 
-      case 'completed':
+      case 'completed': {
+        const isPilot = expCondition?.is_pilot;
         return (
           <div className="glass" style={{ maxWidth: '600px', margin: '4rem auto', padding: '3.5rem', textAlign: 'center' }}>
-            <h2 style={{ color: '#22c55e', marginTop: 0 }}>Experiment Completed Successfully!</h2>
-            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
-              Thank you very much for your time and contribution to our research study. Your responses have been saved and synchronized with Qualtrics.
-            </p>
+            {isPilot ? (
+              <>
+                <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Pilot / Demo Completed!</h2>
+                <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
+                  You have completed the pilot run of the experiment. Your responses have been successfully logged.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 style={{ color: '#22c55e', marginTop: 0 }}>Experiment Completed Successfully!</h2>
+                <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
+                  Thank you very much for your time and contribution to our research study. Your responses have been saved and synchronized with Qualtrics.
+                </p>
+              </>
+            )}
             {submitResult?.qualtrics_sync?.success ? (
               <p style={{ color: '#166534', background: '#f0fdf4', padding: '0.75rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '2rem' }}>
                 ✓ Server sync status: Data uploaded successfully.
@@ -1849,15 +1874,30 @@ function App() {
                 ℹ Server sync status: Logged locally. (Dry-run mode / API offline)
               </p>
             )}
-            <a
-              className="btn"
-              href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
-              style={{ display: 'inline-block', textDecoration: 'none', padding: '1rem 2.5rem', fontSize: '1.1rem', background: 'var(--accent)', color: '#ffffff' }}
-            >
-              Redirect to Prolific to Complete
-            </a>
+            {isPilot ? (
+              <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
+                  Since this is a pilot session, the Prolific redirect is optional:
+                </p>
+                <a
+                  href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
+                  style={{ color: 'var(--accent)', textDecoration: 'underline', fontWeight: 'bold', fontSize: '1rem' }}
+                >
+                  Optional Prolific Redirect (C10BDQBR)
+                </a>
+              </div>
+            ) : (
+              <a
+                className="btn"
+                href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
+                style={{ display: 'inline-block', textDecoration: 'none', padding: '1rem 2.5rem', fontSize: '1.1rem', background: 'var(--accent)', color: '#ffffff' }}
+              >
+                Redirect to Prolific to Complete
+              </a>
+            )}
           </div>
         );
+      }
 
       default:
         return null;

@@ -49,6 +49,7 @@ def init_db():
             sequence TEXT NOT NULL,
             text_pair TEXT NOT NULL,
             text_order TEXT NOT NULL,
+            is_pilot BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -90,12 +91,42 @@ def init_db():
             frequency_academic_english TEXT,
             use_translation_tools TEXT,
             ac_early TEXT,
-            ac_mid_pass BOOLEAN,
-            ac_late_pass BOOLEAN,
+            quiz1_attention_raw TEXT,
+            quiz1_attention_pass BOOLEAN,
+            quiz2_attention_raw TEXT,
+            quiz2_attention_pass BOOLEAN,
+            is_pilot BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.commit()
+
+    # Try adding the is_pilot column to experiment_participants if it doesn't exist
+    try:
+        cursor.execute("SELECT is_pilot FROM experiment_participants LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE experiment_participants ADD COLUMN is_pilot BOOLEAN DEFAULT 0")
+            conn.commit()
+        except Exception as err:
+            print(f"Error altering table experiment_participants: {err}")
+
+    # Try adding new alertness and pilot columns to participant_meta if they don't exist
+    for col, col_type in [
+        ("quiz1_attention_raw", "TEXT"),
+        ("quiz1_attention_pass", "BOOLEAN"),
+        ("quiz2_attention_raw", "TEXT"),
+        ("quiz2_attention_pass", "BOOLEAN"),
+        ("is_pilot", "BOOLEAN DEFAULT 0")
+    ]:
+        try:
+            cursor.execute(f"SELECT {col} FROM participant_meta LIMIT 1")
+        except sqlite3.OperationalError:
+            try:
+                cursor.execute(f"ALTER TABLE participant_meta ADD COLUMN {col} {col_type}")
+                conn.commit()
+            except Exception as err:
+                print(f"Error adding {col} to participant_meta: {err}")
 
     # Try adding the skimmed_words column if it doesn't exist (for existing DBs)
     try:

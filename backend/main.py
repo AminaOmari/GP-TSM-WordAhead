@@ -50,6 +50,10 @@ try:
 except Exception as e:
     print(f"⚠️ Failed to initialize database: {e}")
 
+# Configure pilot Prolific PIDs
+PILOT_PIDS_RAW = os.getenv("PILOT_PIDS", "00")
+PILOT_PIDS = [pid.strip() for pid in PILOT_PIDS_RAW.split(",") if pid.strip()]
+
 app = FastAPI()
 
 def clean_rtf(text: str) -> str:
@@ -596,7 +600,16 @@ class SubmitRequest(BaseModel):
     readings: List[ReadingPayload]
     surveys: SurveyPayload
 
-# 8 Matched Academic texts & 5 MCQs per text (Counterbalanced)
+# =====================================================================
+# EXPERIMENT TEXTS INTEGRATION GUIDE
+# IMPORTANT:
+# - Each text MUST have exactly 5 comprehension MCQs in the "mcqs" array.
+# - The alertness check (attention check item) is system-injected in the middle
+#   (index 2 of 6 items total) at runtime. DO NOT author alertness items here.
+# - The "correct" field is 0-INDEXED: "correct": 0 is the FIRST option,
+#   "correct": 1 is the SECOND option. Getting this wrong silently corrupts 
+#   every participant's comprehension score.
+# =====================================================================
 EXPERIMENT_TEXTS = {
     "textA1": {
         "title": "Online Learning in Modern Education",
@@ -706,39 +719,56 @@ async def experiment_assign(req: AssignRequest):
     if not prolific_pid:
         raise HTTPException(status_code=400, detail="Prolific PID cannot be empty")
         
+    is_pilot = prolific_pid in PILOT_PIDS
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 1. Check if participant already assigned
-    cursor.execute("SELECT * FROM experiment_participants WHERE prolific_pid = ?", (prolific_pid,))
-    existing = cursor.fetchone()
-    if existing:
-        conn.close()
-        return {
-            "prolific_pid": existing["prolific_pid"],
-            "lextale_score": existing["lextale_score"],
-            "cefr_level": existing["cefr_level"],
-            "text_format": existing["text_format"],
-            "sequence": existing["sequence"],
-            "text_pair": existing["text_pair"],
-            "text_order": json.loads(existing["text_order"])
-        }
+    # 1. Check if participant already assigned (skip for reusable pilot PIDs)
+    if not is_pilot:
+        cursor.execute("SELECT * FROM experiment_participants WHERE prolific_pid = ?", (prolific_pid,))
+        existing = cursor.fetchone()
+        if existing:
+            conn.close()
+            return {
+                "prolific_pid": existing["prolific_pid"],
+                "lextale_score": existing["lextale_score"],
+                "cefr_level": existing["cefr_level"],
+                "text_format": existing["text_format"],
+                "sequence": existing["sequence"],
+                "text_pair": existing["text_pair"],
+                "text_order": json.loads(existing["text_order"]),
+                "is_pilot": bool(existing.get("is_pilot", False))
+            }
+    else:
+        # Reusable pilot ID: clear database records for this pilot PID to run fresh
+        cursor.execute("DELETE FROM experiment_participants WHERE prolific_pid = ?", (prolific_pid,))
+        cursor.execute("DELETE FROM participant_meta WHERE prolific_pid = ?", (prolific_pid,))
+        cursor.execute("DELETE FROM survey_responses WHERE prolific_pid = ?", (prolific_pid,))
+        cursor.execute("DELETE FROM experiment_events WHERE prolific_pid = ?", (prolific_pid,))
+        conn.commit()
     
     # 2. Determine CEFR level based on approved thresholds
+    # Aligned to Lemhöfer & Broersma (2012) Table 9:
+    # - score < 60        -> B1
+    # - 60 <= score <= 80 -> B2
+    # - score > 80        -> exclude (C1/C2)
+    # Note: exactly-80 is treated as B2 (the table lists 80 at the B2/C1-C2 boundary;
+    # this keeps the participant eligible) pending final confirmation from the supervisor.
     score = req.lextale_score
-    if score > 80:
+    if score > 80.0:
         cefr_level = "exclude"
-    elif score <= 59:
+    elif score < 60.0:
         cefr_level = "B1"
     else:
         cefr_level = "B2"
         
-    # If excluded, save to DB and return early
-    if cefr_level == "exclude":
+    # If excluded, save to DB and return early (unless it's a pilot session)
+    if cefr_level == "exclude" and not is_pilot:
         cursor.execute("""
-            INSERT INTO experiment_participants (prolific_pid, lextale_score, cefr_level, text_format, sequence, text_pair, text_order)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (prolific_pid, score, cefr_level, "", "", "", json.dumps([])))
+            INSERT INTO experiment_participants (prolific_pid, lextale_score, cefr_level, text_format, sequence, text_pair, text_order, is_pilot)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (prolific_pid, score, cefr_level, "", "", "", json.dumps([]), int(is_pilot)))
         conn.commit()
         conn.close()
         return {
@@ -748,7 +778,8 @@ async def experiment_assign(req: AssignRequest):
             "text_format": "",
             "sequence": "",
             "text_pair": "",
-            "text_order": []
+            "text_order": [],
+            "is_pilot": is_pilot
         }
         
     # 3. Random counterbalanced assignment
@@ -758,21 +789,21 @@ async def experiment_assign(req: AssignRequest):
     if cefr_level == "B1":
         text_pair = random.choice(["pair_1", "pair_2"])
     else:
+        # High scorers/pilot exclusion cases get mapped to B2 texts (pairs 3/4)
         text_pair = random.choice(["pair_3", "pair_4"])
         
-    # Resolve the index suffix
     suffix = "1" if text_pair == "pair_1" else "2" if text_pair == "pair_2" else "3" if text_pair == "pair_3" else "4"
     
-    # Decouple text presentation order from Sequence to fully counterbalance order/text effects
+    # Counterbalance text presentation order from Sequence to fully counterbalance order/text effects
     if random.choice([True, False]):
         text_order = [f"textA{suffix}", f"textB{suffix}"]
     else:
         text_order = [f"textB{suffix}", f"textA{suffix}"]
         
     cursor.execute("""
-        INSERT INTO experiment_participants (prolific_pid, lextale_score, cefr_level, text_format, sequence, text_pair, text_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (prolific_pid, score, cefr_level, text_format, sequence, text_pair, json.dumps(text_order)))
+        INSERT INTO experiment_participants (prolific_pid, lextale_score, cefr_level, text_format, sequence, text_pair, text_order, is_pilot)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (prolific_pid, score, cefr_level, text_format, sequence, text_pair, json.dumps(text_order), int(is_pilot)))
     conn.commit()
     conn.close()
     
@@ -783,7 +814,8 @@ async def experiment_assign(req: AssignRequest):
         "text_format": text_format,
         "sequence": sequence,
         "text_pair": text_pair,
-        "text_order": text_order
+        "text_order": text_order,
+        "is_pilot": is_pilot
     }
 
 @app.get("/api/experiment/session/{prolific_pid}")
@@ -799,7 +831,10 @@ async def get_experiment_session(prolific_pid: str):
         raise HTTPException(status_code=404, detail="Participant session not found")
         
     cefr_level = row["cefr_level"]
-    if cefr_level == "exclude":
+    is_pilot = bool(row["is_pilot"])
+    
+    # Excluded participants (who are not pilots) do not get texts
+    if cefr_level == "exclude" and not is_pilot:
         return {
             "assignment": {
                 "prolific_pid": row["prolific_pid"],
@@ -808,13 +843,20 @@ async def get_experiment_session(prolific_pid: str):
                 "text_format": "",
                 "sequence": "",
                 "text_pair": "",
-                "text_order": []
+                "text_order": [],
+                "is_pilot": is_pilot
             },
             "texts": {}
         }
         
     text_order = json.loads(row["text_order"])
     text_format = row["text_format"]
+    
+    # If a pilot got excluded but falls through, we need to assign default format if empty
+    if not text_format:
+        text_format = "TF"
+    if not text_order:
+        text_order = ["textA3", "textB3"] # Default backup for pilot exclusion
     
     texts = {}
     for text_id in text_order:
@@ -831,10 +873,11 @@ async def get_experiment_session(prolific_pid: str):
             "prolific_pid": row["prolific_pid"],
             "lextale_score": row["lextale_score"],
             "cefr_level": row["cefr_level"],
-            "text_format": row["text_format"],
-            "sequence": row["sequence"],
-            "text_pair": row["text_pair"],
-            "text_order": text_order
+            "text_format": text_format,
+            "sequence": row["sequence"] if row["sequence"] else "A",
+            "text_pair": row["text_pair"] if row["text_pair"] else "pair_3",
+            "text_order": text_order,
+            "is_pilot": is_pilot
         },
         "texts": texts
     }
@@ -883,11 +926,31 @@ async def experiment_submit(req: SubmitRequest):
     demo = payload_data.get("surveys", {}).get("demographics", {})
     ac_early = demo.get("ac_early", "")
     
-    # Calculate pass for attention checks
-    pt1 = payload_data.get("surveys", {}).get("per_task_1", {})
-    pt2 = payload_data.get("surveys", {}).get("per_task_2", {})
-    ac_mid_pass = str(pt1.get("ac_mid", "")) == "7"
-    ac_late_pass = str(pt2.get("ac_late", "")) == "1"
+    # Construct readings
+    reading1 = payload_data["readings"][0] if len(payload_data["readings"]) > 0 else {}
+    reading2 = payload_data["readings"][1] if len(payload_data["readings"]) > 1 else {}
+
+    # Extract alertness items from quizzes
+    r1_comp = reading1.get("comprehension", [])
+    q1_alert = next((item for item in r1_comp if item.get("is_alertness") or item.get("question_id") == "alertness_1"), None)
+    quiz1_attention_raw = str(q1_alert.get("selected", "")) if q1_alert else ""
+    quiz1_attention_pass = bool(q1_alert.get("correct", False)) if q1_alert else False
+
+    r2_comp = reading2.get("comprehension", [])
+    q2_alert = next((item for item in r2_comp if item.get("is_alertness") or item.get("question_id") == "alertness_2"), None)
+    quiz2_attention_raw = str(q2_alert.get("selected", "")) if q2_alert else ""
+    quiz2_attention_pass = bool(q2_alert.get("correct", False)) if q2_alert else False
+
+    # Exclude alertness check from comprehension scores
+    r1_real_mcqs = [item for item in r1_comp if not item.get("is_alertness") and item.get("question_id") not in ["alertness_1", "alertness_2"]]
+    r1_correct = sum(1 for item in r1_real_mcqs if item.get("correct") is True)
+    trial1_comprehension_score = r1_correct / 5.0
+
+    r2_real_mcqs = [item for item in r2_comp if not item.get("is_alertness") and item.get("question_id") not in ["alertness_1", "alertness_2"]]
+    r2_correct = sum(1 for item in r2_real_mcqs if item.get("correct") is True)
+    trial2_comprehension_score = r2_correct / 5.0
+
+    is_pilot = req.prolific_pid.strip() in PILOT_PIDS
     
     # Insert participant_meta
     cursor.execute("""
@@ -895,14 +958,14 @@ async def experiment_submit(req: SubmitRequest):
             prolific_pid, age, gender, native_language, other_languages,
             years_studying_english, course_level, self_rated_english, academic_year,
             field_of_study, frequency_academic_english, use_translation_tools,
-            ac_early, ac_mid_pass, ac_late_pass
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ac_early, quiz1_attention_raw, quiz1_attention_pass, quiz2_attention_raw, quiz2_attention_pass, is_pilot
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         req.prolific_pid.strip(), demo.get("age"), demo.get("gender"), demo.get("native_language"),
         demo.get("other_languages"), demo.get("years_studying_english"), demo.get("course_level"),
         demo.get("self_rated_english"), demo.get("academic_year"), demo.get("field_of_study"),
         demo.get("frequency_academic_english"), demo.get("use_translation_tools"),
-        ac_early, ac_mid_pass, ac_late_pass
+        ac_early, quiz1_attention_raw, int(quiz1_attention_pass), quiz2_attention_raw, int(quiz2_attention_pass), int(is_pilot)
     ))
 
     # Log final submission
@@ -915,9 +978,6 @@ async def experiment_submit(req: SubmitRequest):
     conn.close()
     
     # Construct CSV payload
-    reading1 = payload_data["readings"][0] if len(payload_data["readings"]) > 0 else {}
-    reading2 = payload_data["readings"][1] if len(payload_data["readings"]) > 1 else {}
-
     r1_hover_events = reading1.get("hover_events", [])
     r1_hover_count = len(r1_hover_events)
     r1_dwell_ms = sum(int(e.get("dwell_ms", 0)) for e in r1_hover_events if isinstance(e, dict))
@@ -932,7 +992,9 @@ async def experiment_submit(req: SubmitRequest):
         "trial1_click_count", "trial1_unique_words_translated", "trial1_hover_count", "trial1_dwell_ms", "trial1_comprehension",
         "trial2_text_id", "trial2_condition", "trial2_time_ms", "trial2_hovers", "trial2_clicks",
         "trial2_click_count", "trial2_unique_words_translated", "trial2_hover_count", "trial2_dwell_ms", "trial2_comprehension",
-        "survey_per_task_1", "survey_per_task_2", "survey_post_study", "survey_demographics"
+        "survey_per_task_1", "survey_per_task_2", "survey_post_study", "survey_demographics",
+        "is_pilot", "ac_early", "quiz1_attention_raw", "quiz1_attention_pass", "quiz2_attention_raw", "quiz2_attention_pass",
+        "trial1_comprehension_score", "trial2_comprehension_score"
     ]
     
     row = [
@@ -965,7 +1027,15 @@ async def experiment_submit(req: SubmitRequest):
         json.dumps(payload_data["surveys"]["per_task_1"]),
         json.dumps(payload_data["surveys"]["per_task_2"]),
         json.dumps(payload_data["surveys"]["post_study"]),
-        json.dumps(payload_data["surveys"]["demographics"])
+        json.dumps(payload_data["surveys"]["demographics"]),
+        int(is_pilot),
+        ac_early,
+        quiz1_attention_raw,
+        int(quiz1_attention_pass),
+        quiz2_attention_raw,
+        int(quiz2_attention_pass),
+        trial1_comprehension_score,
+        trial2_comprehension_score
     ]
     
     # Write to a temp CSV file in the backend folder (with BOM for Hebrew)

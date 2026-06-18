@@ -87,6 +87,15 @@ WordAhead includes built-in academic evaluation scripts to measure the accuracy 
 
 ---
 
+## 📖 Experiment Texts Integration Guide
+
+When updating the experiment passages and questions in `backend/main.py` (`EXPERIMENT_TEXTS` object):
+- **Exact MCQ Count**: Provide exactly **5 comprehension MCQs** per text in the `mcqs` array.
+- **Alertness Checks**: Do NOT write alertness/attention checks in the `mcqs` list. The system automatically injects the alertness checks in the middle of the quiz (index 2 of 6 total items) at runtime.
+- **0-Indexed Answers**: The `correct` field in each MCQ must be **0-indexed** (i.e. `correct: 0` refers to the first option, `correct: 1` refers to the second option). Setting this incorrectly will corrupt comprehension scores.
+
+---
+
 ## 🧪 Test Automation & Quality Assurance
 
 WordAhead includes a robust, end-to-end automated testing system to verify the participant flow, counterbalancing routing, and behavioral data pipeline.
