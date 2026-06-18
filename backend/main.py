@@ -757,7 +757,10 @@ async def experiment_assign(req: AssignRequest):
     # this keeps the participant eligible) pending final confirmation from the supervisor.
     score = req.lextale_score
     if score > 80.0:
-        cefr_level = "exclude"
+        if is_pilot:
+            cefr_level = "B2"
+        else:
+            cefr_level = "exclude"
     elif score < 60.0:
         cefr_level = "B1"
     else:

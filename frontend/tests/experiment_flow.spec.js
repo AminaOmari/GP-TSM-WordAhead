@@ -499,7 +499,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     const mockAssignment = {
       prolific_pid: "00",
       lextale_score: 95.0,
-      cefr_level: "exclude",
+      cefr_level: "B2",
       text_format: "TS",
       sequence: "B",
       text_pair: "pair_3",

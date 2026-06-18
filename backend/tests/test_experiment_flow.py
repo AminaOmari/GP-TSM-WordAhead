@@ -506,7 +506,7 @@ def test_failed_attention_checks():
 def test_pilot_session():
     pid = "00"  # Pilot PID from configuration default
     
-    # 1. Assign once with score > 80 (should proceed, NOT exclude)
+    # 1. Assign once with score > 80 (should proceed, NOT exclude, assign B2)
     with patch("random.choice") as mock_choice:
         mock_choice.side_effect = ["TS", "B", "pair_3", False]
         response = client.post("/api/experiment/assign", json={
@@ -516,7 +516,7 @@ def test_pilot_session():
         
     assert response.status_code == 200
     data = response.json()
-    assert data["cefr_level"] == "exclude"  # classified as exclude
+    assert data["cefr_level"] == "B2"  # Now B2 instead of exclude for pilot bypass
     assert data["is_pilot"] is True
     # Verify pilot fallthrough
     assert data["text_format"] == "TS"
@@ -639,3 +639,80 @@ def test_pilot_session():
     conn.close()
     assert meta is not None
     assert bool(meta["is_pilot"]) is True
+
+# ---------------------------------------------------------
+# 7. Pilot PID Matching and Reentry Wiping Robustness Test
+# ---------------------------------------------------------
+def test_pilot_pid_matching_robustness():
+    # PIDs to check:
+    # 1. "5f00a2b1c3004d5e6f7a8b00" (contains "00" in middle, realistic Prolific ID)
+    # 2. "00112233445566778899aabb" (starts with "00", realistic Prolific ID)
+    # 3. "00" (exact match, should be pilot)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    pids_to_insert = ["5f00a2b1c3004d5e6f7a8b00", "00112233445566778899aabb", "00"]
+    for pid in pids_to_insert:
+        # Clear database records just in case
+        cursor.execute("DELETE FROM experiment_participants WHERE prolific_pid = ?", (pid,))
+        cursor.execute("DELETE FROM survey_responses WHERE prolific_pid = ?", (pid,))
+        cursor.execute("DELETE FROM participant_meta WHERE prolific_pid = ?", (pid,))
+        
+        # Insert dummy survey response to verify wiping
+        cursor.execute("""
+            INSERT INTO survey_responses (prolific_pid, survey_type, responses)
+            VALUES (?, ?, ?)
+        """, (pid, "dummy_survey_to_wipe", json.dumps({"q": 5})))
+    conn.commit()
+    conn.close()
+
+    # 1. "5f00a2b1c3004d5e6f7a8b00" with score 95.0.
+    # Since score > 80 and NOT pilot, this should be EXCLUDED (assigned "exclude").
+    # The dummy survey response MUST NOT be wiped.
+    resp1 = client.post("/api/experiment/assign", json={
+        "prolific_pid": "5f00a2b1c3004d5e6f7a8b00",
+        "lextale_score": 95.0
+    })
+    assert resp1.status_code == 200
+    assert resp1.json()["cefr_level"] == "exclude"
+    assert resp1.json()["is_pilot"] is False
+    
+    # 2. "00112233445566778899aabb" with score 75.0.
+    # Since score is 75 and NOT pilot, this should be assigned B2, is_pilot = False.
+    # The dummy survey response MUST NOT be wiped.
+    resp2 = client.post("/api/experiment/assign", json={
+        "prolific_pid": "00112233445566778899aabb",
+        "lextale_score": 75.0
+    })
+    assert resp2.status_code == 200
+    assert resp2.json()["cefr_level"] == "B2"
+    assert resp2.json()["is_pilot"] is False
+
+    # 3. "00" (exact match) with score 95.0.
+    # Since it is a pilot, it should bypass exclusion.
+    # It gets assigned cefr_level = "B2" and is_pilot = True.
+    # The dummy survey response MUST be wiped!
+    resp3 = client.post("/api/experiment/assign", json={
+        "prolific_pid": "00",
+        "lextale_score": 95.0
+    })
+    assert resp3.status_code == 200
+    assert resp3.json()["cefr_level"] == "B2"
+    assert resp3.json()["is_pilot"] is True
+
+    # Verify database states
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Check if dummy survey responses were wiped or kept
+    cursor.execute("SELECT * FROM survey_responses WHERE prolific_pid = ? AND survey_type = ?", ("5f00a2b1c3004d5e6f7a8b00", "dummy_survey_to_wipe"))
+    assert cursor.fetchone() is not None, "Real PID matching contains '00' wiped data inappropriately!"
+    
+    cursor.execute("SELECT * FROM survey_responses WHERE prolific_pid = ? AND survey_type = ?", ("00112233445566778899aabb", "dummy_survey_to_wipe"))
+    assert cursor.fetchone() is not None, "Real PID matching starts with '00' wiped data inappropriately!"
+    
+    cursor.execute("SELECT * FROM survey_responses WHERE prolific_pid = ? AND survey_type = ?", ("00", "dummy_survey_to_wipe"))
+    assert cursor.fetchone() is None, "Pilot PID '00' failed to wipe previous session data!"
+    
+    conn.close()
