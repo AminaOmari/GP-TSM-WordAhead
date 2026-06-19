@@ -41,3 +41,25 @@ This checklist contains the visual-judgment, typographic, and subjective quality
   - Demographics "Complete Experiment" button should visually enable/disable instantly when form validation rules are met.
   - Per-task survey and post-study survey submit buttons must disable until all questions are answered, showing a disabled pointer/color state.
 - [ ] **Micro-animations**: Hovering over submit/action buttons must trigger a subtle scale or color transition.
+
+---
+
+## 5. Mobile & Responsive Layout (360px - 430px Viewports)
+- [ ] **Word Translation Bottom Sheet**:
+  - Tapping a word in the reading passage must present translation details in a fixed bottom sheet.
+  - The bottom sheet must have a visible close (`X`) button in the header.
+  - Clicking the `X` button must collapse the bottom sheet immediately.
+  - Confirm the bottom sheet handles safe area bottom overlays (`env(safe-area-inset-bottom)`).
+- [ ] **Single-Column Stacking**:
+  - Ensure the main interface collapses cleanly to one column without horizontal scrolling.
+  - Verify layout ordering on mobile: passage first, control forms and sidebar details following below.
+  - Verify the top header is static on mobile, preserving valuable vertical space.
+- [ ] **Likert Scale Form Wrapping**:
+  - Verify that the Likert options and their textual anchors (left/right) are stacked on mobile viewports so that they do not stretch wider than 360px.
+  - Confirm that radio buttons and circles are large enough to touch comfortably.
+- [ ] **Touch Target Sizes**:
+  - Verify that buttons, select boxes, inputs, and list choices have at least 44px height for safe finger targeting.
+- [ ] **Modal and Overlay Scrolling**:
+  - Open Dashboard and "How to Use" modals on mobile.
+  - Confirm they are limited to a max height of 90dvh and their inner content scrolls vertically.
+  - Verify modal close buttons are within the screen boundaries and clickable.

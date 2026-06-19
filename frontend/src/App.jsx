@@ -274,11 +274,11 @@ const LikertScale = ({ id, label, value, onChange, leftAnchor, rightAnchor }) =>
   return (
     <div style={{ marginBottom: '2rem' }}>
       <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', lineHeight: '1.5' }}>{label}</h4>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '80px', textAlign: 'right' }}>{leftAnchor}</span>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '80px', textAlign: 'right' }}>{leftAnchor}</span>
+        <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
           {[1, 2, 3, 4, 5, 6, 7].map((val) => (
-            <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
+            <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
               <input
                 type="radio"
                 name={id}
@@ -290,7 +290,7 @@ const LikertScale = ({ id, label, value, onChange, leftAnchor, rightAnchor }) =>
             </label>
           ))}
         </div>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '80px', textAlign: 'left' }}>{rightAnchor}</span>
+        <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', width: '80px', textAlign: 'left' }}>{rightAnchor}</span>
       </div>
     </div>
   );
@@ -1331,11 +1331,11 @@ function App() {
             
             <div style={{ marginTop: '2rem' }}>
               <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem' }}>{t('pre_reading.prior_exposure')}</label>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.not_familiar')}</span>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+              <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.not_familiar')}</span>
+                <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
                   {[1, 2, 3, 4, 5, 6, 7].map((val) => (
-                    <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                    <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                       <input
                         type="radio"
                         name={`pre_reading_exposure_${isFirstPre ? '1' : '2'}`}
@@ -1347,7 +1347,7 @@ function App() {
                     </label>
                   ))}
                 </div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.very_familiar')}</span>
+                <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.very_familiar')}</span>
               </div>
             </div>
             
@@ -1386,7 +1386,7 @@ function App() {
               </div>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: currentReadingCondition === 'wordahead' ? '1fr 320px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+            <div className="reading-layout-grid" style={{ display: 'grid', gridTemplateColumns: currentReadingCondition === 'wordahead' ? '1fr 320px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
               <div className="glass content-panel" style={{ padding: '2.5rem', background: 'white' }}>
                 <h2 style={{ marginTop: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
                   {currentTextData?.title}
@@ -1425,8 +1425,16 @@ function App() {
                           key={i}
                           className={className}
                           onClick={() => handleWordClick(t)}
-                          onMouseEnter={(e) => handleWordMouseEnter(e, t)}
-                          onMouseLeave={() => handleWordMouseLeave(t)}
+                          onPointerEnter={(e) => {
+                            if (e.pointerType !== 'touch') {
+                              handleWordMouseEnter(e, t);
+                            }
+                          }}
+                          onPointerLeave={(e) => {
+                            if (e.pointerType !== 'touch') {
+                              handleWordMouseLeave(t);
+                            }
+                          }}
                           style={{ cursor: currentReadingCondition === 'wordahead' ? 'pointer' : 'default' }}
                         >
                           {t.text}{" "}
@@ -1446,9 +1454,14 @@ function App() {
               </div>
               
               {currentReadingCondition === 'wordahead' && (
-                <div className="glass translation-panel" style={{ height: 'fit-content', background: 'white', position: 'sticky', top: '1rem' }}>
-                  <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                    Translation
+                <div className={`glass translation-panel ${selectedWord ? 'has-selection' : ''}`} style={{ height: 'fit-content', background: 'white', position: 'sticky', top: '1rem' }}>
+                  <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Translation</span>
+                    {selectedWord && (
+                      <button className="close-btn" onClick={() => setSelectedWord(null)} style={{ position: 'static', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+                        <X size={18} />
+                      </button>
+                    )}
                   </h3>
                   {!selectedWord ? (
                     <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '2rem', fontSize: '0.9rem' }}>
@@ -1728,11 +1741,11 @@ function App() {
 
               <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Self-Rated English Level</label>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Beginner (1)</span>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Beginner (1)</span>
+                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((val) => (
-                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="radio"
                           name="demographics_level"
@@ -1744,17 +1757,17 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fluent (5)</span>
+                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fluent (5)</span>
                 </div>
               </div>
 
               <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Prior Topic Exposure</label>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>None (1)</span>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>None (1)</span>
+                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="radio"
                           name="demographics_exposure"
@@ -1766,17 +1779,17 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>High (5)</span>
+                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>High (5)</span>
                 </div>
               </div>
 
               <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('demographics.reads_academic_english')}</label>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
+                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="radio"
                           name="demographics_freq"
@@ -1788,17 +1801,17 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.daily')}</span>
+                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.daily')}</span>
                 </div>
               </div>
 
               <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('demographics.uses_translation_tools')}</label>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
+                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={val} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="radio"
                           name="demographics_translation"
@@ -1810,16 +1823,16 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.always')}</span>
+                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.always')}</span>
                 </div>
               </div>
               <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px dashed var(--border-color)' }}>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('survey.attention.check2')}</label>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>1</span>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>1</span>
+                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
                     {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={`ac_${val}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <label key={`ac_${val}`} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
                         <input
                           type="radio"
                           name="demographics_ac"
@@ -1831,7 +1844,7 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5</span>
+                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5</span>
                 </div>
               </div>
             </div>
@@ -1971,7 +1984,7 @@ function App() {
         </div>
 
         {notification && (
-          <div style={{
+          <div className="notification-toast" style={{
             position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
             background: '#1e293b', color: 'white', padding: '0.75rem 1.5rem',
             borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
@@ -1991,6 +2004,7 @@ function App() {
               setExperimentMode(false);
               setExpStep('');
             }}
+            className="skip-test-btn"
             style={{
               position: 'fixed',
               bottom: '1.5rem',
@@ -2123,7 +2137,7 @@ function App() {
         </header>
 
         {notification && (
-          <div style={{
+          <div className="notification-toast" style={{
             position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
             background: '#1e293b', color: 'white', padding: '0.75rem 1.5rem',
             borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
@@ -2295,7 +2309,7 @@ function App() {
         </div>
 
         {/* Right Panel: Translation Sidebar */}
-        <div className="glass translation-panel">
+        <div className={`glass translation-panel ${selectedWord ? 'has-selection' : ''}`}>
           <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontSize: '1.1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
             <img src="/WordAheadLogo.png" alt="WordAhead Logo" style={{ height: '20px', objectFit: 'contain' }} /> Translation
           </h2>
@@ -2431,7 +2445,7 @@ function App() {
             }}
           >
             <motion.div
-              className="glass"
+              className="glass modal-content-card"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
@@ -2776,7 +2790,7 @@ function App() {
             }}
           >
             <motion.div
-              className="glass"
+              className="glass modal-content-card"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}

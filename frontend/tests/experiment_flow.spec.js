@@ -673,4 +673,154 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await expect(page.locator('h2:has-text("Pilot / Demo Completed!")')).toBeVisible();
     await expect(page.locator('a:has-text("Optional Prolific Redirect")')).toBeVisible();
   });
+
+  test('Mobile Touch Translation Interaction', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.use || !testInfo.project.use.hasTouch, 'Only runs on touch-enabled devices');
+    // 1. Mock API calls to isolate from backend
+    const mockAssignment = {
+      prolific_pid: "mobile_test_pid",
+      lextale_score: 85.0,
+      cefr_level: "B2",
+      text_format: "TS",
+      sequence: "B",
+      text_pair: "pair_3",
+      text_order: ["textA3", "textB3"]
+    };
+
+    const mockTextSession = {
+      assignment: mockAssignment,
+      texts: {
+        textA3: {
+          title: "Mock Passage A3",
+          text: "This is a mock academic reading passage to test the WordAhead frontend system.",
+          mcqs: Array.from({ length: 5 }, (_, i) => ({
+            id: `q_a_${i}`,
+            question: `Comprehension Question A ${i + 1}`,
+            options: ["Option A", "Option B", "Option C", "Option D"],
+            correct: 0
+          }))
+        },
+        textB3: {
+          title: "Mock Passage B3",
+          text: "This is a second mock academic reading passage.",
+          mcqs: Array.from({ length: 5 }, (_, i) => ({
+            id: `q_b_${i}`,
+            question: `Comprehension Question B ${i + 1}`,
+            options: ["Option A", "Option B", "Option C", "Option D"],
+            correct: 1
+          }))
+        }
+      }
+    };
+
+    const mockTokens = {
+      tokens: [
+        { text: "This", cefr: "A1" },
+        { text: " ", cefr: null },
+        { text: "is", cefr: "A1" },
+        { text: " ", cefr: null },
+        { text: "a", cefr: "A1" },
+        { text: " ", cefr: null },
+        { text: "mock", cefr: "C1", importance: 3 },
+        { text: " ", cefr: null },
+        { text: "passage", cefr: "B2", importance: 2 },
+        { text: ".", cefr: null }
+      ]
+    };
+
+    const mockTranslation = {
+      translation: "תרגום_מדומה",
+      transliteration: "mock_trans",
+      part_of_speech: "noun",
+      root: "מ-ק",
+      root_meaning: "fake",
+      example: "This is a mock text."
+    };
+
+    await page.route('**/api/experiment/assign', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockAssignment) });
+    });
+
+    await page.route('**/api/experiment/session/*', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockTextSession) });
+    });
+
+    await page.route('**/api/analyze', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockTokens) });
+    });
+
+    await page.route('**/api/translate', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockTranslation) });
+    });
+
+    await page.route('**/api/experiment/log_event', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    });
+
+    // Track if any hover events are logged
+    let hoverEventLogged = false;
+    page.on('request', request => {
+      if (request.url().includes('/api/experiment/log_event')) {
+        const postData = request.postDataJSON();
+        if (postData && postData.event_type === 'hover') {
+          hoverEventLogged = true;
+        }
+      }
+    });
+
+    // 2. Open page
+    await page.goto('/');
+
+    // 3. Consent
+    const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
+    const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
+    await pidInput.fill('mobile_test_pid');
+    await consentButton.dispatchEvent('click');
+
+    // 4. LexTALE
+    for (let i = 0; i < 63; i++) {
+      await page.locator('button:has-text("YES (Real Word)")').dispatchEvent('click');
+    }
+
+    // 5. Demographics (Submit form)
+    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
+    await page.locator('select').nth(0).selectOption('18_24');
+    await page.locator('select').nth(1).selectOption('female');
+    await page.locator('select').nth(2).selectOption('Hebrew');
+    await page.fill('input[placeholder="e.g. 8"]', '10');
+    await page.locator('select').nth(3).selectOption('undergrad');
+    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
+    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+    await page.locator('input[name="demographics_ac"]').nth(2).dispatchEvent('click');
+    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
+    await expect(demoSubmitButton).toBeEnabled();
+    await demoSubmitButton.dispatchEvent('click');
+
+    // 6. Assignment
+    const startReadingButton = page.locator('button:has-text("Start Reading Phase")');
+    await expect(startReadingButton).toBeVisible();
+    await startReadingButton.dispatchEvent('click');
+
+    // 7. Pre-reading 1
+    const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
+    await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
+    await preContinueButton1.dispatchEvent('click');
+
+    // 8. Reading view: Tap a word
+    // Find the word 'mock' and tap it (emulated touch interaction)
+    const wordMock = page.locator('span.word:has-text("mock")');
+    await expect(wordMock).toBeVisible();
+    await wordMock.tap();
+
+    // 9. Assert translation panel is visible and displays details
+    const translationPanel = page.locator('.translation-panel');
+    await expect(translationPanel).toBeVisible();
+    await expect(translationPanel).toHaveClass(/has-selection/);
+    
+    // Check that translation output is present
+    await expect(translationPanel.locator('text=תרגום_מדומה')).toBeVisible();
+    
+    // Verify that NO hover event has been logged during this touch/tap interaction
+    expect(hoverEventLogged).toBe(false);
+  });
 });
