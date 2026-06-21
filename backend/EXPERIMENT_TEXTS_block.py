@@ -58,12 +58,57 @@ Chloe's age group is spending time on their phones at home that they are missing
 Teenagers might have their parents to thank for their smartphone addiction Peter, reports he used to be on his phone or laptop constantly. 'I was always connected and I felt like I was always working,' he says. he takes card and puts it into phone 'I'm not completely cut off from the world but the important thing is I'm setting a better example to my kids and spending more quality time with them.'
 
 Is it only a matter of time until the generation above and below Peter catches up with the new trend for a less digital life?""",
-        "mcqs": [  # READY: paste the 5 MCQs from the PDF; set each correct (0-indexed)
-            {"question": "<<<Q1>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q2>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q3>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q4>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q5>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+        "mcqs": [
+            {
+                "question": "What is the article mainly about?",
+                "options": [
+                    "How different age groups use social media and phones differently",
+                    "Which phone brand is most popular",
+                    "How to set up a Facebook account",
+                    "Why social media should be banned"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "What change does the article describe among older people?",
+                "options": [
+                    "They are increasingly joining social media such as Facebook",
+                    "They are leaving social media",
+                    "They no longer use phones at all",
+                    "They only send letters by post"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "For the older person in the article, what has social media mainly allowed her to do?",
+                "options": [
+                    "Keep up with family and reconnect with old friends",
+                    "Run an online business",
+                    "Stop using her phone",
+                    "Learn a new language"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "What is happening with younger users, according to the article?",
+                "options": [
+                    "They are leaving Facebook but spending a lot of time on their smartphones",
+                    "They are joining Facebook in large numbers",
+                    "They have stopped using phones at home",
+                    "They prefer letters to messages"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "What does the father in the article do, and what does it suggest?",
+                "options": [
+                    "He limits his own phone use to set a better example, suggesting a possible move toward a less digital life",
+                    "He buys his children new phones; people want more technology",
+                    "He bans all phones; children should never use phones",
+                    "He works only on his phone; phones improve family life"
+                ],
+                "correct": 0
+            }
         ],
     },
     "textB1": {  # Innovation in business
