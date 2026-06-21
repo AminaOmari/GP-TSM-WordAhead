@@ -1413,7 +1413,7 @@ function App() {
       case 'reading_1':
       case 'reading_2':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '2rem auto', textAlign: 'left' }} dir="ltr">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: currentReadingCondition === 'wordahead' ? '1200px' : '800px', margin: '2rem auto', textAlign: 'left', width: '90%' }} dir="ltr">
             <div className="glass" style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, color: 'var(--accent)' }}>Reading Session - Text {expStep === 'reading_1' ? '1' : '2'} of 2</h3>
@@ -1432,7 +1432,7 @@ function App() {
               </div>
             </div>
             
-            <div className="reading-layout-grid" style={{ display: 'grid', gridTemplateColumns: currentReadingCondition === 'wordahead' ? '1fr 320px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+            <div className={`reading-layout-grid ${currentReadingCondition === 'wordahead' ? 'wordahead-layout' : ''}`}>
               <div className="glass content-panel" style={{ padding: '2.5rem', background: 'white' }}>
                 <h2 style={{ marginTop: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
                   {currentTextData?.title}

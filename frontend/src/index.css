@@ -120,6 +120,20 @@ body {
   width: 100%;
 }
 
+.reading-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "output";
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+}
+
+.reading-layout-grid.wordahead-layout {
+  grid-template-columns: 1fr 320px;
+  grid-template-areas: "output sidebar";
+}
+
 .input-panel {
   grid-area: input;
   padding: 1rem;
@@ -280,6 +294,12 @@ body {
     flex-direction: column;
     grid-template-areas: none;
     gap: 1rem;
+  }
+
+  .reading-layout-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
   }
 
   #root {
