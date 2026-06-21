@@ -158,12 +158,57 @@ Changing the way you provide a service
 looking at changes to the customer's lifestyle and needs, we sometimes realise that there might be better ways to serve them. Customers prefer food delivered or do banking online rather than in an actual bank.
 
 innovation can give us the opportunity to grow and learn more about what we do and what our customers might want.""",
-        "mcqs": [  # READY: paste the 5 MCQs from the PDF; set each correct (0-indexed)
-            {"question": "<<<Q1>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q2>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q3>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q4>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-            {"question": "<<<Q5>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+        "mcqs": [
+            {
+                "question": "The blog post mainly explains...",
+                "options": [
+                    "why innovation matters for business and several ways a company can innovate",
+                    "how to start a business with no money",
+                    "why most businesses fail",
+                    "how to hire new employees"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "According to the writer, innovation helps a business to...",
+                "options": [
+                    "improve products/services, increase sales, cut costs and raise profits",
+                    "reduce the number of customers",
+                    "avoid using technology",
+                    "keep prices exactly the same"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "What does the writer say about using new technology?",
+                "options": [
+                    "A company shouldn't use it just because it's available; it should improve the product/service for the customer",
+                    "Companies should always buy the newest technology",
+                    "Technology is never useful for business",
+                    "Only large companies can use technology"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "One way to innovate is to respond to customer demands by...",
+                "options": [
+                    "changing what the business offers, based on customer feedback",
+                    "raising prices",
+                    "ignoring complaints",
+                    "reducing opening hours"
+                ],
+                "correct": 0
+            },
+            {
+                "question": "What does the writer conclude about innovation?",
+                "options": [
+                    "Not all innovation succeeds, but it gives a business the chance to grow and learn",
+                    "Innovation always guarantees success",
+                    "Innovation is only for technology companies",
+                    "Businesses should never change"
+                ],
+                "correct": 0
+            }
         ],
     },
 
