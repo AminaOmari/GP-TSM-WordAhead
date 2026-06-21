@@ -1948,42 +1948,6 @@ function App() {
             </div>
 
             <div className="header-controls">
-              {expStep !== 'consent' && (
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  cursor: 'pointer',
-                  background: 'rgba(124, 58, 237, 0.15)',
-                  padding: '0.55rem 0.9rem',
-                  borderRadius: '8px',
-                  fontSize: '0.85rem',
-                  border: '1px solid var(--accent)',
-                  color: 'var(--text-primary)',
-                  fontWeight: '500',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 0 12px rgba(124, 58, 237, 0.15)'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={experimentMode}
-                    onChange={(e) => {
-                      setExperimentMode(e.target.checked);
-                      if (!e.target.checked) {
-                        setInExperiment(false);
-                        setExpStep('');
-                      }
-                    }}
-                    style={{
-                      cursor: 'pointer',
-                      accentColor: 'var(--accent)',
-                      width: '15px',
-                      height: '15px'
-                    }}
-                  />
-                  <span>Plain Text Mode</span>
-                </label>
-              )}
             </div>
           </header>
         </div>
