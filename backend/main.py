@@ -610,7 +610,7 @@ class SubmitRequest(BaseModel):
 #   "correct": 1 is the SECOND option. Getting this wrong silently corrupts 
 #   every participant's comprehension score.
 # =====================================================================
-EXPERIMENT_TEXTS = {
+TEXTS = {
     "textA1": {
         "title": "Online Learning in Modern Education",
         "TF": "Online learning has transformed education. Many students now study from home because it is more convenient and flexible. They can learn at their own pace and balance their studies with work. However, there are also disadvantages. Students often feel isolated because they do not have direct contact with classmates. Teachers find it harder to engage students through a screen. To succeed, online students must be very self-disciplined.",
@@ -709,6 +709,22 @@ EXPERIMENT_TEXTS = {
     }
 }
 
+# TODO: These lists are pending the final matched sets from the supervisor.
+# Currently seeded with the placeholders representing the original pairings:
+TF_PAIRS = [
+    ("textA1", "textB1"),  # pair_1
+    ("textA2", "textB2"),  # pair_2
+    ("textA3", "textB3"),  # pair_3
+    ("textA4", "textB4"),  # pair_4
+]
+
+TS_PAIRS = [
+    ("textA1", "textB1"),  # pair_1
+    ("textA2", "textB2"),  # pair_2
+    ("textA3", "textB3"),  # pair_3
+    ("textA4", "textB4"),  # pair_4
+]
+
 # --- Experiment Endpoints ---
 
 @app.post("/api/experiment/assign")
@@ -795,13 +811,15 @@ async def experiment_assign(req: AssignRequest):
         # High scorers/pilot exclusion cases get mapped to B2 texts (pairs 3/4)
         text_pair = random.choice(["pair_3", "pair_4"])
         
-    suffix = "1" if text_pair == "pair_1" else "2" if text_pair == "pair_2" else "3" if text_pair == "pair_3" else "4"
+    pair_idx = 0 if text_pair == "pair_1" else 1 if text_pair == "pair_2" else 2 if text_pair == "pair_3" else 3
+    pairs_list = TF_PAIRS if text_format == "TF" else TS_PAIRS
+    selected_pair = pairs_list[pair_idx]
     
     # Counterbalance text presentation order from Sequence to fully counterbalance order/text effects
     if random.choice([True, False]):
-        text_order = [f"textA{suffix}", f"textB{suffix}"]
+        text_order = [selected_pair[0], selected_pair[1]]
     else:
-        text_order = [f"textB{suffix}", f"textA{suffix}"]
+        text_order = [selected_pair[1], selected_pair[0]]
         
     cursor.execute("""
         INSERT INTO experiment_participants (prolific_pid, lextale_score, cefr_level, text_format, sequence, text_pair, text_order, is_pilot)
@@ -863,8 +881,8 @@ async def get_experiment_session(prolific_pid: str):
     
     texts = {}
     for text_id in text_order:
-        if text_id in EXPERIMENT_TEXTS:
-            t_data = EXPERIMENT_TEXTS[text_id]
+        if text_id in TEXTS:
+            t_data = TEXTS[text_id]
             texts[text_id] = {
                 "title": t_data["title"],
                 "text": t_data[text_format],

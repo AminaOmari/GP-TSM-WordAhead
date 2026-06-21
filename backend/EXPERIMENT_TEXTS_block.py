@@ -30,7 +30,7 @@
 #     screenshot — reconfirm against a clean WordAhead run before locking pair_4.
 # =============================================================================
 
-EXPERIMENT_TEXTS = {
+TEXTS = {
 
     # ---------------- B1 — pair_1  (BC LearnEnglish; MCQs READY) ----------------
     "textA1": {  # Digital habits across generations
@@ -136,6 +136,22 @@ EXPERIMENT_TEXTS = {
             {"question": "<<<AUTHOR Q3>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
             {"question": "<<<AUTHOR Q4>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
             {"question": "<<<AUTHOR Q5>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-        ],
     },
 }
+
+# TODO: These lists are pending the final matched sets from the supervisor.
+# Currently seeded with the placeholders representing the original pairings:
+TF_PAIRS = [
+    ("textA1", "textB1"),  # pair_1
+    ("textA2", "textB2"),  # pair_2
+    ("textA3", "textB3"),  # pair_3
+    ("textA4", "textB4"),  # pair_4
+]
+
+TS_PAIRS = [
+    ("textA1", "textB1"),  # pair_1
+    ("textA2", "textB2"),  # pair_2
+    ("textA3", "textB3"),  # pair_3
+    ("textA4", "textB4"),  # pair_4
+]
+
