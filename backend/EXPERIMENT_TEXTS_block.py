@@ -36,179 +36,27 @@ EXPERIMENT_TEXTS = {
     "textA1": {  # Digital habits across generations
         # https://learnenglish.britishcouncil.org/free-resources/reading/b1/digital-habits-across-generations
         "title": "Digital habits across generations",
-        "TF": """Today’s grandparents are joining their grandchildren on social media, but the different generations’ online habits couldn't be more different. In the UK the over-55s are joining Facebook in increasing numbers, meaning that they will soon be the site's second biggest user group, with 3.5 million users aged 55–64 and 2.9 million over-65s.
-
-Sheila, aged 59, says, 'I joined to see what my grandchildren are doing, as my daughter posts videos and photos of them. It's a much better way to see what they're doing than waiting for letters and photos in the post. That's how we did it when I was a child, but I think I'm lucky I get to see so much more of their lives than my grandparents did.'
-
-Ironically, Sheila's grandchildren are less likely to use Facebook themselves. Children under 17 in the UK are leaving the site – only 2.2 million users are under 17 – but they're not going far from their smartphones. Chloe, aged 15, even sleeps with her phone. 'It's my alarm clock so I have to,' she says. 'I look at it before I go to sleep and as soon as I wake up.'
-
-Unlike her grandmother's generation, Chloe's age group is spending so much time on their phones at home that they are missing out on spending time with their friends in real life. Sheila, on the other hand, has made contact with old friends from school she hasn't heard from in forty years. 'We use Facebook to arrange to meet all over the country,' she says. 'It's changed my social life completely.'
-
-Teenagers might have their parents to thank for their smartphone and social media addiction as their parents were the early adopters of the smartphone. Peter, 38 and father of two teenagers, reports that he used to be on his phone or laptop constantly. 'I was always connected and I felt like I was always working,' he says. 'How could I tell my kids to get off their phones if I was always front of a screen myself?' So, in the evenings and at weekends, he takes his SIM card out of his smartphone and puts it into an old-style mobile phone that can only make calls and send text messages. 'I'm not completely cut off from the world in case of emergencies, but the important thing is I'm setting a better example to my kids and spending more quality time with them.'
-
-Is it only a matter of time until the generation above and below Peter catches up with the new trend for a less digital life?""",
-        "TS": """Today’s grandparents are joining their grandchildren on social media, but the different generations’ online habits couldn't be more different. In the UK the over-55s are joining Facebook they will soon be the site's second biggest user group, with 3.5 million users aged 55–64 and 2.9 million over-65s.
-
-Sheila, says, 'I joined to see what my grandchildren are doing, as my daughter posts videos and photos of
-Sheila's grandchildren are less likely to use Facebook Children under 17 in the UK are leaving the site
-Chloe, sleeps with her phone. 'It's my alarm clock so I have to,' she says. 'I look at it before I go to sleep and as soon as I wake up.'
-
-Chloe's age group is spending time on their phones at home that they are missing out on spending time with friends in real life. Sheila, has made contact with friends 'We use Facebook to arrange to meet all over the country,' she says. 'It's changed my social life completely.'
-
-Teenagers might have their parents to thank for their smartphone addiction Peter, reports he used to be on his phone or laptop constantly. 'I was always connected and I felt like I was always working,' he says. he takes card and puts it into phone 'I'm not completely cut off from the world but the important thing is I'm setting a better example to my kids and spending more quality time with them.'
-
-Is it only a matter of time until the generation above and below Peter catches up with the new trend for a less digital life?""",
-        "mcqs": [
-            {
-                "question": "What is the article mainly about?",
-                "options": [
-                    "How different age groups use social media and phones differently",
-                    "Which phone brand is most popular",
-                    "How to set up a Facebook account",
-                    "Why social media should be banned"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "What change does the article describe among older people?",
-                "options": [
-                    "They are increasingly joining social media such as Facebook",
-                    "They are leaving social media",
-                    "They no longer use phones at all",
-                    "They only send letters by post"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "For the older person in the article, what has social media mainly allowed her to do?",
-                "options": [
-                    "Keep up with family and reconnect with old friends",
-                    "Run an online business",
-                    "Stop using her phone",
-                    "Learn a new language"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "What is happening with younger users, according to the article?",
-                "options": [
-                    "They are leaving Facebook but spending a lot of time on their smartphones",
-                    "They are joining Facebook in large numbers",
-                    "They have stopped using phones at home",
-                    "They prefer letters to messages"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "What does the father in the article do, and what does it suggest?",
-                "options": [
-                    "He limits his own phone use to set a better example, suggesting a possible move toward a less digital life",
-                    "He buys his children new phones; people want more technology",
-                    "He bans all phones; children should never use phones",
-                    "He works only on his phone; phones improve family life"
-                ],
-                "correct": 0
-            }
+        "TF": "<<< PASTE EXACT DETAILED TEXT — Digital habits (B1_Texts_British_Council.pdf) >>>",
+        "TS": "<<< PASTE EXACT SKIMMED TEXT — Digital habits >>>",
+        "mcqs": [  # READY: paste the 5 MCQs from the PDF; set each correct (0-indexed)
+            {"question": "<<<Q1>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q2>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q3>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q4>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q5>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
         ],
     },
     "textB1": {  # Innovation in business
         # https://learnenglish.britishcouncil.org/free-resources/reading/b1/innovation-business
         "title": "Innovation in business",
-        "TF": """What does it mean to be innovative in business?
-In order for a business to survive in today's world, it is important that we regularly review what we are doing and how we are doing it. By considering new ideas and new ways of doing things, and trying to innovate, we can improve on our products/services, increase sales, reduce costs and make our processes more effective and efficient. Innovation is key to increasing profits.
-
-There are several ways a company can be innovative with their products and services. Today we will look at four of them.
-
-Using the latest technology to improve your product/service
-
-When we think of innovation, we often think of new technologies. While they might be impressive, we should not use new technologies just because they are available. It is important to consider how the technology can improve our product/service and make a difference to our customer. Companies that produce cars, toiletries, household appliances, etc. often have a large R&D department to work on making their products better.
-
-Responding to customer demands by changing what is on offer
-
-By listening to customer feedback, we can get their opinions on how we are doing and find out about what it is that they want. We also need to be aware of changes in customer demands and keep up with the times. When fast-food restaurant McDonald's realised that the market wanted healthier choices, they introduced fruit and salads, while removing the 'super-size' option from their menus.
-
-Offering a new product/service to reach new customers
-
-Your business might be doing well, but there is no growth or development and there is a risk that your competitors might take away some of your customers. Innovation sometimes means developing a new product that targets a different market. Although video games were often played by boys, in 2006, video games giant Nintendo introduced the game console Nintendo Wii, successfully targeting girls and older customers with games like Cooking Mama and Brain Training.
-
-Changing the way you provide a service
-
-By looking at the changes to the customer's lifestyle and needs, we sometimes realise that there might be better ways to serve them. Customers who do not have a lot of time might prefer to have their food or their shopping delivered to their homes, or they might like to do their banking online rather than in an actual bank.
-
-Not all innovation will bring success to our businesses, but it can give us the opportunity to grow and learn more about what we do and what our customers might want.""",
-        "TS": """What does it mean to be innovative in business?
-for a business to survive review what we are doing considering new ideas and ways of doing things, we can improve products/services, increase sales, reduce costs and make processes more effective and efficient. Innovation is key
-
-ways a company can be innovative Today we will look at four of them.
-
-Using technology to improve product/service
-
-When we think of innovation, we think of technologies. we should not use new technologies just because they are
-
-Responding to customer demands by changing what is on offer
-
-listening to customer feedback, we can get opinions on how we are doing and find out what they
-
-Offering a new product/service
-
-Your business might be doing well, but there is no growth or development and there is a risk that your competitors might take away some of your customers. Innovation means developing a product that targets a market. video games played by boys, Nintendo introduced Nintendo Wii, targeting girls and older customers with games like Cooking Mama and Brain Training.
-
-Changing the way you provide a service
-
-looking at changes to the customer's lifestyle and needs, we sometimes realise that there might be better ways to serve them. Customers prefer food delivered or do banking online rather than in an actual bank.
-
-innovation can give us the opportunity to grow and learn more about what we do and what our customers might want.""",
-        "mcqs": [
-            {
-                "question": "The blog post mainly explains...",
-                "options": [
-                    "why innovation matters for business and several ways a company can innovate",
-                    "how to start a business with no money",
-                    "why most businesses fail",
-                    "how to hire new employees"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "According to the writer, innovation helps a business to...",
-                "options": [
-                    "improve products/services, increase sales, cut costs and raise profits",
-                    "reduce the number of customers",
-                    "avoid using technology",
-                    "keep prices exactly the same"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "What does the writer say about using new technology?",
-                "options": [
-                    "A company shouldn't use it just because it's available; it should improve the product/service for the customer",
-                    "Companies should always buy the newest technology",
-                    "Technology is never useful for business",
-                    "Only large companies can use technology"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "One way to innovate is to respond to customer demands by...",
-                "options": [
-                    "changing what the business offers, based on customer feedback",
-                    "raising prices",
-                    "ignoring complaints",
-                    "reducing opening hours"
-                ],
-                "correct": 0
-            },
-            {
-                "question": "What does the writer conclude about innovation?",
-                "options": [
-                    "Not all innovation succeeds, but it gives a business the chance to grow and learn",
-                    "Innovation always guarantees success",
-                    "Innovation is only for technology companies",
-                    "Businesses should never change"
-                ],
-                "correct": 0
-            }
+        "TF": "<<< PASTE EXACT DETAILED TEXT — Innovation in business >>>",
+        "TS": "<<< PASTE EXACT SKIMMED TEXT — Innovation in business >>>",
+        "mcqs": [  # READY: paste the 5 MCQs from the PDF; set each correct (0-indexed)
+            {"question": "<<<Q1>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q2>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q3>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q4>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
+            {"question": "<<<Q5>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
         ],
     },
 
