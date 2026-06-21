@@ -136,7 +136,28 @@ Changing the way you provide a service
 By looking at the changes to the customer's lifestyle and needs, we sometimes realise that there might be better ways to serve them. Customers who do not have a lot of time might prefer to have their food or their shopping delivered to their homes, or they might like to do their banking online rather than in an actual bank.
 
 Not all innovation will bring success to our businesses, but it can give us the opportunity to grow and learn more about what we do and what our customers might want.""",
-        "TS": "<<< PASTE EXACT SKIMMED TEXT — Innovation in business >>>",
+        "TS": """What does it mean to be innovative in business?
+for a business to survive review what we are doing considering new ideas and ways of doing things, we can improve products/services, increase sales, reduce costs and make processes more effective and efficient. Innovation is key
+
+ways a company can be innovative Today we will look at four of them.
+
+Using technology to improve product/service
+
+When we think of innovation, we think of technologies. we should not use new technologies just because they are
+
+Responding to customer demands by changing what is on offer
+
+listening to customer feedback, we can get opinions on how we are doing and find out what they
+
+Offering a new product/service
+
+Your business might be doing well, but there is no growth or development and there is a risk that your competitors might take away some of your customers. Innovation means developing a product that targets a market. video games played by boys, Nintendo introduced Nintendo Wii, targeting girls and older customers with games like Cooking Mama and Brain Training.
+
+Changing the way you provide a service
+
+looking at changes to the customer's lifestyle and needs, we sometimes realise that there might be better ways to serve them. Customers prefer food delivered or do banking online rather than in an actual bank.
+
+innovation can give us the opportunity to grow and learn more about what we do and what our customers might want.""",
         "mcqs": [  # READY: paste the 5 MCQs from the PDF; set each correct (0-indexed)
             {"question": "<<<Q1>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
             {"question": "<<<Q2>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
