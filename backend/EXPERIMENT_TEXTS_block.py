@@ -136,7 +136,8 @@ TEXTS = {
             {"question": "<<<AUTHOR Q3>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
             {"question": "<<<AUTHOR Q4>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
             {"question": "<<<AUTHOR Q5>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
-    },
+        ],
+    }
 }
 
 # TODO: These lists are pending the final matched sets from the supervisor.
