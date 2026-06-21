@@ -47,7 +47,17 @@ Unlike her grandmother's generation, Chloe's age group is spending so much time 
 Teenagers might have their parents to thank for their smartphone and social media addiction as their parents were the early adopters of the smartphone. Peter, 38 and father of two teenagers, reports that he used to be on his phone or laptop constantly. 'I was always connected and I felt like I was always working,' he says. 'How could I tell my kids to get off their phones if I was always front of a screen myself?' So, in the evenings and at weekends, he takes his SIM card out of his smartphone and puts it into an old-style mobile phone that can only make calls and send text messages. 'I'm not completely cut off from the world in case of emergencies, but the important thing is I'm setting a better example to my kids and spending more quality time with them.'
 
 Is it only a matter of time until the generation above and below Peter catches up with the new trend for a less digital life?""",
-        "TS": "<<< PASTE EXACT SKIMMED TEXT — Digital habits >>>",
+        "TS": """Today’s grandparents are joining their grandchildren on social media, but the different generations’ online habits couldn't be more different. In the UK the over-55s are joining Facebook they will soon be the site's second biggest user group, with 3.5 million users aged 55–64 and 2.9 million over-65s.
+
+Sheila, says, 'I joined to see what my grandchildren are doing, as my daughter posts videos and photos of
+Sheila's grandchildren are less likely to use Facebook Children under 17 in the UK are leaving the site
+Chloe, sleeps with her phone. 'It's my alarm clock so I have to,' she says. 'I look at it before I go to sleep and as soon as I wake up.'
+
+Chloe's age group is spending time on their phones at home that they are missing out on spending time with friends in real life. Sheila, has made contact with friends 'We use Facebook to arrange to meet all over the country,' she says. 'It's changed my social life completely.'
+
+Teenagers might have their parents to thank for their smartphone addiction Peter, reports he used to be on his phone or laptop constantly. 'I was always connected and I felt like I was always working,' he says. he takes card and puts it into phone 'I'm not completely cut off from the world but the important thing is I'm setting a better example to my kids and spending more quality time with them.'
+
+Is it only a matter of time until the generation above and below Peter catches up with the new trend for a less digital life?""",
         "mcqs": [  # READY: paste the 5 MCQs from the PDF; set each correct (0-indexed)
             {"question": "<<<Q1>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
             {"question": "<<<Q2>>>", "options": ["<<<A>>>", "<<<B>>>", "<<<C>>>", "<<<D>>>"], "correct": None},
