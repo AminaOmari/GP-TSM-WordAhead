@@ -112,30 +112,13 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await page.locator('button:has-text("YES (Real Word)")').dispatchEvent('click');
     }
 
-    // 5. Demographics Screen
-    // Gating blocks should prevent submission until required elements are filled.
-    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
-    await expect(demoSubmitButton).toBeDisabled();
-
-    // Fill demographics using index-based select options to be locale-independent
-    await page.locator('select').nth(0).selectOption('18_24');
-    await page.locator('select').nth(1).selectOption('female');
-    await page.locator('select').nth(2).selectOption('Hebrew');
-    await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
-
-    // Make sure Attention check is selected (e.g. choice 3, which is index 2 of 5 options)
-    const acRadio = page.locator('input[name="demographics_ac"]').nth(2);
-    await acRadio.dispatchEvent('click');
-
-    // Select self-rated English level (e.g. option 7, which is index 6 of 10 options)
-    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
-
-    // Verify it is enabled now
-    await expect(demoSubmitButton).toBeEnabled();
-    await demoSubmitButton.dispatchEvent('click');
+    // 5. Early System check (Attention check)
+    const systemCheckSubmit = page.locator('button:has-text("Continue")');
+    await expect(systemCheckSubmit).toBeDisabled();
+    // Select early attention check (choice 3, which is index 2 of 5 options)
+    await page.locator('input[name="early_ac"]').nth(2).dispatchEvent('click');
+    await expect(systemCheckSubmit).toBeEnabled();
+    await systemCheckSubmit.dispatchEvent('click');
 
     // 6. Assignment screen
     const startReadingButton = page.locator('button:has-text("Start Reading Phase")');
@@ -256,6 +239,26 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await expect(postSubmitButton).toBeEnabled();
     await postSubmitButton.dispatchEvent('click');
 
+    // 15.5 Demographics Screen
+    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
+    await expect(demoSubmitButton).toBeDisabled();
+
+    // Fill demographics using index-based select options to be locale-independent
+    await page.locator('select').nth(0).selectOption('18_24');
+    await page.locator('select').nth(1).selectOption('female');
+    await page.locator('select').nth(2).selectOption('Hebrew');
+    await page.fill('input[placeholder="e.g. 8"]', '10');
+    await page.locator('select').nth(3).selectOption('undergrad');
+    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
+    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+
+    // Select self-rated English level (e.g. option 7, which is index 6 of 10 options)
+    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
+
+    // Verify it is enabled now
+    await expect(demoSubmitButton).toBeEnabled();
+    await demoSubmitButton.dispatchEvent('click');
+
     // 16. Completed Screen
     // Verify Prolific redirect URL with correct code C10BDQBR
     const prolificLink = page.locator('a[href*="C10BDQBR"]');
@@ -366,28 +369,13 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await page.locator('button:has-text("YES (Real Word)")').dispatchEvent('click');
     }
 
-    // 5. Demographics Screen
-    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
-    await expect(demoSubmitButton).toBeDisabled();
-
-    // Fill demographics
-    await page.locator('select').nth(0).selectOption('18_24');
-    await page.locator('select').nth(1).selectOption('female');
-    await page.locator('select').nth(2).selectOption('Hebrew');
-    await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
-
-    // Early attention check
-    const acRadio = page.locator('input[name="demographics_ac"]').nth(2);
-    await acRadio.dispatchEvent('click');
-
-    // Select self-rated English level (e.g. option 7, which is index 6 of 10 options)
-    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
-
-    await expect(demoSubmitButton).toBeEnabled();
-    await demoSubmitButton.dispatchEvent('click');
+    // 5. Early System check (Attention check)
+    const systemCheckSubmit = page.locator('button:has-text("Continue")');
+    await expect(systemCheckSubmit).toBeDisabled();
+    // Select early attention check (choice 3, which is index 2 of 5 options)
+    await page.locator('input[name="early_ac"]').nth(2).dispatchEvent('click');
+    await expect(systemCheckSubmit).toBeEnabled();
+    await systemCheckSubmit.dispatchEvent('click');
 
     // 6. Assignment screen
     const startReadingButton = page.locator('button:has-text("Start Reading Phase")');
@@ -488,6 +476,25 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await expect(postSubmitButton).toBeEnabled();
     await postSubmitButton.dispatchEvent('click');
 
+    // 15.5 Demographics Screen
+    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
+    await expect(demoSubmitButton).toBeDisabled();
+
+    // Fill demographics
+    await page.locator('select').nth(0).selectOption('18_24');
+    await page.locator('select').nth(1).selectOption('female');
+    await page.locator('select').nth(2).selectOption('Hebrew');
+    await page.fill('input[placeholder="e.g. 8"]', '10');
+    await page.locator('select').nth(3).selectOption('undergrad');
+    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
+    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+
+    // Select self-rated English level (e.g. option 7, which is index 6 of 10 options)
+    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
+
+    await expect(demoSubmitButton).toBeEnabled();
+    await demoSubmitButton.dispatchEvent('click');
+
     // 16. Completed Screen
     const prolificLink = page.locator('a[href*="C10BDQBR"]');
     await expect(prolificLink).toBeVisible();
@@ -586,23 +593,13 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await page.locator('button:has-text("YES (Real Word)")').dispatchEvent('click');
     }
 
-    // 5. Demographics (Should bypass exclusion screen and show demographics)
-    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
-    await page.locator('select').nth(0).selectOption('18_24');
-    await page.locator('select').nth(1).selectOption('female');
-    await page.locator('select').nth(2).selectOption('Hebrew');
-    await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
-
-    const acRadio = page.locator('input[name="demographics_ac"]').nth(2);
-    await acRadio.dispatchEvent('click');
-
-    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
-
-    await expect(demoSubmitButton).toBeEnabled();
-    await demoSubmitButton.dispatchEvent('click');
+    // 5. Early System check (Attention check)
+    const systemCheckSubmit = page.locator('button:has-text("Continue")');
+    await expect(systemCheckSubmit).toBeDisabled();
+    // Select early attention check (choice 3, which is index 2 of 5 options)
+    await page.locator('input[name="early_ac"]').nth(2).dispatchEvent('click');
+    await expect(systemCheckSubmit).toBeEnabled();
+    await systemCheckSubmit.dispatchEvent('click');
 
     // 6. Assignment
     const startReadingButton = page.locator('button:has-text("Start Reading Phase")');
@@ -668,6 +665,19 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.locator('input[name="ps_use_plain"]').nth(3).dispatchEvent('click');
     await page.locator('input[name="ps_use_wordahead"]').nth(4).dispatchEvent('click');
     await postSubmitButton.dispatchEvent('click');
+
+    // 15.5 Demographics Screen
+    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
+    await page.locator('select').nth(0).selectOption('18_24');
+    await page.locator('select').nth(1).selectOption('female');
+    await page.locator('select').nth(2).selectOption('Hebrew');
+    await page.fill('input[placeholder="e.g. 8"]', '10');
+    await page.locator('select').nth(3).selectOption('undergrad');
+    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
+    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
+    await expect(demoSubmitButton).toBeEnabled();
+    await demoSubmitButton.dispatchEvent('click');
 
     // 16. Completed Screen
     await expect(page.locator('h2:has-text("Pilot / Demo Completed!")')).toBeVisible();
@@ -782,19 +792,13 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await page.locator('button:has-text("YES (Real Word)")').dispatchEvent('click');
     }
 
-    // 5. Demographics (Submit form)
-    const demoSubmitButton = page.locator('button:has-text("Complete Experiment")');
-    await page.locator('select').nth(0).selectOption('18_24');
-    await page.locator('select').nth(1).selectOption('female');
-    await page.locator('select').nth(2).selectOption('Hebrew');
-    await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
-    await page.locator('input[name="demographics_ac"]').nth(2).dispatchEvent('click');
-    await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
-    await expect(demoSubmitButton).toBeEnabled();
-    await demoSubmitButton.dispatchEvent('click');
+    // 5. Early System check (Attention check)
+    const systemCheckSubmit = page.locator('button:has-text("Continue")');
+    await expect(systemCheckSubmit).toBeDisabled();
+    // Select early attention check (choice 3, which is index 2 of 5 options)
+    await page.locator('input[name="early_ac"]').nth(2).dispatchEvent('click');
+    await expect(systemCheckSubmit).toBeEnabled();
+    await systemCheckSubmit.dispatchEvent('click');
 
     // 6. Assignment
     const startReadingButton = page.locator('button:has-text("Start Reading Phase")');

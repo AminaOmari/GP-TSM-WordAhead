@@ -839,7 +839,7 @@ function App() {
         setExpCondition(assignRes.data);
         
         await logExperimentEvent("lextale_completed", { score: computedScore, cefr_level: assignRes.data.cefr_level });
-        setExpStep('survey_demographics');
+        setExpStep('early_attention_check');
       } catch (err) {
         console.error(err);
         showNotification("Failed to submit vocabulary test screening.");
@@ -1134,7 +1134,7 @@ function App() {
       await axios.post(`${API_URL}/api/survey`, payload);
       await logExperimentEvent("post_study_survey_completed", payload);
       setPostStudySurvey(surveyData);
-      await submitExperiment(surveyData);
+      setExpStep('survey_demographics');
     } catch (err) {
       console.error(err);
       showNotification("Failed to save survey. Please try again.");
@@ -1288,6 +1288,47 @@ function App() {
           </div>
         );
 
+      case 'early_attention_check':
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>System Check</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+              Before proceeding to the reading phase, please complete this quick system validation.
+            </p>
+            <div style={{ margin: '2rem 0' }}>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem' }}>
+                {t('survey.attention.check2')}
+              </label>
+              <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>1</span>
+                <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <label key={`ac_${val}`} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="early_ac"
+                        checked={surveyDemographics.ac_early === String(val)}
+                        onChange={() => setSurveyDemographics(prev => ({ ...prev, ac_early: String(val) }))}
+                        style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                      />
+                      <span style={{ fontSize: '0.85rem' }}>{val}</span>
+                    </label>
+                  ))}
+                </div>
+                <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5</span>
+              </div>
+            </div>
+            <button
+              className="btn"
+              disabled={!surveyDemographics.ac_early}
+              onClick={() => setExpStep('assigned')}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
+            >
+              Continue
+            </button>
+          </div>
+        );
+
       case 'assigned':
         if (expCondition?.cefr_level === 'exclude' && !expCondition?.is_pilot) {
           return (
@@ -1323,14 +1364,18 @@ function App() {
         );
 
       case 'pre_reading_1':
-      case 'pre_reading_2':
+      case 'pre_reading_2': {
         const isFirstPre = expStep === 'pre_reading_1';
+        const textId = expCondition?.text_order?.[isFirstPre ? 0 : 1];
+        const textTitle = expTexts?.[textId]?.title || "";
         return (
           <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="ltr">
             <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('pre_reading.title')}</h2>
             
             <div style={{ marginTop: '2rem' }}>
-              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem' }}>{t('pre_reading.prior_exposure')}</label>
+              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem' }}>
+                {t('pre_reading.prior_exposure', { title: textTitle })}
+              </label>
               <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.not_familiar')}</span>
                 <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
@@ -1363,6 +1408,7 @@ function App() {
             </button>
           </div>
         );
+      }
 
       case 'reading_1':
       case 'reading_2':
@@ -1762,28 +1808,6 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Prior Topic Exposure</label>
-                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>None (1)</span>
-                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
-                        <input
-                          type="radio"
-                          name="demographics_exposure"
-                          checked={surveyDemographics.prior_topic_exposure === String(val)}
-                          onChange={() => setSurveyDemographics(prev => ({ ...prev, prior_topic_exposure: String(val) }))}
-                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-                        />
-                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>High (5)</span>
-                </div>
-              </div>
-
-              <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('demographics.reads_academic_english')}</label>
                 <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.rarely')}</span>
@@ -1826,27 +1850,6 @@ function App() {
                   <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.freq_anchors.always')}</span>
                 </div>
               </div>
-              <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '2px dashed var(--border-color)' }}>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>{t('survey.attention.check2')}</label>
-                <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>1</span>
-                  <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <label key={`ac_${val}`} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
-                        <input
-                          type="radio"
-                          name="demographics_ac"
-                          checked={surveyDemographics.ac_early === String(val)}
-                          onChange={() => setSurveyDemographics(prev => ({ ...prev, ac_early: String(val) }))}
-                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-                        />
-                        <span style={{ fontSize: '0.85rem' }}>{val}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5</span>
-                </div>
-              </div>
             </div>
             
             <button
@@ -1861,7 +1864,7 @@ function App() {
                 !surveyDemographics.academic_year.trim() ||
                 !surveyDemographics.field_of_study.trim()
               }
-              onClick={() => setExpStep('assigned')}
+              onClick={() => submitExperiment()}
               style={{ width: '100%', padding: '1.2rem', fontSize: '1.2rem', marginTop: '3rem', background: 'var(--accent)' }}
             >
               {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & ' + t('demographics.submit')}

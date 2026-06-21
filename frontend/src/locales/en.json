@@ -139,7 +139,7 @@
   },
   "pre_reading": {
     "title": "Pre-Reading",
-    "prior_exposure": "Before reading, how familiar were you with this topic?",
+    "prior_exposure": "How much did you already know about the topic '{{title}}'?",
     "continue": "Continue to Text"
   }
 }
