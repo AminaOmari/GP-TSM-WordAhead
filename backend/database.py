@@ -82,24 +82,62 @@ def init_db():
             age TEXT,
             gender TEXT,
             native_language TEXT,
-            other_languages TEXT,
             years_studying_english TEXT,
-            course_level TEXT,
+            education TEXT,
             self_rated_english TEXT,
-            academic_year TEXT,
-            field_of_study TEXT,
             frequency_academic_english TEXT,
             use_translation_tools TEXT,
+            translation_tools_used TEXT,
             ac_early TEXT,
             quiz1_attention_raw TEXT,
             quiz1_attention_pass BOOLEAN,
             quiz2_attention_raw TEXT,
             quiz2_attention_pass BOOLEAN,
+            consent_timestamp TEXT,
             is_pilot BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     conn.commit()
+
+    # Schema check/migration for demographics changes
+    try:
+        cursor.execute("SELECT education FROM participant_meta LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("SELECT course_level FROM participant_meta LIMIT 1")
+            cursor.execute("ALTER TABLE participant_meta RENAME COLUMN course_level TO education")
+            conn.commit()
+        except sqlite3.OperationalError:
+            cursor.execute("ALTER TABLE participant_meta ADD COLUMN education TEXT")
+            conn.commit()
+
+    try:
+        cursor.execute("SELECT translation_tools_used FROM participant_meta LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE participant_meta ADD COLUMN translation_tools_used TEXT")
+            conn.commit()
+        except Exception as err:
+            print(f"Error adding translation_tools_used column: {err}")
+
+    try:
+        cursor.execute("SELECT consent_timestamp FROM participant_meta LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE participant_meta ADD COLUMN consent_timestamp TEXT")
+            conn.commit()
+            print("Successfully added consent_timestamp column to participant_meta!")
+        except Exception as err:
+            print(f"Error adding consent_timestamp column: {err}")
+
+    for col in ["other_languages", "academic_year", "field_of_study"]:
+        try:
+            cursor.execute(f"SELECT {col} FROM participant_meta LIMIT 1")
+            cursor.execute(f"ALTER TABLE participant_meta DROP COLUMN {col}")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # Already dropped or table doesn't have it
 
     # Try adding the is_pilot column to experiment_participants if it doesn't exist
     try:

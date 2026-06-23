@@ -93,12 +93,16 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
     // 3. Consent Page Check
-    const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
-    await expect(consentButton).toBeDisabled(); // Should be disabled if input is empty
+    const consentButton = page.locator('button:has-text("Continue")');
+    await expect(consentButton).toBeDisabled();
 
     // Enter Prolific ID
     const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
     await pidInput.fill('test_pid_pw');
+    await expect(consentButton).toBeDisabled();
+
+    // Tick checkbox
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
     await expect(consentButton).toBeEnabled();
 
     // Click Consent & go to LexTALE
@@ -127,8 +131,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 7. Pre-reading 1 (Topic Familiarity for Passage 1)
     const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
-    // Select familiarity option 4 (which is index 3 of 7 options)
-    await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
     // 8. Reading 1 (WordAhead condition because Sequence = B)
@@ -159,33 +161,31 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 10. Per-Task Survey 1 (Condition: wordahead, Text Format: TS)
     // Verify Block B questions render (since WordAhead condition)
-    // Look for a Block B specific question (pt_b10 contains "gray out")
-    await expect(page.locator('h4:has-text("gray out")')).toBeVisible();
+    // Look for a Block B specific question (pt_b18 contains "dependent on translation")
+    await expect(page.locator('h4:has-text("dependent on translation")')).toBeVisible();
 
-    // Verify Block C questions render (since Text Format is TS - Skimmed, pt_c19 contains "shortened")
-    await expect(page.locator('h4:has-text("shortened")')).toBeVisible();
+    // Verify Block C questions render (since Text Format is TS - Skimmed, pt_c19 contains "preserved enough")
+    await expect(page.locator('h4:has-text("preserved enough")')).toBeVisible();
 
     // Click submit should be disabled initially
     const ptSubmitButton1 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton1).toBeDisabled();
 
     // Answer all questions
-    // Likert scales are 1-7, attention check is ac_mid (value 7, index 6)
-    // There are 9 Block A + 9 Block B + 1 Block C = 19 questions + 1 attention check = 20 total
-    for (let i = 1; i <= 9; i++) {
-      await page.locator(`input[name="pt_a${i}"]`).nth(3).dispatchEvent('click'); // value 4 (index 3)
+    const activeKeys1 = [
+      'pt_a1', 'pt_a2', 'pt_a3', 'pt_a4', 'pt_a5', 'pt_a6', 'pt_a7', 'pt_a8', 'pt_a9',
+      'pt_b11', 'pt_b12', 'pt_b14', 'pt_b15', 'pt_b16', 'pt_b17', 'pt_b18',
+      'pt_b10', 'pt_c19'
+    ];
+    for (const key of activeKeys1) {
+      await page.locator(`input[name="${key}"]`).nth(3).dispatchEvent('click'); // value 4 (index 3)
     }
-    for (let i = 10; i <= 18; i++) {
-      await page.locator(`input[name="pt_b${i}"]`).nth(3).dispatchEvent('click'); // value 4 (index 3)
-    }
-    await page.locator('input[name="pt_c19"]').nth(3).dispatchEvent('click'); // value 4 (index 3)
 
     await expect(ptSubmitButton1).toBeEnabled();
     await ptSubmitButton1.dispatchEvent('click');
 
     // 11. Pre-reading 2 (Topic Familiarity for Passage 2)
     const preContinueButton2 = page.locator('button:has-text("Continue to Text")');
-    await page.locator('input[name="pre_reading_exposure_2"]').nth(4).dispatchEvent('click'); // value 5 (index 4)
     await preContinueButton2.dispatchEvent('click');
 
     // 12. Reading 2 (Plain condition because Sequence = B)
@@ -203,20 +203,23 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await quizSubmitButton2.dispatchEvent('click');
 
     // 14. Per-Task Survey 2 (Condition: plain, Text Format: TS)
-    // Verify Block B questions do NOT render (since plain condition, pt_b10 contains "gray out")
-    await expect(page.locator('h4:has-text("gray out")')).not.toBeVisible();
+    // Verify Block B questions do NOT render (since plain condition, pt_b18 contains "dependent on translation")
+    await expect(page.locator('h4:has-text("dependent on translation")')).not.toBeVisible();
 
-    // Verify Block C questions DO render (since TS format, pt_c19 contains "shortened")
-    await expect(page.locator('h4:has-text("shortened")')).toBeVisible();
+    // Verify Block C questions DO render (since TS format, pt_c19 contains "preserved enough")
+    await expect(page.locator('h4:has-text("preserved enough")')).toBeVisible();
 
     const ptSubmitButton2 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton2).toBeDisabled();
 
-    // Answer questions: 9 Block A + 1 Block C = 10 questions total
-    for (let i = 1; i <= 9; i++) {
-      await page.locator(`input[name="pt_a${i}"]`).nth(4).dispatchEvent('click'); // value 5 (index 4)
+    // Answer questions: 9 Block A + 2 Block C = 11 questions total
+    const activeKeys2 = [
+      'pt_a1', 'pt_a2', 'pt_a3', 'pt_a4', 'pt_a5', 'pt_a6', 'pt_a7', 'pt_a8', 'pt_a9',
+      'pt_b10', 'pt_c19'
+    ];
+    for (const key of activeKeys2) {
+      await page.locator(`input[name="${key}"]`).nth(4).dispatchEvent('click'); // value 5 (index 4)
     }
-    await page.locator('input[name="pt_c19"]').nth(4).dispatchEvent('click'); // value 5 (index 4)
 
     await expect(ptSubmitButton2).toBeEnabled();
     await ptSubmitButton2.dispatchEvent('click');
@@ -248,9 +251,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.locator('select').nth(1).selectOption('female');
     await page.locator('select').nth(2).selectOption('Hebrew');
     await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+    await page.locator('select').nth(3).selectOption('bachelors');
+    await page.locator('input[type="checkbox"]').nth(0).dispatchEvent('click'); // Google Translate
+    await page.locator('input[type="checkbox"]').nth(3).dispatchEvent('click'); // DeepL
 
     // Select self-rated English level (e.g. option 7, which is index 6 of 10 options)
     await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
@@ -352,12 +355,16 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
     // 3. Consent Page Check
-    const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
+    const consentButton = page.locator('button:has-text("Continue")');
     await expect(consentButton).toBeDisabled();
 
     // Enter Prolific ID
     const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
     await pidInput.fill('test_pid_pw_tf');
+    await expect(consentButton).toBeDisabled();
+
+    // Tick checkbox
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
     await expect(consentButton).toBeEnabled();
 
     // Click Consent & go to LexTALE
@@ -384,7 +391,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 7. Pre-reading 1 (Topic Familiarity for Passage 1)
     const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
-    await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
     // 8. Reading 1 (WordAhead condition because Sequence = B)
@@ -406,20 +412,21 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 10. Per-Task Survey 1 (Condition: wordahead, Text Format: TF)
     // Verify Block B questions DO render (since WordAhead condition)
-    await expect(page.locator('h4:has-text("gray out")')).toBeVisible();
+    await expect(page.locator('h4:has-text("dependent on translation")')).toBeVisible();
 
     // Verify Block C questions do NOT render (since Text Format is TF - Full)
-    await expect(page.locator('h4:has-text("shortened")')).not.toBeVisible();
+    await expect(page.locator('h4:has-text("preserved enough")')).not.toBeVisible();
 
     const ptSubmitButton1 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton1).toBeDisabled();
 
-    // Answer questions: 9 Block A + 9 Block B = 18 questions total
-    for (let i = 1; i <= 9; i++) {
-      await page.locator(`input[name="pt_a${i}"]`).nth(3).dispatchEvent('click'); // value 4 (index 3)
-    }
-    for (let i = 10; i <= 18; i++) {
-      await page.locator(`input[name="pt_b${i}"]`).nth(3).dispatchEvent('click'); // value 4 (index 3)
+    // Answer questions: 9 Block A + 7 Block B = 16 questions total
+    const activeKeys1 = [
+      'pt_a1', 'pt_a2', 'pt_a3', 'pt_a4', 'pt_a5', 'pt_a6', 'pt_a7', 'pt_a8', 'pt_a9',
+      'pt_b11', 'pt_b12', 'pt_b14', 'pt_b15', 'pt_b16', 'pt_b17', 'pt_b18'
+    ];
+    for (const key of activeKeys1) {
+      await page.locator(`input[name="${key}"]`).nth(3).dispatchEvent('click'); // value 4 (index 3)
     }
 
     await expect(ptSubmitButton1).toBeEnabled();
@@ -427,7 +434,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 11. Pre-reading 2 (Topic Familiarity for Passage 2)
     const preContinueButton2 = page.locator('button:has-text("Continue to Text")');
-    await page.locator('input[name="pre_reading_exposure_2"]').nth(4).dispatchEvent('click');
     await preContinueButton2.dispatchEvent('click');
 
     // 12. Reading 2 (Plain condition because Sequence = B)
@@ -446,17 +452,20 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 14. Per-Task Survey 2 (Condition: plain, Text Format: TF)
     // Verify Block B questions do NOT render
-    await expect(page.locator('h4:has-text("gray out")')).not.toBeVisible();
+    await expect(page.locator('h4:has-text("dependent on translation")')).not.toBeVisible();
 
     // Verify Block C questions do NOT render
-    await expect(page.locator('h4:has-text("shortened")')).not.toBeVisible();
+    await expect(page.locator('h4:has-text("preserved enough")')).not.toBeVisible();
 
     const ptSubmitButton2 = page.locator('button:has-text("Submit Survey & Continue")');
     await expect(ptSubmitButton2).toBeDisabled();
 
     // Answer questions: 9 Block A = 9 total
-    for (let i = 1; i <= 9; i++) {
-      await page.locator(`input[name="pt_a${i}"]`).nth(4).dispatchEvent('click'); // value 5 (index 4)
+    const activeKeys2 = [
+      'pt_a1', 'pt_a2', 'pt_a3', 'pt_a4', 'pt_a5', 'pt_a6', 'pt_a7', 'pt_a8', 'pt_a9'
+    ];
+    for (const key of activeKeys2) {
+      await page.locator(`input[name="${key}"]`).nth(4).dispatchEvent('click'); // value 5 (index 4)
     }
 
     await expect(ptSubmitButton2).toBeEnabled();
@@ -485,9 +494,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.locator('select').nth(1).selectOption('female');
     await page.locator('select').nth(2).selectOption('Hebrew');
     await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+    await page.locator('select').nth(3).selectOption('bachelors');
+    await page.locator('input[type="checkbox"]').nth(0).dispatchEvent('click'); // Google Translate
+    await page.locator('input[type="checkbox"]').nth(3).dispatchEvent('click'); // DeepL
 
     // Select self-rated English level (e.g. option 7, which is index 6 of 10 options)
     await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
@@ -583,9 +592,10 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.goto('/');
 
     // 3. Consent
-    const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
+    const consentButton = page.locator('button:has-text("Continue")');
     const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
     await pidInput.fill('00');
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
     await consentButton.dispatchEvent('click');
 
     // 4. LexTALE
@@ -608,7 +618,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 7. Pre-reading 1
     const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
-    await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
     // 8. Reading 1
@@ -624,18 +633,18 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 10. Survey 1
     const ptSubmitButton1 = page.locator('button:has-text("Submit Survey & Continue")');
-    for (let i = 1; i <= 9; i++) {
-      await page.locator(`input[name="pt_a${i}"]`).nth(3).dispatchEvent('click');
+    const activeKeys1 = [
+      'pt_a1', 'pt_a2', 'pt_a3', 'pt_a4', 'pt_a5', 'pt_a6', 'pt_a7', 'pt_a8', 'pt_a9',
+      'pt_b11', 'pt_b12', 'pt_b14', 'pt_b15', 'pt_b16', 'pt_b17', 'pt_b18',
+      'pt_b10', 'pt_c19'
+    ];
+    for (const key of activeKeys1) {
+      await page.locator(`input[name="${key}"]`).nth(3).dispatchEvent('click');
     }
-    for (let i = 10; i <= 18; i++) {
-      await page.locator(`input[name="pt_b${i}"]`).nth(3).dispatchEvent('click');
-    }
-    await page.locator('input[name="pt_c19"]').nth(3).dispatchEvent('click');
     await ptSubmitButton1.dispatchEvent('click');
 
     // 11. Pre-reading 2
     const preContinueButton2 = page.locator('button:has-text("Continue to Text")');
-    await page.locator('input[name="pre_reading_exposure_2"]').nth(4).dispatchEvent('click');
     await preContinueButton2.dispatchEvent('click');
 
     // 12. Reading 2
@@ -651,10 +660,13 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 14. Survey 2
     const ptSubmitButton2 = page.locator('button:has-text("Submit Survey & Continue")');
-    for (let i = 1; i <= 9; i++) {
-      await page.locator(`input[name="pt_a${i}"]`).nth(4).dispatchEvent('click');
+    const activeKeys2 = [
+      'pt_a1', 'pt_a2', 'pt_a3', 'pt_a4', 'pt_a5', 'pt_a6', 'pt_a7', 'pt_a8', 'pt_a9',
+      'pt_b10', 'pt_c19'
+    ];
+    for (const key of activeKeys2) {
+      await page.locator(`input[name="${key}"]`).nth(4).dispatchEvent('click');
     }
-    await page.locator('input[name="pt_c19"]').nth(4).dispatchEvent('click');
     await ptSubmitButton2.dispatchEvent('click');
 
     // 15. Post Study Survey
@@ -672,9 +684,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.locator('select').nth(1).selectOption('female');
     await page.locator('select').nth(2).selectOption('Hebrew');
     await page.fill('input[placeholder="e.g. 8"]', '10');
-    await page.locator('select').nth(3).selectOption('undergrad');
-    await page.fill('input[placeholder="e.g. 1st Year, 2nd Year, etc."]', '2nd Year');
-    await page.fill('input[placeholder="e.g. Computer Science, Medicine"]', 'Biology');
+    await page.locator('select').nth(3).selectOption('bachelors');
+    await page.locator('input[type="checkbox"]').nth(0).dispatchEvent('click'); // Google Translate
+    await page.locator('input[type="checkbox"]').nth(3).dispatchEvent('click'); // DeepL
     await page.locator('input[name="demographics_level"]').nth(6).dispatchEvent('click');
     await expect(demoSubmitButton).toBeEnabled();
     await demoSubmitButton.dispatchEvent('click');
@@ -782,9 +794,10 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.goto('/');
 
     // 3. Consent
-    const consentButton = page.locator('button:has-text("I Consent & Agree to Participate")');
+    const consentButton = page.locator('button:has-text("Continue")');
     const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
     await pidInput.fill('mobile_test_pid');
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
     await consentButton.dispatchEvent('click');
 
     // 4. LexTALE
@@ -807,7 +820,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     // 7. Pre-reading 1
     const preContinueButton1 = page.locator('button:has-text("Continue to Text")');
-    await page.locator('input[name="pre_reading_exposure_1"]').nth(3).dispatchEvent('click');
     await preContinueButton1.dispatchEvent('click');
 
     // 8. Reading view: Tap a word

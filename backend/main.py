@@ -976,17 +976,17 @@ async def experiment_submit(req: SubmitRequest):
     # Insert participant_meta
     cursor.execute("""
         INSERT OR REPLACE INTO participant_meta (
-            prolific_pid, age, gender, native_language, other_languages,
-            years_studying_english, course_level, self_rated_english, academic_year,
-            field_of_study, frequency_academic_english, use_translation_tools,
-            ac_early, quiz1_attention_raw, quiz1_attention_pass, quiz2_attention_raw, quiz2_attention_pass, is_pilot
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            prolific_pid, age, gender, native_language,
+            years_studying_english, education, self_rated_english,
+            frequency_academic_english, use_translation_tools, translation_tools_used,
+            ac_early, quiz1_attention_raw, quiz1_attention_pass, quiz2_attention_raw, quiz2_attention_pass, is_pilot, consent_timestamp
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         req.prolific_pid.strip(), demo.get("age"), demo.get("gender"), demo.get("native_language"),
-        demo.get("other_languages"), demo.get("years_studying_english"), demo.get("course_level"),
-        demo.get("self_rated_english"), demo.get("academic_year"), demo.get("field_of_study"),
-        demo.get("frequency_academic_english"), demo.get("use_translation_tools"),
-        ac_early, quiz1_attention_raw, int(quiz1_attention_pass), quiz2_attention_raw, int(quiz2_attention_pass), int(is_pilot)
+        demo.get("years_studying_english"), demo.get("education"), demo.get("self_rated_english"),
+        demo.get("frequency_academic_english"), demo.get("use_translation_tools"), demo.get("translation_tools_used"),
+        ac_early, quiz1_attention_raw, int(quiz1_attention_pass), quiz2_attention_raw, int(quiz2_attention_pass), int(is_pilot),
+        demo.get("consent_timestamp", "")
     ))
 
     # Log final submission

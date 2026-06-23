@@ -1,0 +1,9 @@
+﻿prolific_pid,lextale_score,cefr_level,text_format,sequence,text_pair,text_order,created_at,is_pilot
+test_prolific_123,75.0,B2,TF,B,pair_4,"[""textB4"", ""textA4""]",2026-06-11 15:01:56,0
+PROLIFIC_TEST_USER,100.0,B2,TF,B,pair_3,"[""textB3"", ""textA3""]",2026-06-11 15:25:11,0
+TEST_EXCLUDE_PID,45.5,B1,TF,B,pair_1,"[""textB1"", ""textA1""]",2026-06-13 10:15:39,0
+TEST_ADVANCED_PID,85.0,exclude,,,,[],2026-06-13 10:15:39,0
+TEST_PROLIFIC_PID_XYZ,67.5,B2,TS,A,pair_3,"[""textA3"", ""textB3""]",2026-06-13 10:15:39,0
+5f00a2b1c3004d5e6f7a8b00,95.0,exclude,,,,[],2026-06-21 07:48:53,0
+00112233445566778899aabb,75.0,B2,TF,A,pair_4,"[""textB4"", ""textA4""]",2026-06-21 07:48:53,0
+00,95.0,B2,TF,A,pair_4,"[""textB4"", ""textA4""]",2026-06-21 07:48:53,1

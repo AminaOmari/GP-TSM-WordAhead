@@ -255,10 +255,8 @@ const PER_TASK_QUESTIONS = {
     { id: "pt_a9", label: t('survey.blocks.a9', "I could recognize how the key points are supported by additional detail in the passage."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') }
   ],
   blockB: [
-    { id: "pt_b10", label: t('survey.blocks.b10', "The system's choice of what to gray out and what to keep at full weight made sense to me."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
-    { id: "pt_b11", label: t('survey.blocks.b11', "I think I know why certain words were lighter than others."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
-    { id: "pt_b12", label: t('survey.blocks.b12', "I found it helpful that certain words were lighter than others."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
-    { id: "pt_b13", label: t('survey.blocks.b13', "The different levels of gray helped me see the relationships between parts of sentences."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b11", label: t('survey.blocks.b11', "I think I know why certain words were highlighted."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
+    { id: "pt_b12", label: t('survey.blocks.b12', "I found it helpful that certain words were highlighted."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
     { id: "pt_b14", label: t('survey.blocks.b14', "I understood why some words were highlighted."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
     { id: "pt_b15", label: t('survey.blocks.b15', "The translations helped without interrupting my reading."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
     { id: "pt_b16", label: t('survey.blocks.b16', "The highlighted words matched the words I found difficult."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
@@ -266,6 +264,8 @@ const PER_TASK_QUESTIONS = {
     { id: "pt_b18", label: t('survey.blocks.b18', "The system made me too dependent on translation."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree'), lowerIsBetter: true }
   ],
   blockC: [
+    // Note: pt_b10 is now a skimmed-block item despite the 'b' key name
+    { id: "pt_b10", label: t('survey.blocks.b10', "The system's choice of what to keep prominent and what to reduce in the shortened version made sense to me."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') },
     { id: "pt_c19", label: t('survey.blocks.c19', "The shortened (skimmed) version preserved enough of the meaning."), leftAnchor: t('survey.anchors.strongly_disagree'), rightAnchor: t('survey.anchors.strongly_agree') }
   ]
 };
@@ -296,8 +296,8 @@ const LikertScale = ({ id, label, value, onChange, leftAnchor, rightAnchor }) =>
   );
 };
 
-const PerTaskSurvey = ({ condition, textFormat, onSubmit }) => {
-  const [responses, setResponses] = useState({});
+const PerTaskSurvey = ({ condition, textFormat, onSubmit, onBack, initialResponses }) => {
+  const [responses, setResponses] = useState(initialResponses || {});
 
   const showBlockB = condition === 'wordahead';
   const showBlockC = textFormat === 'TS';
@@ -329,23 +329,52 @@ const PerTaskSurvey = ({ condition, textFormat, onSubmit }) => {
         />
       ))}
       
-      <button
-        className="btn"
-        disabled={!allAnswered}
-        onClick={() => onSubmit(responses)}
-        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
-      >
-        {t('survey.submit')}
-      </button>
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+        <button
+          className="btn"
+          onClick={() => onBack(responses)}
+          style={{
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            border: '1px solid #e2e8f0',
+            padding: '1rem',
+            fontSize: '1.1rem'
+          }}
+        >
+          Back
+        </button>
+        <button
+          className="btn"
+          disabled={!allAnswered}
+          onClick={() => onSubmit(responses)}
+          style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}
+        >
+          {t('survey.submit')}
+        </button>
+      </div>
     </div>
   );
 };
 
-const PostStudySurvey = ({ conditionsSeen, onSubmit }) => {
-  const [responses, setResponses] = useState({});
-  const [ranking, setRanking] = useState('');
-  const [openText1, setOpenText1] = useState('');
-  const [openText2, setOpenText2] = useState('');
+const PostStudySurvey = ({ conditionsSeen, onSubmit, onBack, initialData }) => {
+  const [responses, setResponses] = useState(initialData?.responses || {});
+  const [ranking, setRanking] = useState(initialData?.ranking?.helpful || '');
+  const [openText1, setOpenText1] = useState(initialData?.open_text_responses?.ps_open1 || '');
+  const [openText2, setOpenText2] = useState(initialData?.open_text_responses?.ps_open2 || '');
+
+  const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+
+  const firstLabel = capitalize(
+    conditionsSeen[0].condition === 'wordahead'
+      ? t('survey.options.highlighted_text', 'the highlighted text')
+      : t('survey.options.plain_text', 'the text without highlighting')
+  );
+
+  const secondLabel = capitalize(
+    conditionsSeen[1].condition === 'wordahead'
+      ? t('survey.options.highlighted_text', 'the highlighted text')
+      : t('survey.options.plain_text', 'the text without highlighting')
+  );
 
   const likertQuestions = [];
   conditionsSeen.forEach((cond) => {
@@ -368,7 +397,20 @@ const PostStudySurvey = ({ conditionsSeen, onSubmit }) => {
         "ps_open2": openText2
       },
       ranking: {
-        "most_helpful": ranking
+        "helpful": ranking
+      }
+    });
+  };
+
+  const handleBackClick = () => {
+    onBack({
+      responses,
+      open_text_responses: {
+        "ps_open1": openText1,
+        "ps_open2": openText2
+      },
+      ranking: {
+        "helpful": ranking
       }
     });
   };
@@ -383,11 +425,11 @@ const PostStudySurvey = ({ conditionsSeen, onSubmit }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
             <input type="radio" name="ranking" checked={ranking === 'first'} onChange={() => setRanking('first')} style={{ accentColor: 'var(--accent)' }} />
-            <span>{t('survey.options.first_passage')}</span>
+            <span>{firstLabel}</span>
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
             <input type="radio" name="ranking" checked={ranking === 'second'} onChange={() => setRanking('second')} style={{ accentColor: 'var(--accent)' }} />
-            <span>{t('survey.options.second_passage')}</span>
+            <span>{secondLabel}</span>
           </label>
         </div>
       </div>
@@ -426,14 +468,29 @@ const PostStudySurvey = ({ conditionsSeen, onSubmit }) => {
         />
       ))}
       
-      <button
-        className="btn"
-        disabled={!isValid}
-        onClick={handleSubmit}
-        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
-      >
-        Submit Feedback & Continue
-      </button>
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+        <button
+          className="btn"
+          onClick={handleBackClick}
+          style={{
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            border: '1px solid #e2e8f0',
+            padding: '1rem',
+            fontSize: '1.1rem'
+          }}
+        >
+          Back
+        </button>
+        <button
+          className="btn"
+          disabled={!isValid}
+          onClick={handleSubmit}
+          style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}
+        >
+          Submit Feedback & Continue
+        </button>
+      </div>
     </div>
   );
 };
@@ -464,6 +521,8 @@ function App() {
   // --- Experiment Flow States ---
   const [inExperiment, setInExperiment] = useState(true);
   const [prolificId, setProlificId] = useState('');
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consentTimestamp, setConsentTimestamp] = useState('');
   const [expStep, setExpStep] = useState('consent'); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
   const [lextaleAnswers, setLextaleAnswers] = useState({});
   const [lextaleCurrentIdx, setLextaleCurrentIdx] = useState(0);
@@ -477,8 +536,6 @@ function App() {
   const [clickEvents1, setClickEvents1] = useState([]);
   const [clickEvents2, setClickEvents2] = useState([]);
   const [clickEvents, setClickEvents] = useState([]);
-  const [priorExposure1, setPriorExposure1] = useState('4');
-  const [priorExposure2, setPriorExposure2] = useState('4');
   const [readingTime1, setReadingTime1] = useState(0);
   const [readingTime2, setReadingTime2] = useState(0);
   const [quizAnswers1, setQuizAnswers1] = useState(new Array(6).fill(undefined));
@@ -492,17 +549,43 @@ function App() {
     age: '',
     gender: '',
     native_language: '',
-    other_languages: '',
     years_studying_english: '',
-    course_level: '',
+    education: '',
     self_rated_english: '',
-    academic_year: '',
-    field_of_study: '',
     frequency_academic_english: '3',
     use_translation_tools: '3',
+    translation_tools_used: '',
     ac_early: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleTranslationToolChange = (toolLabel) => {
+    setSurveyDemographics(prev => {
+      let currentTools = prev.translation_tools_used
+        ? prev.translation_tools_used.split(', ').map(t => t.trim()).filter(Boolean)
+        : [];
+      
+      if (toolLabel === 'None') {
+        if (currentTools.includes('None')) {
+          currentTools = [];
+        } else {
+          currentTools = ['None'];
+        }
+      } else {
+        currentTools = currentTools.filter(t => t !== 'None');
+        if (currentTools.includes(toolLabel)) {
+          currentTools = currentTools.filter(t => t !== toolLabel);
+        } else {
+          currentTools.push(toolLabel);
+        }
+      }
+      
+      return {
+        ...prev,
+        translation_tools_used: currentTools.join(', ')
+      };
+    });
+  };
   const [submitResult, setSubmitResult] = useState(null);
   const [hoverTooltip, setHoverTooltip] = useState(null);
   const hoverTimers = React.useRef({});
@@ -555,6 +638,18 @@ function App() {
       setLocale('en');
     }
   }, [expStep]);
+
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      if (!e.target.closest('.word')) {
+        setHoverTooltip(null);
+      }
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -663,16 +758,22 @@ function App() {
   // Dynamic Level Adjustment Logic
   const [struggleCount, setStruggleCount] = useState(0);
 
-  const handleWordClick = async (token) => {
-    if (!token.cefr) return;
-    if (experimentMode && currentReadingCondition === 'plain') return; // Disable hover translations in plain mode
+  const handleWordClick = async (e, token) => {
+    // Robust argument check: if e is a token (i.e. has no target or currentTarget, but has a cefr field), swap them
+    let event = e;
+    let tok = token;
+    if (e && e.cefr && !token) {
+      tok = e;
+      event = null;
+    }
+    if (!tok || !tok.cefr) return;
 
     const uIdx = CEFR_LEVELS.indexOf(userLevel);
-    const cleanWord = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
+    const cleanWord = tok.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
     const isLearned = learnedWords[cleanWord];
 
     // Trigger level down ONLY on GREY words (importance < 3 and not difficult)
-    if (!experimentMode && !token.isDifficult && !isLearned && uIdx > 0) {
+    if (!experimentMode && !tok.isDifficult && !isLearned && uIdx > 0) {
       const newCount = struggleCount + 1;
       setStruggleCount(newCount);
       if (newCount >= 3) {
@@ -695,27 +796,43 @@ function App() {
 
 
     const eventData = {
-      word: token.text,
+      word: tok.text,
       timestamp: Date.now()
     };
     setClickEvents(prev => [...prev, eventData]);
 
-    setSelectedWord(token);
+    setSelectedWord(tok);
     setTransLoading(true);
     setTranslation(null);
+
+    const rect = event ? event.currentTarget.getBoundingClientRect() : null;
 
     try {
       const textToUse = experimentMode ? currentTextData.text : text;
       const sentences = textToUse.match(/[^.!?]*[.!?]/g) || [textToUse];
       const relevantSentence = sentences.find(s =>
-        s.toLowerCase().includes(token.text.toLowerCase())
+        s.toLowerCase().includes(tok.text.toLowerCase())
       ) || textToUse.substring(0, 300);
 
       const res = await axios.post(`${API_URL}/api/translate`, {
-        word: token.text,
+        word: tok.text,
         context: relevantSentence
       });
       setTranslation(res.data);
+
+      if (experimentMode && rect) {
+        if (hoverTooltip && hoverTooltip.word === tok.text) {
+          setHoverTooltip(null);
+        } else {
+          setHoverTooltip({
+            word: tok.text,
+            translation: res.data.translation,
+            transliteration: res.data.transliteration,
+            x: rect.left + window.scrollX,
+            y: rect.top + window.scrollY - 10
+          });
+        }
+      }
     } catch (err) {
       console.error(err);
       setTranslation({ error: "Failed to fetch translation." });
@@ -904,6 +1021,8 @@ function App() {
       payload: { text_id: textId, duration_ms: duration, timestamp: Date.now() }
     });
 
+    setHoverTooltip(null);
+
     if (expStep === 'reading_1') {
       setReadingTime1(duration);
       setHoverEvents1(hoverEvents);
@@ -922,7 +1041,7 @@ function App() {
   };
 
   const handleWordMouseEnter = (e, token) => {
-    if (!experimentMode || currentReadingCondition !== 'wordahead') return;
+    if (!experimentMode) return;
     if (!token.cefr) return;
     
     const wordText = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
@@ -930,49 +1049,15 @@ function App() {
       start: Date.now(),
       target: e.currentTarget
     };
-    
-    const timerId = setTimeout(async () => {
-      if (hoverTimers.current[wordText]) {
-        try {
-          const textToUse = currentTextData.text;
-          const sentences = textToUse.match(/[^.!?]*[.!?]/g) || [textToUse];
-          const relevantSentence = sentences.find(s =>
-            s.toLowerCase().includes(token.text.toLowerCase())
-          ) || textToUse.substring(0, 300);
-
-          const res = await axios.post(`${API_URL}/api/translate`, {
-            word: token.text,
-            context: relevantSentence
-          });
-          
-          if (hoverTimers.current[wordText]) {
-            const rect = hoverTimers.current[wordText].target.getBoundingClientRect();
-            setHoverTooltip({
-              word: token.text,
-              translation: res.data.translation,
-              transliteration: res.data.transliteration,
-              x: rect.left + window.scrollX,
-              y: rect.top + window.scrollY - 10
-            });
-            hoverTimers.current[wordText].translation_shown = true;
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    }, 150);
-    
-    hoverTimers.current[wordText].timerId = timerId;
   };
 
   const handleWordMouseLeave = async (token) => {
-    if (!experimentMode || currentReadingCondition !== 'wordahead') return;
+    if (!experimentMode) return;
     if (!token.cefr) return;
     
     const wordText = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
     const hoverInfo = hoverTimers.current[wordText];
     if (hoverInfo) {
-      clearTimeout(hoverInfo.timerId);
       const dwellMs = Date.now() - hoverInfo.start;
       
       if (dwellMs >= 150) {
@@ -980,7 +1065,7 @@ function App() {
           word: token.text,
           timestamp: Date.now(),
           dwell_ms: dwellMs,
-          translation_shown: !!hoverInfo.translation_shown
+          translation_shown: false
         };
         
         setHoverEvents(prev => [...prev, eventData]);
@@ -998,7 +1083,6 @@ function App() {
       
       delete hoverTimers.current[wordText];
     }
-    setHoverTooltip(null);
   };
 
   const handleQuizSelect = (idx, oIdx) => {
@@ -1023,7 +1107,7 @@ function App() {
     
     const alertnessQuestion = isFirstQuiz ? {
       id: "alertness_1",
-      question: t('quiz.alertness1.question', "This is an alertness check. To show you are reading carefully, please choose the second option (Option B) below."),
+      question: t('quiz.alertness1.question', "To show you are reading carefully, please select the second answer below."),
       options: [
         t('quiz.alertness1.opt0', "Option A"),
         t('quiz.alertness1.opt1', "Option B"),
@@ -1034,14 +1118,14 @@ function App() {
       isAlertness: true
     } : {
       id: "alertness_2",
-      question: t('quiz.alertness2.question', "Attention check: please select the fourth option (Option D) from the choices below to confirm you are paying attention."),
+      question: t('quiz.alertness2.question', "To show you are reading carefully, please select the second answer below."),
       options: [
         t('quiz.alertness2.opt0', "Option A"),
         t('quiz.alertness2.opt1', "Option B"),
         t('quiz.alertness2.opt2', "Option C"),
         t('quiz.alertness2.opt3', "Option D")
       ],
-      correct: 3, // Option D
+      correct: 1, // Option B
       isAlertness: true
     };
     
@@ -1158,10 +1242,9 @@ function App() {
           hover_events: hoverEvents1,
           click_events: clickEvents1,
           click_count: clickEvents1.length,
-          unique_words_translated: Array.from(new Set([
-            ...hoverEvents1.filter(e => e.translation_shown).map(e => e.word.toLowerCase()),
-            ...clickEvents1.map(e => e.word.toLowerCase())
-          ])).length,
+          unique_words_translated: Array.from(new Set(
+            clickEvents1.map(e => e.word.toLowerCase())
+          )).length,
           comprehension: quiz1Results
         },
         {
@@ -1171,10 +1254,9 @@ function App() {
           hover_events: hoverEvents2,
           click_events: clickEvents2,
           click_count: clickEvents2.length,
-          unique_words_translated: Array.from(new Set([
-            ...hoverEvents2.filter(e => e.translation_shown).map(e => e.word.toLowerCase()),
-            ...clickEvents2.map(e => e.word.toLowerCase())
-          ])).length,
+          unique_words_translated: Array.from(new Set(
+            clickEvents2.map(e => e.word.toLowerCase())
+          )).length,
           comprehension: quiz2Results
         }
       ],
@@ -1182,7 +1264,10 @@ function App() {
         per_task_1: perTaskSurvey1,
         per_task_2: perTaskSurvey2,
         post_study: postStudyData,
-        demographics: surveyDemographics
+        demographics: {
+          ...surveyDemographics,
+          consent_timestamp: consentTimestamp
+        }
       }
     };
 
@@ -1218,12 +1303,44 @@ function App() {
     switch (expStep) {
       case 'consent':
         return (
-          <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
-            <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Research Consent Form</h2>
-            <p>Welcome to the WordAhead Academic Reading Experiment!</p>
-            <p>This study evaluates the effectiveness of an adaptive, structure-aware reading assistant designed to help English language learners read authentic academic texts. By participating, you will complete a short English vocabulary test, read two academic texts, and answer a few questions about your reading experience.</p>
-            <p>All data collected will be completely anonymous and used solely for academic research. You may withdraw at any time.</p>
-            <div style={{ margin: '2rem 0' }}>
+          <div className="glass" style={{ maxWidth: '750px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0, textAlign: 'center' }}>Research Consent Form</h2>
+            
+            <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.5rem', background: 'var(--bg-secondary)', marginBottom: '1.5rem' }}>
+              <h3 style={{ marginTop: 0, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Study: WordAhead — An AI-Based Reading Assistant for Hebrew Speakers Reading English Texts</h3>
+              
+              <p>You are invited to take part in a research study run by students at the University of Haifa (Information Systems, AI specialization) as part of their final-year project. Please read the information below before deciding whether to take part.</p>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>What the study is about</h4>
+              <p style={{ marginTop: 0 }}>The study looks at how an AI-based reading assistant affects the reading and comprehension of academic English texts among native Hebrew speakers.</p>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>What you will be asked to do</h4>
+              <p style={{ marginTop: 0 }}>You will complete a short English-level screening task, then read two short English texts on a desktop computer. After each text you will answer a short comprehension quiz and a brief questionnaire about your reading experience. At the end you will answer a short background questionnaire and a comparison questionnaire. The session is expected to take roughly the time stated on Prolific.</p>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Voluntary participation and withdrawal</h4>
+              <p style={{ marginTop: 0 }}>Participation is entirely voluntary. You may stop at any time without giving a reason. Some questions include simple attention checks to confirm careful reading; responses that do not pass these checks may be excluded from analysis.</p>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Privacy and data use</h4>
+              <p style={{ marginTop: 0 }}>The study is anonymous and collects no personally identifying information. Your Prolific ID is used only to deliver your compensation and is not stored in an identifying way alongside your research responses. The English reading texts are processed by a third-party translation service (OpenAI / GPT-4o); no personal information is sent. Data are stored securely and used for academic research only.</p>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Compensation</h4>
+              <p style={{ marginTop: 0 }}>Compensation is provided through Prolific according to the platform's rates, as stated in the study listing.</p>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Contact</h4>
+              <p style={{ marginTop: 0, marginBottom: '0.5rem' }}>If you have questions about the study, you may contact the research team or the academic supervisor:</p>
+              <ul style={{ marginTop: 0, paddingLeft: '1.2rem' }}>
+                <li>Amina Omari — omariamina275@gmail.com</li>
+                <li>Ossama Ziadat — ossamaziadat02@gmail.com</li>
+                <li>Samia Idris — smiaidris3@gmail.com</li>
+                <li>Academic supervisor: Dr. Osnat (Ossi) Mokryn — omokryn@is.haifa.ac.il</li>
+                <li>Academic supervisor: Mr. Moshi Hadad — moshe.hadad@gmail.com</li>
+              </ul>
+              
+              <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Consent</h4>
+              <p style={{ marginTop: 0 }}>By selecting “I have read and understood the information above, and I agree to take part” and continuing, you confirm that you are at least 18 years old, that you have read and understood this information, and that you agree to take part in the study.</p>
+            </div>
+
+            <div style={{ margin: '1.5rem 0' }}>
               <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Prolific Participant ID</label>
               <input
                 type="text"
@@ -1235,16 +1352,33 @@ function App() {
                 style={{ fontSize: '1.1rem' }}
               />
             </div>
+
+            <div style={{ margin: '1.5rem 0' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  style={{ marginTop: '0.25rem', cursor: 'pointer', accentColor: 'var(--accent)' }}
+                />
+                <span style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: '500' }}>
+                  I have read and understood the information above, and I agree to take part
+                </span>
+              </label>
+            </div>
+
             <button
               className="btn"
-              disabled={!prolificId.trim()}
+              disabled={!prolificId.trim() || !consentChecked}
               onClick={() => {
-                logExperimentEvent("consent_agreed", {});
+                const now = new Date().toISOString();
+                setConsentTimestamp(now);
+                logExperimentEvent("consent_agreed", { consent_timestamp: now });
                 setExpStep('lextale');
               }}
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: 'var(--accent)' }}
             >
-              I Consent & Agree to Participate
+              Continue
             </button>
           </div>
         );
@@ -1351,7 +1485,7 @@ function App() {
           <div className="glass" style={{ maxWidth: '600px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
             <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Screening Complete!</h2>
             <p>Your screening score is <strong>{lextaleScore.toFixed(1)}%</strong>, which assigns you to <strong>Pool: {expCondition?.cefr_level}</strong>.</p>
-            <p>In the next phase, you will read two English academic texts. Depending on the counterbalancing sequence, one text will be read in plain format, and the other will include WordAhead highlights and hover translations.</p>
+            <p>In the next phase, you will read two English academic texts. Depending on the counterbalancing sequence, one text will be read in plain format, and the other will include WordAhead highlights and click translations.</p>
             <p>After each text, you will answer 5 multiple-choice questions about the content. Please read at your normal pace.</p>
             <button
               className="btn"
@@ -1366,46 +1500,41 @@ function App() {
       case 'pre_reading_1':
       case 'pre_reading_2': {
         const isFirstPre = expStep === 'pre_reading_1';
-        const textId = expCondition?.text_order?.[isFirstPre ? 0 : 1];
-        const textTitle = expTexts?.[textId]?.title || "";
         return (
           <div className="glass" style={{ maxWidth: '650px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }} dir="ltr">
             <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>{t('pre_reading.title')}</h2>
             
-            <div style={{ marginTop: '2rem' }}>
-              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem' }}>
-                {t('pre_reading.prior_exposure', { title: textTitle })}
-              </label>
-              <div className="likert-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="likert-anchor likert-left" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.not_familiar')}</span>
-                <div className="likert-options" style={{ display: 'flex', gap: '1rem' }}>
-                  {[1, 2, 3, 4, 5, 6, 7].map((val) => (
-                    <label key={val} className="likert-option-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name={`pre_reading_exposure_${isFirstPre ? '1' : '2'}`}
-                        checked={(isFirstPre ? priorExposure1 : priorExposure2) === String(val)}
-                        onChange={() => isFirstPre ? setPriorExposure1(String(val)) : setPriorExposure2(String(val))}
-                        style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-                      />
-                      <span style={{ fontSize: '0.85rem' }}>{val}</span>
-                    </label>
-                  ))}
-                </div>
-                <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('survey.anchors.very_familiar')}</span>
-              </div>
-            </div>
+            <p style={{ marginTop: '2rem', color: 'var(--text-secondary)', lineHeight: '1.6', fontSize: '1.1rem' }}>
+              You are about to start reading the next text. Please read at your normal pace.
+            </p>
             
-            <button
-              className="btn"
-              onClick={() => {
-                 setExpStep(isFirstPre ? 'reading_1' : 'reading_2');
-                 setReadingStartTime(Date.now());
-              }}
-              style={{ width: '100%', marginTop: '3rem', padding: '1rem', fontSize: '1.1rem' }}
-            >
-              {t('pre_reading.continue')}
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '3rem' }}>
+              <button
+                className="btn"
+                onClick={() => {
+                  setExpStep(isFirstPre ? 'assigned' : 'per_task_survey_1');
+                }}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid #e2e8f0',
+                  padding: '1rem',
+                  fontSize: '1.1rem'
+                }}
+              >
+                Back
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                   setExpStep(isFirstPre ? 'reading_1' : 'reading_2');
+                   setReadingStartTime(Date.now());
+                }}
+                style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}
+              >
+                {t('pre_reading.continue')}
+              </button>
+            </div>
           </div>
         );
       }
@@ -1437,6 +1566,9 @@ function App() {
                 <h2 style={{ marginTop: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
                   {currentTextData?.title}
                 </h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '1rem 0 0 0', borderBottom: '1px dashed #e2e8f0', paddingBottom: '0.75rem' }}>
+                  <Info size={14} style={{ color: 'var(--accent)' }} /> To see a translation, click on a word.
+                </p>
                 {loading ? (
                   <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
                     <Loader2 className="loader" style={{ width: '48px', height: '48px' }} />
@@ -1447,18 +1579,41 @@ function App() {
                       if (t.text === '\n') return <br key={i} />;
                       
                       let className = "word";
-                      if (currentReadingCondition === 'plain') {
-                        className += " word-experiment";
-                      } else {
-                        if (t.isDifficult) {
-                          if (t.importance > 2) className += " word-difficult-important";
-                          else className += " word-difficult";
-                        } else if (t.importance >= 3) {
-                          className += " word-important";
+                      if (expCondition.text_format === 'TF') {
+                        // Full-text format: complete, undimmed text. No GP-TSM dimming/graying.
+                        if (currentReadingCondition === 'plain') {
+                          className += " word-experiment"; // plain text style
                         } else {
-                          if (t.importance === 2) className += " word-fade-2";
-                          else if (t.importance === 1) className += " word-fade-1";
-                          else className += " word-low";
+                          // wordahead: apply ONLY purple highlighting to difficult words
+                          if (t.isDifficult) {
+                            className += " word-difficult"; // purple highlight
+                          } else {
+                            className += " word-experiment"; // plain text style
+                          }
+                        }
+                      } else {
+                        // Skimmed format (TS): GP-TSM runs here
+                        if (currentReadingCondition === 'plain') {
+                          // GP-TSM skimmed/dimmed output (no purple highlight)
+                          if (t.importance >= 3) {
+                            className += " word-important"; // bold black
+                          } else {
+                            if (t.importance === 2) className += " word-fade-2";
+                            else if (t.importance === 1) className += " word-fade-1";
+                            else className += " word-low";
+                          }
+                        } else {
+                          // wordahead: GP-TSM + purple highlight for difficult words
+                          if (t.isDifficult) {
+                            if (t.importance > 2) className += " word-difficult-important";
+                            else className += " word-difficult";
+                          } else if (t.importance >= 3) {
+                            className += " word-important";
+                          } else {
+                            if (t.importance === 2) className += " word-fade-2";
+                            else if (t.importance === 1) className += " word-fade-1";
+                            else className += " word-low";
+                          }
                         }
                       }
                       
@@ -1470,7 +1625,7 @@ function App() {
                         <span
                           key={i}
                           className={className}
-                          onClick={() => handleWordClick(t)}
+                          onClick={(e) => handleWordClick(e, t)}
                           onPointerEnter={(e) => {
                             if (e.pointerType !== 'touch') {
                               handleWordMouseEnter(e, t);
@@ -1481,7 +1636,7 @@ function App() {
                               handleWordMouseLeave(t);
                             }
                           }}
-                          style={{ cursor: currentReadingCondition === 'wordahead' ? 'pointer' : 'default' }}
+                          style={{ cursor: t.cefr ? 'pointer' : 'default' }}
                         >
                           {t.text}{" "}
                         </span>
@@ -1490,13 +1645,31 @@ function App() {
                   </div>
                 )}
                 
-                <button
-                  className="btn"
-                  onClick={finishReadingSession}
-                  style={{ display: 'block', width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '2rem' }}
-                >
-                  Continue to Comprehension Questions
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                  <button
+                    className="btn"
+                    onClick={() => {
+                      setHoverTooltip(null);
+                      setExpStep(expStep === 'reading_1' ? 'pre_reading_1' : 'pre_reading_2');
+                    }}
+                    style={{
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid #e2e8f0',
+                      padding: '1rem',
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="btn"
+                    onClick={finishReadingSession}
+                    style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}
+                  >
+                    Continue to Comprehension Questions
+                  </button>
+                </div>
               </div>
               
               {currentReadingCondition === 'wordahead' && (
@@ -1624,14 +1797,31 @@ function App() {
               );
             })}
             
-            <button
-              className="btn"
-              disabled={currentQuizAnswers.length < 6 || currentQuizAnswers.includes(undefined)}
-              onClick={submitQuiz}
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
-            >
-              Submit Answers & Continue
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                className="btn"
+                onClick={() => {
+                  setExpStep(expStep === 'quiz_1' ? 'reading_1' : 'reading_2');
+                }}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid #e2e8f0',
+                  padding: '1rem',
+                  fontSize: '1.1rem'
+                }}
+              >
+                Back
+              </button>
+              <button
+                className="btn"
+                disabled={currentQuizAnswers.length < 6 || currentQuizAnswers.includes(undefined)}
+                onClick={submitQuiz}
+                style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}
+              >
+                Submit Answers & Continue
+              </button>
+            </div>
           </div>
         );
       }
@@ -1648,6 +1838,16 @@ function App() {
             condition={condition} 
             textFormat={expCondition.text_format} 
             onSubmit={submitPerTaskSurvey} 
+            initialResponses={isFirst ? perTaskSurvey1 : perTaskSurvey2}
+            onBack={(responses) => {
+              if (isFirst) {
+                setPerTaskSurvey1(responses);
+                setExpStep('quiz_1');
+              } else {
+                setPerTaskSurvey2(responses);
+                setExpStep('quiz_2');
+              }
+            }}
           />
         );
       }
@@ -1661,6 +1861,11 @@ function App() {
           <PostStudySurvey 
             conditionsSeen={conditionsSeen} 
             onSubmit={submitPostStudySurvey} 
+            initialData={postStudySurvey}
+            onBack={(surveyData) => {
+              setPostStudySurvey(surveyData);
+              setExpStep('per_task_survey_2');
+            }}
           />
         );
       }
@@ -1728,17 +1933,6 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Other Languages</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={surveyDemographics.other_languages}
-                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, other_languages: e.target.value }))}
-                  placeholder="e.g. English, French, Spanish"
-                />
-              </div>
-
-              <div>
                 <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.years_studying_english')}</label>
                 <input
                   type="number"
@@ -1750,39 +1944,66 @@ function App() {
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.course_level')}</label>
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.education')}</label>
                 <select
                   className="input"
-                  value={surveyDemographics.course_level}
-                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, course_level: e.target.value }))}
+                  value={surveyDemographics.education}
+                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, education: e.target.value }))}
                 >
-                  <option value="">Select Course Level</option>
-                  <option value="undergrad">Undergraduate</option>
-                  <option value="grad">Graduate</option>
-                  <option value="other">{t('demographics.options.other_course')}</option>
+                  <option value="">{t('demographics.education_options.select')}</option>
+                  <option value="high_school">{t('demographics.education_options.high_school')}</option>
+                  <option value="vocational">{t('demographics.education_options.vocational')}</option>
+                  <option value="bachelors">{t('demographics.education_options.bachelors')}</option>
+                  <option value="masters">{t('demographics.education_options.masters')}</option>
+                  <option value="doctoral">{t('demographics.education_options.doctoral')}</option>
+                  <option value="other">{t('demographics.education_options.other')}</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.academic_year')}</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={surveyDemographics.academic_year}
-                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, academic_year: e.target.value }))}
-                  placeholder="e.g. 1st Year, 2nd Year, etc."
-                />
-              </div>
-
-              <div>
-                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>{t('demographics.field_of_study')}</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={surveyDemographics.field_of_study}
-                  onChange={(e) => setSurveyDemographics(prev => ({ ...prev, field_of_study: e.target.value }))}
-                  placeholder="e.g. Computer Science, Medicine"
-                />
+                <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>
+                  {t('demographics.translation_tools_used')}
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  {[
+                    { key: 'google_translate', label: 'Google Translate' },
+                    { key: 'morfix', label: 'Morfix' },
+                    { key: 'reverso', label: 'Reverso' },
+                    { key: 'deepl', label: 'DeepL' },
+                    { key: 'chatgpt_ai', label: 'ChatGPT/AI assistant' },
+                    { key: 'dictionary_app', label: 'Dictionary app' },
+                    { key: 'browser_extension', label: 'Browser extension' },
+                    { key: 'other', label: 'Other' },
+                    { key: 'none', label: 'None' }
+                  ].map((tool) => {
+                    const isChecked = surveyDemographics.translation_tools_used
+                      ? surveyDemographics.translation_tools_used.split(', ').map(t => t.trim()).includes(tool.label)
+                      : false;
+                    return (
+                      <label
+                        key={tool.key}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          cursor: 'pointer',
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          background: 'var(--bg-secondary)',
+                          border: '1px solid #e2e8f0'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleTranslationToolChange(tool.label)}
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                        />
+                        <span style={{ fontSize: '0.9rem' }}>{t(`demographics.tools.${tool.key}`)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
@@ -1852,23 +2073,37 @@ function App() {
               </div>
             </div>
             
-            <button
-              className="btn"
-              disabled={
-                isSubmitting ||
-                !surveyDemographics.age ||
-                !surveyDemographics.native_language.trim() ||
-                !surveyDemographics.years_studying_english.trim() ||
-                !surveyDemographics.course_level ||
-                !surveyDemographics.self_rated_english ||
-                !surveyDemographics.academic_year.trim() ||
-                !surveyDemographics.field_of_study.trim()
-              }
-              onClick={() => submitExperiment()}
-              style={{ width: '100%', padding: '1.2rem', fontSize: '1.2rem', marginTop: '3rem', background: 'var(--accent)' }}
-            >
-              {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & ' + t('demographics.submit')}
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '3rem' }}>
+              <button
+                className="btn"
+                onClick={() => setExpStep('post_study_survey')}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid #e2e8f0',
+                  padding: '1.2rem',
+                  fontSize: '1.2rem'
+                }}
+              >
+                Back
+              </button>
+              <button
+                className="btn"
+                disabled={
+                  isSubmitting ||
+                  !surveyDemographics.age ||
+                  !surveyDemographics.native_language.trim() ||
+                  !surveyDemographics.years_studying_english.trim() ||
+                  !surveyDemographics.education ||
+                  !surveyDemographics.self_rated_english ||
+                  !surveyDemographics.translation_tools_used
+                }
+                onClick={() => submitExperiment()}
+                style={{ flex: 1, padding: '1.2rem', fontSize: '1.2rem', background: 'var(--accent)' }}
+              >
+                {isSubmitting ? 'Submitting Responses...' : 'Complete Experiment & ' + t('demographics.submit')}
+              </button>
+            </div>
           </div>
         );
 
@@ -2257,7 +2492,7 @@ function App() {
                   <motion.span
                     key={i}
                     className={className}
-                    onClick={() => handleWordClick(t)}
+                    onClick={(e) => handleWordClick(e, t)}
                     animate={{
                       opacity: 1,
                       scale: 1

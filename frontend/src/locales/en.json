@@ -24,14 +24,14 @@
     "title": "Comprehension Questions",
     "submit": "Submit Answers & Continue",
     "alertness1": {
-      "question": "This is an alertness check. To show you are reading carefully, please choose the second option (Option B) below.",
+      "question": "To show you are reading carefully, please select the second answer below.",
       "opt0": "Option A",
       "opt1": "Option B",
       "opt2": "Option C",
       "opt3": "Option D"
     },
     "alertness2": {
-      "question": "Attention check: please select the fourth option (Option D) from the choices below to confirm you are paying attention.",
+      "question": "To show you are reading carefully, please select the second answer below.",
       "opt0": "Option A",
       "opt1": "Option B",
       "opt2": "Option C",
@@ -74,10 +74,9 @@
       "a7": "How insecure, discouraged, irritated, stressed, or annoyed were you during the task?",
       "a8": "I could recognize the key points in the passage.",
       "a9": "I could recognize how the key points are supported by additional detail in the passage.",
-      "b10": "The system's choice of what to gray out and what to keep at full weight made sense to me.",
-      "b11": "I think I know why certain words were lighter than others.",
-      "b12": "I found it helpful that certain words were lighter than others.",
-      "b13": "The different levels of gray helped me see the relationships between parts of sentences.",
+      "b10": "The system's choice of what to keep prominent and what to reduce in the shortened version made sense to me.",
+      "b11": "I think I know why certain words were highlighted.",
+      "b12": "I found it helpful that certain words were highlighted.",
       "b14": "I understood why some words were highlighted.",
       "b15": "The translations helped without interrupting my reading.",
       "b16": "The highlighted words matched the words I found difficult.",
@@ -93,7 +92,9 @@
     },
     "options": {
       "first_passage": "The first passage I read",
-      "second_passage": "The second passage I read"
+      "second_passage": "The second passage I read",
+      "highlighted_text": "the highlighted text",
+      "plain_text": "the text without highlighting"
     },
     "attention": {
       "check1": "This is an attention check - to show you are reading carefully, please select 'Strongly Agree' for this question.",
@@ -107,14 +108,32 @@
     "age": "Age Range",
     "gender": "Gender (Optional)",
     "native_language": "Native Language",
-    "other_languages": "Other Languages (besides English and Native)",
     "years_studying_english": "Years Studying English",
-    "course_level": "Course Level",
-    "academic_year": "Academic Year",
-    "field_of_study": "Field of Study",
+    "education": "Highest Level of Education Completed",
+    "education_options": {
+      "select": "Select Education Level",
+      "high_school": "High school or less",
+      "vocational": "Vocational or professional training",
+      "bachelors": "Bachelor's degree",
+      "masters": "Master's degree",
+      "doctoral": "Doctoral degree",
+      "other": "Other"
+    },
     "self_rated_english": "Self-Rated English Reading Proficiency",
     "reads_academic_english": "Frequency of Academic Reading in English",
     "uses_translation_tools": "Frequency of Translation Tool Usage",
+    "translation_tools_used": "Which translation tools do you use? (Select all that apply)",
+    "tools": {
+      "google_translate": "Google Translate",
+      "morfix": "Morfix",
+      "reverso": "Reverso",
+      "deepl": "DeepL",
+      "chatgpt_ai": "ChatGPT/AI assistant",
+      "dictionary_app": "Dictionary app",
+      "browser_extension": "Browser extension",
+      "other": "Other",
+      "none": "None"
+    },
     "submit": "Submit Results",
     "options": {
       "select": "Select...",
@@ -131,10 +150,7 @@
       "25_34": "25-34",
       "35_44": "35-44",
       "45_54": "45-54",
-      "55_plus": "55+",
-      "undergrad": "Undergraduate",
-      "grad": "Graduate",
-      "other_course": "Other"
+      "55_plus": "55+"
     }
   },
   "pre_reading": {

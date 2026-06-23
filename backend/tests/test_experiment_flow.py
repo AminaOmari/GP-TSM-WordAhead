@@ -252,7 +252,7 @@ def test_full_experiment_submission():
                 "comprehension": [
                     {"qid": 1, "answer": "B", "correct": True},
                     {"qid": 2, "answer": "B", "correct": True},
-                    {"question_id": "alertness_2", "selected": "Option D", "correct": True, "is_alertness": True},
+                    {"question_id": "alertness_2", "selected": "Option B", "correct": True, "is_alertness": True},
                     {"qid": 3, "answer": "A", "correct": True},
                     {"qid": 4, "answer": "B", "correct": True},
                     {"qid": 5, "answer": "B", "correct": True}
@@ -274,14 +274,13 @@ def test_full_experiment_submission():
                 "age": "18_24",
                 "gender": "female",
                 "native_language": "Hebrew",
-                "other_languages": "English",
                 "years_studying_english": "10",
-                "course_level": "undergrad",
+                "education": "bachelors",
                 "self_rated_english": "7",
-                "academic_year": "2nd",
-                "field_of_study": "Psychology",
                 "frequency_academic_english": "4",
                 "use_translation_tools": "5",
+                "translation_tools_used": "ChatGPT/AI assistant, DeepL",
+                "consent_timestamp": "2026-06-23T18:00:00.000Z",
                 "ac_early": "3"
             }
         }
@@ -349,7 +348,7 @@ def test_full_experiment_submission():
     assert row[h_idx["ac_early"]] == "3"
     assert row[h_idx["quiz1_attention_raw"]] == "Option B"
     assert row[h_idx["quiz1_attention_pass"]] == "1"
-    assert row[h_idx["quiz2_attention_raw"]] == "Option D"
+    assert row[h_idx["quiz2_attention_raw"]] == "Option B"
     assert row[h_idx["quiz2_attention_pass"]] == "1"
     assert row[h_idx["trial1_comprehension_score"]] == "0.8"  # 4/5 correct real MCQs
     assert row[h_idx["trial2_comprehension_score"]] == "1.0"  # 5/5 correct real MCQs
@@ -367,11 +366,13 @@ def test_full_experiment_submission():
     assert meta is not None
     assert meta["age"] == "18_24"
     assert meta["native_language"] == "Hebrew"
-    assert meta["field_of_study"] == "Psychology"
+    assert meta["education"] == "bachelors"
+    assert meta["translation_tools_used"] == "ChatGPT/AI assistant, DeepL"
+    assert meta["consent_timestamp"] == "2026-06-23T18:00:00.000Z"
     assert meta["ac_early"] == "3"
     assert meta["quiz1_attention_raw"] == "Option B"
     assert bool(meta["quiz1_attention_pass"]) is True
-    assert meta["quiz2_attention_raw"] == "Option D"
+    assert meta["quiz2_attention_raw"] == "Option B"
     assert bool(meta["quiz2_attention_pass"]) is True
     assert bool(meta["is_pilot"]) is False
     
@@ -470,14 +471,13 @@ def test_failed_attention_checks():
                 "age": "18_24",
                 "gender": "female",
                 "native_language": "Hebrew",
-                "other_languages": "English",
                 "years_studying_english": "10",
-                "course_level": "undergrad",
+                "education": "bachelors",
                 "self_rated_english": "7",
-                "academic_year": "2nd",
-                "field_of_study": "Psychology",
                 "frequency_academic_english": "4",
                 "use_translation_tools": "5",
+                "translation_tools_used": "ChatGPT/AI assistant, DeepL",
+                "consent_timestamp": "2026-06-23T18:00:00.000Z",
                 "ac_early": "3"
             }
         }
@@ -580,7 +580,7 @@ def test_pilot_session():
                 "comprehension": [
                     {"qid": 1, "answer": "A", "correct": True},
                     {"qid": 2, "answer": "B", "correct": True},
-                    {"question_id": "alertness_2", "selected": "Option D", "correct": True, "is_alertness": True},
+                    {"question_id": "alertness_2", "selected": "Option B", "correct": True, "is_alertness": True},
                     {"qid": 3, "answer": "A", "correct": True},
                     {"qid": 4, "answer": "B", "correct": True},
                     {"qid": 5, "answer": "B", "correct": True}
@@ -595,14 +595,13 @@ def test_pilot_session():
                 "age": "18_24",
                 "gender": "female",
                 "native_language": "Hebrew",
-                "other_languages": "English",
                 "years_studying_english": "10",
-                "course_level": "undergrad",
+                "education": "bachelors",
                 "self_rated_english": "7",
-                "academic_year": "2nd",
-                "field_of_study": "Psychology",
                 "frequency_academic_english": "4",
                 "use_translation_tools": "5",
+                "translation_tools_used": "ChatGPT/AI assistant, DeepL",
+                "consent_timestamp": "2026-06-23T18:00:00.000Z",
                 "ac_early": "3"
             }
         }

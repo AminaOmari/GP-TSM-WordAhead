@@ -1,0 +1,12 @@
+﻿id,prolific_pid,survey_type,condition,text_id,sequence_position,responses,open_text_responses,ranking,created_at
+1,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-18 12:59:26
+4,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-18 14:03:48
+6,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-18 14:34:22
+8,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-18 14:34:54
+10,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-18 14:39:34
+12,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-18 17:47:40
+53,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-21 06:56:58
+66,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-21 07:48:35
+67,test_pid,per_task,TF,text_1,1,"{""pt_a1"": 5}",{},{},2026-06-21 07:48:51
+69,5f00a2b1c3004d5e6f7a8b00,dummy_survey_to_wipe,,,,"{""q"": 5}",,,2026-06-21 07:48:53
+70,00112233445566778899aabb,dummy_survey_to_wipe,,,,"{""q"": 5}",,,2026-06-21 07:48:53

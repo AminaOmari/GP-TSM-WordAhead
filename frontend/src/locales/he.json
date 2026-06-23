@@ -24,14 +24,14 @@
     "title": "בוחן הבנת הנקרא",
     "submit": "הגש תשובות והמשך",
     "alertness1": {
-      "question": "This is an alertness check. To show you are reading carefully, please choose the second option (Option B) below.",
+      "question": "To show you are reading carefully, please select the second answer below.",
       "opt0": "Option A",
       "opt1": "Option B",
       "opt2": "Option C",
       "opt3": "Option D"
     },
     "alertness2": {
-      "question": "Attention check: please select the fourth option (Option D) from the choices below to confirm you are paying attention.",
+      "question": "To show you are reading carefully, please select the second answer below.",
       "opt0": "Option A",
       "opt1": "Option B",
       "opt2": "Option C",
@@ -78,10 +78,9 @@
       "a8": "הצלחתי לזהות את הנקודות המרכזיות בטקסט.",
       "a9": "הצלחתי לזהות כיצד הנקודות המרכזיות נתמכות על ידי פרטים נוספים בטקסט.",
       
-      "b10": "הבחירה של המערכת אילו מילים להאפיר ואילו להשאיר במלואן הייתה הגיונית עבורי.",
-      "b11": "אני חושב/ת שאני יודע/ת מדוע מילים מסוימות היו בהירות מאחרות.",
-      "b12": "מצאתי שזה עוזר שמילים מסוימות היו בהירות מאחרות.",
-      "b13": "הרמות השונות של אפור עזרו לי לראות את הקשרים בין חלקי המשפטים.",
+      "b10": "בחירת המערכת מה להבליט ומה לצמצם בגרסה המקוצרת הייתה הגיונית עבורי.",
+      "b11": "אני חושב/ת שאני יודע/ת מדוע מילים מסוימות היו מודגשות.",
+      "b12": "מצאתי שזה עוזר שמילים מסוימות היו מודגשות.",
       "b14": "הבנתי מדוע מילים מסוימות הודגשו.",
       "b15": "התרגומים עזרו מבלי להפריע לקריאה שלי.",
       "b16": "המילים שהודגשו תאמו למילים שהיו קשות עבורי.",
@@ -100,7 +99,9 @@
 
     "options": {
       "first_passage": "הטקסט הראשון שקראתי",
-      "second_passage": "הטקסט השני שקראתי"
+      "second_passage": "הטקסט השני שקראתי",
+      "highlighted_text": "הטקסט המודגש",
+      "plain_text": "הטקסט ללא הדגשה"
     },
 
     "attention": {
@@ -115,38 +116,49 @@
     "age": "טווח גילאים",
     "gender": "מגדר (אופציונלי)",
     "native_language": "שפת אם",
-    "other_languages": "שפות נוספות (מלבד אנגלית ושפת אם)",
     "years_studying_english": "מספר שנות לימוד אנגלית",
-    "course_level": "רמת קורס",
-    "academic_year": "שנת לימודים אקדמית",
-    "field_of_study": "תחום לימודים",
+    "education": "רמת ההשכלה הגבוהה ביותר שהושלמה",
+    "education_options": {
+      "select": "בחר/י רמת השכלה...",
+      "high_school": "תיכון או פחות",
+      "vocational": "הכשרה מקצועית",
+      "bachelors": "תואר ראשון (Bachelor's degree)",
+      "masters": "תואר שני (Master's degree)",
+      "doctoral": "תואר שלישי (Doctoral degree)",
+      "other": "אחר"
+    },
     "self_rated_english": "הערכה עצמית של רמת האנגלית בקריאה (1 - חלש, 10 - מצוין)",
     "reads_academic_english": "באיזו תדירות את/ה קורא/ת אנגלית אקדמית?",
     "uses_translation_tools": "באיזו תדירות את/ה משתמש/ת בכלי תרגום (כמו Google Translate)?",
+    "translation_tools_used": "באילו כלי תרגום את/ה משתמש/ת? (בחר/י את כל מה שמתאים)",
+    "tools": {
+      "google_translate": "Google Translate",
+      "morfix": "Morfix",
+      "reverso": "Reverso",
+      "deepl": "DeepL",
+      "chatgpt_ai": "ChatGPT/עוזר בינה מלאכותית",
+      "dictionary_app": "אפליקציית מילון",
+      "browser_extension": "תוסף לדפדפן",
+      "other": "אחר",
+      "none": "אף אחד"
+    },
     "submit": "הגש נתונים והמשך",
-    
     "options": {
       "select": "בחר/י...",
       "hebrew": "עברית",
       "arabic": "ערבית",
       "russian": "רוסית",
       "other": "אחר (פרט/י)",
-      
       "male": "זכר",
       "female": "נקבה",
       "non_binary": "א-בינארי",
       "prefer_not": "מעדיף/ה לא לציין",
-      
       "under_18": "מתחת ל-18",
       "18_24": "18-24",
       "25_34": "25-34",
       "35_44": "35-44",
       "45_54": "45-54",
-      "55_plus": "55+",
-      
-      "undergrad": "תואר ראשון",
-      "grad": "תואר מתקדם",
-      "other_course": "אחר"
+      "55_plus": "55+"
     }
   },
   "pre_reading": {
