@@ -54,7 +54,9 @@
       "strongly_disagree": "Strongly Disagree",
       "strongly_agree": "Strongly Agree",
       "not_familiar": "Not at all familiar",
-      "very_familiar": "Very familiar"
+      "very_familiar": "Very familiar",
+      "very_unlikely": "Very unlikely",
+      "very_likely": "Very likely"
     },
     "freq_anchors": {
       "never": "Never",
@@ -88,13 +90,16 @@
       "use_system": "I would like to use [XXX] to read online texts that interest me in the future.",
       "ranking": "Which version did you find more helpful for answering the comprehension questions?",
       "like_most": "What did you like most about the version you found most helpful?",
-      "missing_features": "Were there any features missing that you'd like to see?"
+      "missing_features": "Were there any features missing that you'd like to see?",
+      "adoption_intent": "If WordAhead were widely available, how likely would you be to use it as your main translation tool for reading academic English?"
     },
     "options": {
       "first_passage": "The first passage I read",
       "second_passage": "The second passage I read",
       "highlighted_text": "the highlighted text",
-      "plain_text": "the text without highlighting"
+      "plain_text": "the text without highlighting",
+      "highlighted_passage": "the highlighted passage",
+      "regular_passage": "the regular passage"
     },
     "attention": {
       "check1": "This is an attention check - to show you are reading carefully, please select 'Strongly Agree' for this question.",

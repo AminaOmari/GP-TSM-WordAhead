@@ -386,6 +386,13 @@ const PostStudySurvey = ({ conditionsSeen, onSubmit, onBack, initialData }) => {
     });
   });
 
+  likertQuestions.push({
+    id: 'ps_adoption_intent',
+    label: t('survey.post.adoption_intent', 'If WordAhead were widely available, how likely would you be to use it as your main translation tool for reading academic English?'),
+    leftAnchor: t('survey.anchors.very_unlikely', 'Very unlikely'),
+    rightAnchor: t('survey.anchors.very_likely', 'Very likely')
+  });
+
   const allLikertAnswered = likertQuestions.every(q => responses[q.id] !== undefined);
   const isValid = allLikertAnswered && ranking !== '';
 
@@ -1805,8 +1812,18 @@ function App() {
 
       case 'post_study_survey': {
         const conditionsSeen = [
-          { label: "The first passage you read", condition: expCondition.sequence === 'A' ? 'plain' : 'wordahead' },
-          { label: "The second passage you read", condition: expCondition.sequence === 'A' ? 'wordahead' : 'plain' }
+          { 
+            label: expCondition.sequence === 'A' 
+              ? t('survey.options.regular_passage', 'the regular passage') 
+              : t('survey.options.highlighted_passage', 'the highlighted passage'), 
+            condition: expCondition.sequence === 'A' ? 'plain' : 'wordahead' 
+          },
+          { 
+            label: expCondition.sequence === 'A' 
+              ? t('survey.options.highlighted_passage', 'the highlighted passage') 
+              : t('survey.options.regular_passage', 'the regular passage'), 
+            condition: expCondition.sequence === 'A' ? 'wordahead' : 'plain' 
+          }
         ];
         return (
           <PostStudySurvey 

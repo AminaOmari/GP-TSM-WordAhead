@@ -32,7 +32,7 @@ submit_payload = {
     "surveys": {
         "per_task_1": {"pt_a1": 5},
         "per_task_2": {"pt_a1": 4},
-        "post_study": {"responses": {}, "open_text_responses": {}, "ranking": {"helpful": "plain"}},
+        "post_study": {"responses": {"ps_use_plain": 4, "ps_use_wordahead": 5, "ps_adoption_intent": 5}, "open_text_responses": {}, "ranking": {"helpful": "plain"}},
         "demographics": {
             "age": "18-24",
             "gender": "Male",

@@ -267,8 +267,9 @@ def test_full_experiment_submission():
                 "mental_demand": 3
             },
             "post_study": {
-                "sus_1": 5,
-                "dependent": 3
+                "ps_use_plain": 4,
+                "ps_use_wordahead": 5,
+                "ps_adoption_intent": 5
             },
             "demographics": {
                 "age": "18_24",
@@ -464,8 +465,9 @@ def test_failed_attention_checks():
                 "mental_demand": 3
             },
             "post_study": {
-                "sus_1": 5,
-                "dependent": 3
+                "ps_use_plain": 4,
+                "ps_use_wordahead": 5,
+                "ps_adoption_intent": 5
             },
             "demographics": {
                 "age": "18_24",
@@ -590,7 +592,7 @@ def test_pilot_session():
         "surveys": {
             "per_task_1": {"mental_demand": 4},
             "per_task_2": {"mental_demand": 3},
-            "post_study": {"sus_1": 5, "dependent": 3},
+            "post_study": {"ps_use_plain": 4, "ps_use_wordahead": 5, "ps_adoption_intent": 5},
             "demographics": {
                 "age": "18_24",
                 "gender": "female",

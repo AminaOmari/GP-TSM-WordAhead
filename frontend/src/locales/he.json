@@ -55,7 +55,9 @@
       "strongly_disagree": "לא מסכים/ה כלל",
       "strongly_agree": "מסכים/ה במידה רבה",
       "not_familiar": "כלל לא מוכר",
-      "very_familiar": "מוכר מאוד"
+      "very_familiar": "מוכר מאוד",
+      "very_unlikely": "בסבירות נמוכה מאוד",
+      "very_likely": "בסבירות גבוהה מאוד"
     },
     
     "freq_anchors": {
@@ -94,14 +96,17 @@
       "use_system": "הייתי רוצה להשתמש ב-[XXX] כדי לקרוא טקסטים מקוונים שמעניינים אותי בעתיד.",
       "ranking": "איזו גרסה מצאת כמועילה יותר עבור מענה על שאלות ההבנה?",
       "like_most": "מה הכי אהבת בגרסה שמצאת כמועילה ביותר?",
-      "missing_features": "האם היו חסרות תכונות שהיית רוצה לראות?"
+      "missing_features": "האם היו חסרות תכונות שהיית רוצה לראות?",
+      "adoption_intent": "אם WordAhead הייתה זמינה באופן נרחב, באיזו מידה סביר להניח שהיית משתמש/ת בה ככלי התרגום העיקרי שלך לקריאת אנגלית אקדמית?"
     },
 
     "options": {
       "first_passage": "הטקסט הראשון שקראתי",
       "second_passage": "הטקסט השני שקראתי",
       "highlighted_text": "הטקסט המודגש",
-      "plain_text": "הטקסט ללא הדגשה"
+      "plain_text": "הטקסט ללא הדגשה",
+      "highlighted_passage": "המעבר המודגש",
+      "regular_passage": "המעבר הרגיל"
     },
 
     "attention": {

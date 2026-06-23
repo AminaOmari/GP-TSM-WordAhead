@@ -238,6 +238,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // Answer other Likert questions (ps_use_plain, ps_use_wordahead, etc.)
     await page.locator('input[name="ps_use_plain"]').nth(3).dispatchEvent('click'); // value 4 (index 3)
     await page.locator('input[name="ps_use_wordahead"]').nth(4).dispatchEvent('click'); // value 5 (index 4)
+    await page.locator('input[name="ps_adoption_intent"]').nth(4).dispatchEvent('click'); // value 5 (index 4)
 
     await expect(postSubmitButton).toBeEnabled();
     await postSubmitButton.dispatchEvent('click');
@@ -481,6 +482,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
 
     await page.locator('input[name="ps_use_plain"]').nth(3).dispatchEvent('click');
     await page.locator('input[name="ps_use_wordahead"]').nth(4).dispatchEvent('click');
+    await page.locator('input[name="ps_adoption_intent"]').nth(4).dispatchEvent('click');
 
     await expect(postSubmitButton).toBeEnabled();
     await postSubmitButton.dispatchEvent('click');
@@ -676,6 +678,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await page.locator('textarea').last().fill('Pilot missing comment');
     await page.locator('input[name="ps_use_plain"]').nth(3).dispatchEvent('click');
     await page.locator('input[name="ps_use_wordahead"]').nth(4).dispatchEvent('click');
+    await page.locator('input[name="ps_adoption_intent"]').nth(4).dispatchEvent('click');
     await postSubmitButton.dispatchEvent('click');
 
     // 15.5 Demographics Screen
