@@ -15,14 +15,14 @@ test.describe('WordAhead Participant Flow E2E', () => {
       cefr_level: "B2",
       text_format: "TS",  // Skimmed Text format (Block C should render)
       sequence: "B",     // Sequence B (Trial 1 = wordahead, Trial 2 = plain)
-      text_pair: "pair_3",
-      text_order: ["textA3", "textB3"]
+      text_pair: "b2_pair1",
+      text_order: ["b2p1_santiago_skimmed", "b2p1_numeracy"]
     };
 
     const mockTextSession = {
       assignment: mockAssignment,
       texts: {
-        textA3: {
+        b2p1_santiago_skimmed: {
           title: "Mock Passage A3",
           text: "This is a mock academic reading passage to test the WordAhead frontend system.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -32,7 +32,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
             correct: 0
           }))
         },
-        textB3: {
+        b2p1_numeracy: {
           title: "Mock Passage B3",
           text: "This is a second mock academic reading passage for the counterbalanced experiment flow.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -278,14 +278,14 @@ test.describe('WordAhead Participant Flow E2E', () => {
       cefr_level: "B2",
       text_format: "TF",  // Full Text format (Block C should NOT render)
       sequence: "B",     // Sequence B (Trial 1 = wordahead, Trial 2 = plain)
-      text_pair: "pair_3",
-      text_order: ["textA3", "textB3"]
+      text_pair: "b2_pair1",
+      text_order: ["b2p1_plasticbags", "b2p1_santiago_detailed"]
     };
 
     const mockTextSession = {
       assignment: mockAssignment,
       texts: {
-        textA3: {
+        b2p1_plasticbags: {
           title: "Mock Passage A3",
           text: "This is a mock academic reading passage to test the WordAhead frontend system.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -295,7 +295,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
             correct: 0
           }))
         },
-        textB3: {
+        b2p1_santiago_detailed: {
           title: "Mock Passage B3",
           text: "This is a second mock academic reading passage for the counterbalanced experiment flow.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -520,15 +520,15 @@ test.describe('WordAhead Participant Flow E2E', () => {
       cefr_level: "B2",
       text_format: "TS",
       sequence: "B",
-      text_pair: "pair_3",
-      text_order: ["textA3", "textB3"],
+      text_pair: "b2_pair1",
+      text_order: ["b2p1_santiago_skimmed", "b2p1_numeracy"],
       is_pilot: true
     };
 
     const mockTextSession = {
       assignment: mockAssignment,
       texts: {
-        textA3: {
+        b2p1_santiago_skimmed: {
           title: "Mock Passage A3",
           text: "This is a mock academic reading passage to test the WordAhead frontend system.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -538,7 +538,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
             correct: 0
           }))
         },
-        textB3: {
+        b2p1_numeracy: {
           title: "Mock Passage B3",
           text: "This is a second mock academic reading passage for the counterbalanced experiment flow.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -708,14 +708,14 @@ test.describe('WordAhead Participant Flow E2E', () => {
       cefr_level: "B2",
       text_format: "TS",
       sequence: "B",
-      text_pair: "pair_3",
-      text_order: ["textA3", "textB3"]
+      text_pair: "b2_pair1",
+      text_order: ["b2p1_santiago_skimmed", "b2p1_numeracy"]
     };
 
     const mockTextSession = {
       assignment: mockAssignment,
       texts: {
-        textA3: {
+        b2p1_santiago_skimmed: {
           title: "Mock Passage A3",
           text: "This is a mock academic reading passage to test the WordAhead frontend system.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({
@@ -725,7 +725,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
             correct: 0
           }))
         },
-        textB3: {
+        b2p1_numeracy: {
           title: "Mock Passage B3",
           text: "This is a second mock academic reading passage.",
           mcqs: Array.from({ length: 5 }, (_, i) => ({

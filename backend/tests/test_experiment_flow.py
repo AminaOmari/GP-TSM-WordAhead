@@ -107,14 +107,14 @@ def test_lextale_thresholds_b1():
 # 2. Counterbalancing & Permutation Verification (8 Permutations)
 # ---------------------------------------------------------
 @pytest.mark.parametrize("cefr_score,expected_cefr,text_format,sequence,text_pair,reverse_order", [
-    (50.0, "B1", "TF", "A", "pair_1", False),
-    (50.0, "B1", "TF", "B", "pair_2", True),
-    (50.0, "B1", "TS", "A", "pair_2", False),
-    (50.0, "B1", "TS", "B", "pair_1", True),
-    (75.0, "B2", "TF", "A", "pair_3", False),
-    (75.0, "B2", "TF", "B", "pair_4", True),
-    (75.0, "B2", "TS", "A", "pair_4", False),
-    (75.0, "B2", "TS", "B", "pair_3", True),
+    (50.0, "B1", "TF", "A", "b1_pair1", False),
+    (50.0, "B1", "TF", "B", "b1_pair1", True),
+    (50.0, "B1", "TS", "A", "b1_pair1", False),
+    (50.0, "B1", "TS", "B", "b1_pair1", True),
+    (75.0, "B2", "TF", "A", "b2_pair1", False),
+    (75.0, "B2", "TF", "B", "b2_pair1", True),
+    (75.0, "B2", "TS", "A", "b2_pair1", False),
+    (75.0, "B2", "TS", "B", "b2_pair1", True),
 ])
 def test_all_permutations(cefr_score, expected_cefr, text_format, sequence, text_pair, reverse_order):
     pid = f"test_pid_{expected_cefr}_{text_format}_{sequence}_{text_pair}_{'rev' if reverse_order else 'fwd'}"
@@ -123,7 +123,7 @@ def test_all_permutations(cefr_score, expected_cefr, text_format, sequence, text
     # assign has 4 random choices:
     # 1. text_format (TF/TS)
     # 2. sequence (A/B)
-    # 3. text_pair (pair_1/pair_2 or pair_3/pair_4)
+    # 3. text_pair (b1_pair1 or b2_pair1)
     # 4. reverse_order (True/False for text_order shuffle)
     choices = [text_format, sequence, text_pair, not reverse_order]
     
@@ -142,8 +142,12 @@ def test_all_permutations(cefr_score, expected_cefr, text_format, sequence, text
     assert data["sequence"] == sequence
     assert data["text_pair"] == text_pair
     
-    suffix = "1" if text_pair == "pair_1" else "2" if text_pair == "pair_2" else "3" if text_pair == "pair_3" else "4"
-    expected_order = [f"textB{suffix}", f"textA{suffix}"] if reverse_order else [f"textA{suffix}", f"textB{suffix}"]
+    from EXPERIMENT_TEXTS_block import PAIRS
+    pair_data = PAIRS[text_pair]
+    format_key = "detailed" if text_format == "TF" else "skimmed"
+    selected_pair = pair_data[format_key]
+    
+    expected_order = [selected_pair[1], selected_pair[0]] if reverse_order else [selected_pair[0], selected_pair[1]]
     assert data["text_order"] == expected_order
 
 # ---------------------------------------------------------
@@ -155,7 +159,7 @@ def test_survey_submission():
         "prolific_pid": pid,
         "survey_type": "post_study",
         "condition": "wordahead",
-        "text_id": "textA1",
+        "text_id": "b1p1_underground",
         "sequence_position": 1,
         "responses": {
             "mental_demand": 4,
@@ -198,9 +202,9 @@ def test_survey_submission():
 def test_full_experiment_submission():
     pid = "test_pid_full_submit"
     
-    # 1. Assign participant (B2, TF, A, pair_3, forward order)
+    # 1. Assign participant (B2, TF, A, b2_pair1, forward order)
     with patch("random.choice") as mock_choice:
-        mock_choice.side_effect = ["TF", "A", "pair_3", True]
+        mock_choice.side_effect = ["TF", "A", "b2_pair1", True]
         client.post("/api/experiment/assign", json={
             "prolific_pid": pid,
             "lextale_score": 70.0
@@ -213,10 +217,10 @@ def test_full_experiment_submission():
         "cefr_level": "B2",
         "text_format": "TF",
         "sequence": "A",
-        "text_pair": "pair_3",
+        "text_pair": "b2_pair1",
         "readings": [
             {
-                "text_id": "textA3",
+                "text_id": "b2p1_plasticbags",
                 "condition": "plain",
                 "reading_time_ms": 120000,
                 "hover_events": [
@@ -238,7 +242,7 @@ def test_full_experiment_submission():
                 ]
             },
             {
-                "text_id": "textB3",
+                "text_id": "b2p1_santiago_detailed",
                 "condition": "wordahead",
                 "reading_time_ms": 95000,
                 "hover_events": [
@@ -407,7 +411,7 @@ def test_failed_attention_checks():
     
     # Assign participant
     with patch("random.choice") as mock_choice:
-        mock_choice.side_effect = ["TS", "B", "pair_4", False]
+        mock_choice.side_effect = ["TS", "B", "b2_pair1", False]
         client.post("/api/experiment/assign", json={
             "prolific_pid": pid,
             "lextale_score": 72.0
@@ -420,10 +424,10 @@ def test_failed_attention_checks():
         "cefr_level": "B2",
         "text_format": "TS",
         "sequence": "B",
-        "text_pair": "pair_4",
+        "text_pair": "b2_pair1",
         "readings": [
             {
-                "text_id": "textB4",
+                "text_id": "b2p1_numeracy",
                 "condition": "plain",
                 "reading_time_ms": 110000,
                 "hover_events": [],
@@ -440,7 +444,7 @@ def test_failed_attention_checks():
                 ]
             },
             {
-                "text_id": "textA4",
+                "text_id": "b2p1_santiago_skimmed",
                 "condition": "wordahead",
                 "reading_time_ms": 105000,
                 "hover_events": [],
@@ -510,7 +514,7 @@ def test_pilot_session():
     
     # 1. Assign once with score > 80 (should proceed, NOT exclude, assign B2)
     with patch("random.choice") as mock_choice:
-        mock_choice.side_effect = ["TS", "B", "pair_3", False]
+        mock_choice.side_effect = ["TS", "B", "b2_pair1", False]
         response = client.post("/api/experiment/assign", json={
             "prolific_pid": pid,
             "lextale_score": 95.0
@@ -523,7 +527,7 @@ def test_pilot_session():
     # Verify pilot fallthrough
     assert data["text_format"] == "TS"
     assert data["sequence"] == "B"
-    assert data["text_pair"] == "pair_3"
+    assert data["text_pair"] == "b2_pair1"
     assert len(data["text_order"]) == 2
 
     # 2. Get session
@@ -535,7 +539,7 @@ def test_pilot_session():
 
     # 3. Assign AGAIN (clear and allow reuse)
     with patch("random.choice") as mock_choice:
-        mock_choice.side_effect = ["TF", "A", "pair_4", True]
+        mock_choice.side_effect = ["TF", "A", "b2_pair1", True]
         response2 = client.post("/api/experiment/assign", json={
             "prolific_pid": pid,
             "lextale_score": 75.0
@@ -552,10 +556,10 @@ def test_pilot_session():
         "cefr_level": "B2",
         "text_format": "TF",
         "sequence": "A",
-        "text_pair": "pair_4",
+        "text_pair": "b2_pair1",
         "readings": [
             {
-                "text_id": "textB4",
+                "text_id": "b2p1_plasticbags",
                 "condition": "plain",
                 "reading_time_ms": 100000,
                 "hover_events": [],
@@ -572,7 +576,7 @@ def test_pilot_session():
                 ]
             },
             {
-                "text_id": "textA4",
+                "text_id": "b2p1_santiago_detailed",
                 "condition": "wordahead",
                 "reading_time_ms": 90000,
                 "hover_events": [],

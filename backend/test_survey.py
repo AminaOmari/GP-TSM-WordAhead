@@ -11,7 +11,7 @@ payload = {
     "prolific_pid": "test_pid",
     "survey_type": "per_task",
     "condition": "TF",
-    "text_id": "text_1",
+    "text_id": "b1p1_underground",
     "sequence_position": 1,
     "responses": {"pt_a1": 5},
     "open_text_responses": {},
@@ -27,7 +27,7 @@ submit_payload = {
     "cefr_level": "B2",
     "text_format": "TF",
     "sequence": "A",
-    "text_pair": "pair_1",
+    "text_pair": "b1_pair1",
     "readings": [],
     "surveys": {
         "per_task_1": {"pt_a1": 5},

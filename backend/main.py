@@ -50,6 +50,11 @@ try:
 except Exception as e:
     print(f"⚠️ Failed to initialize database: {e}")
 
+# Import decoupled experiment texts and pairings
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+from EXPERIMENT_TEXTS_block import EXPERIMENT_TEXTS, PAIRS
+
 # Configure pilot Prolific PIDs
 PILOT_PIDS_RAW = os.getenv("PILOT_PIDS", "00")
 PILOT_PIDS = [pid.strip() for pid in PILOT_PIDS_RAW.split(",") if pid.strip()]
@@ -601,129 +606,9 @@ class SubmitRequest(BaseModel):
     surveys: SurveyPayload
 
 # =====================================================================
-# EXPERIMENT TEXTS INTEGRATION GUIDE
-# IMPORTANT:
-# - Each text MUST have exactly 5 comprehension MCQs in the "mcqs" array.
-# - The alertness check (attention check item) is system-injected in the middle
-#   (index 2 of 6 items total) at runtime. DO NOT author alertness items here.
-# - The "correct" field is 0-INDEXED: "correct": 0 is the FIRST option,
-#   "correct": 1 is the SECOND option. Getting this wrong silently corrupts 
-#   every participant's comprehension score.
+# EXPERIMENT TEXTS CONFIGURATION
+# Decoupled experiment texts and pairs are imported from EXPERIMENT_TEXTS_block.py
 # =====================================================================
-TEXTS = {
-    "textA1": {
-        "title": "Online Learning in Modern Education",
-        "TF": "Online learning has transformed education. Many students now study from home because it is more convenient and flexible. They can learn at their own pace and balance their studies with work. However, there are also disadvantages. Students often feel isolated because they do not have direct contact with classmates. Teachers find it harder to engage students through a screen. To succeed, online students must be very self-disciplined.",
-        "TS": "Online learning has transformed education. Many study from home for convenience and flexibility. They learn at their own pace and balance studies. However, disadvantages exist. Students feel isolated without direct contact. Teachers find engaging students harder. Online students must be self-disciplined.",
-        "mcqs": [
-            {"id": "q1_1", "question": "What is a primary benefit of online learning mentioned in the text?", "options": ["Direct contact with teachers", "Convenience and flexibility", "Reduced tuition costs", "No need for self-discipline"], "correct": 1},
-            {"id": "q1_2", "question": "What is a major disadvantage of online learning?", "options": ["Too much homework", "High internet costs", "Feeling isolated", "Unclear grades"], "correct": 2},
-            {"id": "q1_3", "question": "Why do teachers find online classes challenging?", "options": ["They cannot use computers", "Engaging students is harder", "Lessons are too short", "Students do not submit work"], "correct": 1},
-            {"id": "q1_4", "question": "What quality is necessary for online students to succeed?", "options": ["Self-discipline", "Advanced technical skills", "Group work experience", "Extroversion"], "correct": 0},
-            {"id": "q1_5", "question": "What is the main idea of the text?", "options": ["Online learning is perfect for everyone", "Teachers prefer online classes", "Online learning has both advantages and disadvantages", "Work is more important than studies"], "correct": 2}
-        ]
-    },
-    "textB1": {
-        "title": "Modern City Life: Opportunities and Challenges",
-        "TF": "Modern city life is fast and exciting. Cities offer many job opportunities, cultural events, and public transport systems. People can easily visit museums, restaurants, and parks. But city life has drawbacks. High rent makes living in the city expensive. Noise and air pollution can cause health problems. Traffic jams are common, making daily travel stressful. Despite these challenges, cities continue to attract people searching for a dynamic lifestyle.",
-        "TS": "Modern city life is fast and exciting. Cities offer job opportunities, cultural events, and transport. People visit museums, restaurants, and parks. But city life has drawbacks. High rent makes living expensive. Noise and pollution cause health problems. Traffic jams make travel stressful. Cities attract people seeking dynamic lifestyles.",
-        "mcqs": [
-            {"id": "q2_1", "question": "What is one positive aspect of city life mentioned in the text?", "options": ["Cheap rent", "Cultural events and jobs", "Quiet environments", "Short travel times"], "correct": 1},
-            {"id": "q2_2", "question": "Which of the following is listed as a health-related drawback?", "options": ["Stressful traffic", "Lack of parks", "Noise and air pollution", "Expensive food"], "correct": 2},
-            {"id": "q2_3", "question": "What makes city living expensive?", "options": ["High rent", "Public transport fees", "Museum tickets", "Clean air costs"], "correct": 0},
-            {"id": "q2_4", "question": "What does the text say about traffic?", "options": ["It is fast", "It causes stress", "It is cheap", "It does not exist"], "correct": 1},
-            {"id": "q2_5", "question": "Who is attracted to cities despite the drawbacks?", "options": ["People seeking quiet lives", "People looking for a dynamic lifestyle", "Farmers", "Remote workers"], "correct": 1}
-        ]
-    },
-    "textA2": {
-        "title": "The Growth of Renewable Energy",
-        "TF": "Renewable energy is growing rapidly. Solar panels and wind turbines produce clean electricity without releasing greenhouse gases. This helps fight climate change. However, solar and wind power depend on the weather. If there is no sun or wind, energy production drops. Therefore, we need better battery storage systems to keep power stable. Countries are investing billions in these new green technologies.",
-        "TS": "Renewable energy is growing rapidly. Solar panels and wind turbines produce clean electricity. This helps fight climate change. However, solar and wind depend on weather. Without sun or wind, production drops. Therefore, battery storage is needed to keep power stable. Countries invest billions in green technologies.",
-        "mcqs": [
-            {"id": "q3_1", "question": "What is a benefit of renewable energy?", "options": ["It is independent of weather", "It does not release greenhouse gases", "It requires no battery storage", "It is very cheap"], "correct": 1},
-            {"id": "q3_2", "question": "What is a key challenge for solar and wind power?", "options": ["They are toxic", "They depend on weather", "They occupy too much space", "They are not popular"], "correct": 1},
-            {"id": "q3_3", "question": "Why are battery storage systems needed?", "options": ["To replace wind turbines", "To make panels look better", "To keep power stable", "To reduce battery size"], "correct": 2},
-            {"id": "q3_4", "question": "What are countries investing billions in?", "options": ["Fossil fuels", "Green technologies", "Nuclear plants", "Weather control"], "correct": 1},
-            {"id": "q3_5", "question": "What is the main focus of the text?", "options": ["The benefits and challenges of renewable energy", "The cost of electricity", "Global warming causes", "Battery manufacturing"], "correct": 0}
-        ]
-    },
-    "textB2": {
-        "title": "The Essentials of Healthy Eating",
-        "TF": "Healthy eating is essential for physical and mental well-being. A balanced diet should include fruits, vegetables, whole grains, and lean proteins. These foods provide vital nutrients that protect the body against chronic diseases like diabetes and heart disease. Eating well also improves mood and energy levels. On the other hand, consuming too much sugar and processed food can lead to fatigue and weight gain. Making small, positive changes to your daily meals can yield long-term health benefits.",
-        "TS": "Healthy eating is essential for physical and mental well-being. A balanced diet includes fruits, vegetables, grains, and proteins. These foods provide vital nutrients protecting against chronic diseases. Eating well improves mood and energy. Conversely, sugar and processed food cause fatigue and weight gain. Small meal changes yield long-term benefits.",
-        "mcqs": [
-            {"id": "q4_1", "question": "What should a balanced diet include?", "options": ["Processed foods", "Fruits, vegetables, grains, proteins", "High sugar items", "Supplements only"], "correct": 1},
-            {"id": "q4_2", "question": "What diseases does healthy eating help protect against?", "options": ["Infectious diseases", "Diabetes and heart disease", "Chronic fatigue", "Headaches"], "correct": 1},
-            {"id": "q4_3", "question": "What is a physical benefit of healthy eating mentioned?", "options": ["Immediate weight loss", "Improved mood and energy levels", "Curing diabetes", "Better sleep"], "correct": 1},
-            {"id": "q4_4", "question": "What can consuming too much sugar lead to?", "options": ["Chronic diseases", "Fatigue and weight gain", "High energy", "Good mood"], "correct": 1},
-            {"id": "q4_5", "question": "What is the recommended approach to changing your diet?", "options": ["Stop eating sugar completely", "Eat only vegetables", "Make small, positive changes", "Buy expensive foods"], "correct": 2}
-        ]
-    },
-    "textA3": {
-        "title": "Understanding Cognitive Dissonance",
-        "TF": "Cognitive dissonance is a psychological phenomenon that occurs when an individual holds two conflicting beliefs, values, or attitudes. This inconsistency creates mental discomfort, leading the person to search for ways to reduce the tension. Typically, people resolve this discomfort by changing one of their beliefs, acquiring new information that supports one side, or minimizing the importance of the conflict. For example, a smoker who knows that smoking is harmful may justify their habit by claiming it reduces stress. Understanding cognitive dissonance helps psychologists analyze how people justify irrational behaviors.",
-        "TS": "Cognitive dissonance is a psychological phenomenon occurring when individuals hold conflicting beliefs, values, or attitudes. This creates discomfort, prompting ways to reduce tension. People resolve discomfort by changing beliefs, acquiring supporting information, or minimizing conflict. For example, smokers justify habits by claiming stress reduction. This helps psychologists analyze irrational justifications.",
-        "mcqs": [
-            {"id": "q5_1", "question": "What causes cognitive dissonance?", "options": ["Lack of sleep", "Conflicting beliefs, values, or attitudes", "Inability to make decisions", "Memory loss"], "correct": 1},
-            {"id": "q5_2", "question": "What does cognitive dissonance create?", "options": ["Clear thinking", "Psychological stability", "Mental discomfort and tension", "Irrational behavior"], "correct": 2},
-            {"id": "q5_3", "question": "Which of the following is NOT mentioned as a way people reduce dissonance?", "options": ["Changing a belief", "Acquiring new information", "Ignoring the conflict entirely", "Minimizing the conflict's importance"], "correct": 2},
-            {"id": "q5_4", "question": "How might a smoker reduce cognitive dissonance?", "options": ["By quitting immediately", "By claiming smoking reduces stress", "By avoiding other smokers", "By reading medical articles"], "correct": 1},
-            {"id": "q5_5", "question": "Why is cognitive dissonance significant for psychologists?", "options": ["It helps them diagnose memory disorders", "It explains how people justify irrational behaviors", "It is a cure for mental stress", "It determines IQ"], "correct": 1}
-        ]
-    },
-    "textB3": {
-        "title": "The Importance of Biodiversity",
-        "TF": "The concept of biodiversity refers to the variety of life on Earth, including the number of different species, genetic variation, and complex ecosystems. Biodiversity is crucial for maintaining ecological balance. Diverse ecosystems are more resilient to environmental disturbances, such as climate change or natural disasters, and they provide essential services like crop pollination, clean water, and soil fertility. Human activities, including deforestation, urbanization, and industrial pollution, are rapidly accelerating species extinction rates. Protecting biodiversity requires international cooperation and sustainable resource management.",
-        "TS": "Biodiversity refers to Earth's variety of life, species, genetic variation, and ecosystems. It is crucial for ecological balance. Diverse ecosystems are resilient to environmental disturbances and provide crop pollination, water, and soil fertility. Deforestation, urbanization, and pollution accelerate species extinction. Protection requires international cooperation and sustainable management.",
-        "mcqs": [
-            {"id": "q6_1", "question": "What does biodiversity encompass?", "options": ["Climate change and pollution", "Species variety, genetics, and ecosystems", "Crop pollination methods", "Forest conservation"], "correct": 1},
-            {"id": "q6_2", "question": "Why are diverse ecosystems important?", "options": ["They produce more industrial goods", "They are resilient to environmental disturbances", "They prevent natural disasters", "They are easy to urbanize"], "correct": 1},
-            {"id": "q6_3", "question": "What is an example of an ecosystem service mentioned?", "options": ["Sustainable management", "International cooperation", "Crop pollination", "Urban development"], "correct": 2},
-            {"id": "q6_4", "question": "Which human activity is listed as accelerating species extinction?", "options": ["Deforestation", "Ecotourism", "Crop rotation", "Clean energy use"], "correct": 0},
-            {"id": "q6_5", "question": "What is required to protect biodiversity?", "options": ["Deforestation", "International cooperation and sustainable management", "Expanding cities", "Stopping all industrial activity"], "correct": 1}
-        ]
-    },
-    "textA4": {
-        "title": "Artificial Intelligence in Medicine",
-        "TF": "Artificial intelligence (AI) has integrated into modern medicine, presenting opportunities to improve patient outcomes and streamline diagnostics. Machine learning algorithms can analyze vast datasets of medical images, identifying abnormalities like tumors with speed and accuracy that rival human specialists. Furthermore, AI systems can predict patient risks by analyzing electronic health records. However, the integration of AI also raises ethical concerns. Issues regarding patient privacy, data security, and algorithmic bias must be addressed. Furthermore, medical professionals emphasize that AI should assist, rather than replace, clinical judgment.",
-        "TS": "Artificial intelligence in modern medicine presents opportunities to improve outcomes and diagnostics. Machine learning algorithms analyze medical images, identifying abnormalities with speed and accuracy. AI systems predict patient risks from electronic health records. However, integration raises ethical concerns regarding privacy, security, and bias. AI should assist clinical judgment, not replace it.",
-        "mcqs": [
-            {"id": "q7_1", "question": "What is a primary diagnostic benefit of AI in medicine?", "options": ["Streamlining doctor schedules", "Analyzing images to identify abnormalities", "Reducing patient registration times", "Eliminating clinical errors"], "correct": 1},
-            {"id": "q7_2", "question": "What can machine learning algorithms predict by analyzing health records?", "options": ["Future hospital budgets", "Patient health risks", "Doctor performance", "Best drug prices"], "correct": 1},
-            {"id": "q7_3", "question": "Which ethical concern is explicitly mentioned in the text?", "options": ["High cost of medical equipment", "Lack of patient trust", "Patient privacy and algorithmic bias", "Doctor unemployment"], "correct": 2},
-            {"id": "q7_4", "question": "According to medical professionals, what role should AI play?", "options": ["Completely replace doctors", "Assist clinical judgment", "Handle administrative tasks only", "Write prescriptions automatically"], "correct": 1},
-            {"id": "q7_5", "question": "What is the overall tone of the text regarding AI in medicine?", "options": ["Skeptical and fearful", "Overly optimistic", "Balanced, recognizing both benefits and concerns", "Disinterested"], "correct": 2}
-        ]
-    },
-    "textB4": {
-        "title": "The Sharing Economy",
-        "TF": "The sharing economy has transformed consumption patterns in modern society. Platforms like Airbnb and Uber allow individuals to share underutilized assets, such as spare rooms or personal vehicles, with consumers seeking temporary access. This model offers several benefits, including lower costs for users and income opportunities for asset owners. However, the rapid expansion of the sharing economy has sparked intense regulatory debates. Traditional industries argue that sharing platforms enjoy unfair advantages due to lack of regulation. Moreover, concerns have been raised regarding labor rights for gig workers, safety standards, and local community displacement.",
-        "TS": "The sharing economy transformed modern consumption. Platforms like Airbnb and Uber allow individuals to share underutilized assets, spare rooms, or vehicles with consumers. This model offers lower costs and income opportunities. However, rapid expansion sparked regulatory debates. Traditional industries argue sharing platforms enjoy unregulated advantages. Concerns include gig workers' labor rights, safety, and community displacement.",
-        "mcqs": [
-            {"id": "q8_1", "question": "What defines the sharing economy model?", "options": ["Giving away free goods", "Sharing underutilized assets", "Government-funded public services", "Buying items in bulk"], "correct": 1},
-            {"id": "q8_2", "question": "What benefit does the sharing economy offer to users?", "options": ["Full ownership of assets", "Lower costs", "Guaranteed employment", "Exemption from taxes"], "correct": 1},
-            {"id": "q8_3", "question": "Why do traditional industries criticize sharing platforms?", "options": ["They produce poor quality assets", "They lack customer support", "They have an unfair advantage due to lack of regulation", "They are too expensive"], "correct": 2},
-            {"id": "q8_4", "question": "Which concern is raised regarding workers in this economy?", "options": ["High educational requirements", "Labor rights for gig workers", "Strict working hours", "Lack of tax forms"], "correct": 1},
-            {"id": "q8_5", "question": "What has the rapid expansion of this economy sparked?", "options": ["Worldwide economic collapse", "Declining travel rates", "Intense regulatory debates", "An increase in traditional vehicle ownership"], "correct": 2}
-        ]
-    }
-}
-
-# TODO: These lists are pending the final matched sets from the supervisor.
-# Currently seeded with the placeholders representing the original pairings:
-TF_PAIRS = [
-    ("textA1", "textB1"),  # pair_1
-    ("textA2", "textB2"),  # pair_2
-    ("textA3", "textB3"),  # pair_3
-    ("textA4", "textB4"),  # pair_4
-]
-
-TS_PAIRS = [
-    ("textA1", "textB1"),  # pair_1
-    ("textA2", "textB2"),  # pair_2
-    ("textA3", "textB3"),  # pair_3
-    ("textA4", "textB4"),  # pair_4
-]
 
 # --- Experiment Endpoints ---
 
@@ -801,21 +686,22 @@ async def experiment_assign(req: AssignRequest):
             "is_pilot": is_pilot
         }
         
-    # 3. Random counterbalanced assignment
+    # 3. Random counterbalanced assignment using new decoupled schema
     text_format = random.choice(["TF", "TS"])
     sequence = random.choice(["A", "B"])
     
     if cefr_level == "B1":
-        text_pair = random.choice(["pair_1", "pair_2"])
+        available_pairs = [k for k, v in PAIRS.items() if v.get("level") == "B1"]
+        text_pair = random.choice(available_pairs) if available_pairs else "b1_pair1"
     else:
-        # High scorers/pilot exclusion cases get mapped to B2 texts (pairs 3/4)
-        text_pair = random.choice(["pair_3", "pair_4"])
+        available_pairs = [k for k, v in PAIRS.items() if v.get("level") == "B2"]
+        text_pair = random.choice(available_pairs) if available_pairs else "b2_pair1"
         
-    pair_idx = 0 if text_pair == "pair_1" else 1 if text_pair == "pair_2" else 2 if text_pair == "pair_3" else 3
-    pairs_list = TF_PAIRS if text_format == "TF" else TS_PAIRS
-    selected_pair = pairs_list[pair_idx]
+    pair_data = PAIRS.get(text_pair)
+    format_key = "detailed" if text_format == "TF" else "skimmed"
+    selected_pair = pair_data.get(format_key)
     
-    # Counterbalance text presentation order from Sequence to fully counterbalance order/text effects
+    # Counterbalance text presentation order
     if random.choice([True, False]):
         text_order = [selected_pair[0], selected_pair[1]]
     else:
@@ -877,15 +763,15 @@ async def get_experiment_session(prolific_pid: str):
     if not text_format:
         text_format = "TF"
     if not text_order:
-        text_order = ["textA3", "textB3"] # Default backup for pilot exclusion
+        text_order = ["b2p1_plasticbags", "b2p1_santiago_detailed"] # Default backup for pilot exclusion
     
     texts = {}
     for text_id in text_order:
-        if text_id in TEXTS:
-            t_data = TEXTS[text_id]
+        if text_id in EXPERIMENT_TEXTS:
+            t_data = EXPERIMENT_TEXTS[text_id]
             texts[text_id] = {
                 "title": t_data["title"],
-                "text": t_data[text_format],
+                "text": t_data["body"],
                 "mcqs": t_data["mcqs"]
             }
             
