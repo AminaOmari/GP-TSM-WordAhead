@@ -17,7 +17,7 @@
   "reading": {
     "start_text": "Start Reading Text",
     "finished_reading": "Continue to Comprehension Questions",
-    "translation_hint": "Hover over or click a highlighted word to see its translation here.",
+    "translation_hint": "Click on a word to see its translation here.",
     "hover_hint": "Hover over highlighted words to see translation."
   },
   "quiz": {

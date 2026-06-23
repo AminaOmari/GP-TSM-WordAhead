@@ -587,7 +587,6 @@ function App() {
     });
   };
   const [submitResult, setSubmitResult] = useState(null);
-  const [hoverTooltip, setHoverTooltip] = useState(null);
   const hoverTimers = React.useRef({});
 
   const showNotification = (msg) => {
@@ -639,17 +638,7 @@ function App() {
     }
   }, [expStep]);
 
-  useEffect(() => {
-    const handleDocumentClick = (e) => {
-      if (!e.target.closest('.word')) {
-        setHoverTooltip(null);
-      }
-    };
-    document.addEventListener('click', handleDocumentClick);
-    return () => {
-      document.removeEventListener('click', handleDocumentClick);
-    };
-  }, []);
+  // No hover tooltip document click listener needed
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -820,19 +809,7 @@ function App() {
       });
       setTranslation(res.data);
 
-      if (experimentMode && rect) {
-        if (hoverTooltip && hoverTooltip.word === tok.text) {
-          setHoverTooltip(null);
-        } else {
-          setHoverTooltip({
-            word: tok.text,
-            translation: res.data.translation,
-            transliteration: res.data.transliteration,
-            x: rect.left + window.scrollX,
-            y: rect.top + window.scrollY - 10
-          });
-        }
-      }
+      // Set selected word details for the translation panel sidebar
     } catch (err) {
       console.error(err);
       setTranslation({ error: "Failed to fetch translation." });
@@ -1020,8 +997,6 @@ function App() {
       event_type: "reading_end",
       payload: { text_id: textId, duration_ms: duration, timestamp: Date.now() }
     });
-
-    setHoverTooltip(null);
 
     if (expStep === 'reading_1') {
       setReadingTime1(duration);
@@ -1542,7 +1517,7 @@ function App() {
       case 'reading_1':
       case 'reading_2':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: currentReadingCondition === 'wordahead' ? '1200px' : '800px', margin: '2rem auto', textAlign: 'left', width: '90%' }} dir="ltr">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1200px', margin: '2rem auto', textAlign: 'left', width: '90%' }} dir="ltr">
             <div className="glass" style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, color: 'var(--accent)' }}>Reading Session - Text {expStep === 'reading_1' ? '1' : '2'} of 2</h3>
@@ -1561,7 +1536,7 @@ function App() {
               </div>
             </div>
             
-            <div className={`reading-layout-grid ${currentReadingCondition === 'wordahead' ? 'wordahead-layout' : ''}`}>
+            <div className="reading-layout-grid wordahead-layout">
               <div className="glass content-panel" style={{ padding: '2.5rem', background: 'white' }}>
                 <h2 style={{ marginTop: 0, borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
                   {currentTextData?.title}
@@ -1649,7 +1624,6 @@ function App() {
                   <button
                     className="btn"
                     onClick={() => {
-                      setHoverTooltip(null);
                       setExpStep(expStep === 'reading_1' ? 'pre_reading_1' : 'pre_reading_2');
                     }}
                     style={{
@@ -1672,82 +1646,59 @@ function App() {
                 </div>
               </div>
               
-              {currentReadingCondition === 'wordahead' && (
-                <div className={`glass translation-panel ${selectedWord ? 'has-selection' : ''}`} style={{ height: 'fit-content', background: 'white', position: 'sticky', top: '1rem' }}>
-                  <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Translation</span>
-                    {selectedWord && (
-                      <button className="close-btn" onClick={() => setSelectedWord(null)} style={{ position: 'static', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
-                        <X size={18} />
-                      </button>
-                    )}
-                  </h3>
-                  {!selectedWord ? (
-                    <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '2rem', fontSize: '0.9rem' }}>
-                      Hover over or click a highlighted word to see its translation here.
-                    </p>
-                  ) : (
-                    <div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', color: 'var(--accent)' }}>{selectedWord.text}</h4>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                        <span style={{ background: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>CEFR: {selectedWord.cefr}</span>
-                        <span style={{ background: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Imp: {selectedWord.importance}</span>
-                      </div>
-                      {transLoading ? (
-                        <Loader2 className="loader" style={{ margin: '1rem auto', display: 'block' }} />
-                      ) : translation ? (
-                        translation.error ? (
-                          <div style={{ color: '#991b1b', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>{translation.error}</div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div>
-                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                                {translation.translation}
-                              </div>
-                              {translation.transliteration && (
-                                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>({translation.transliteration})</span>
-                              )}
+              <div className={`glass translation-panel ${selectedWord ? 'has-selection' : ''}`} style={{ height: 'fit-content', background: 'white', position: 'sticky', top: '1rem' }}>
+                <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Translation</span>
+                  {selectedWord && (
+                    <button className="close-btn" onClick={() => setSelectedWord(null)} style={{ position: 'static', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+                      <X size={18} />
+                    </button>
+                  )}
+                </h3>
+                {!selectedWord ? (
+                  <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '2rem', fontSize: '0.9rem' }}>
+                    {t('reading.translation_hint')}
+                  </p>
+                ) : (
+                  <div>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem', color: 'var(--accent)' }}>{selectedWord.text}</h4>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                      <span style={{ background: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>CEFR: {selectedWord.cefr}</span>
+                      <span style={{ background: '#f1f5f9', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Imp: {selectedWord.importance}</span>
+                    </div>
+                    {transLoading ? (
+                      <Loader2 className="loader" style={{ margin: '1rem auto', display: 'block' }} />
+                    ) : translation ? (
+                      translation.error ? (
+                        <div style={{ color: '#991b1b', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px' }}>{translation.error}</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          <div>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                              {translation.translation}
                             </div>
-                            {translation.root && translation.root !== 'N/A' && (
-                              <div>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Root (Shoresh):</span>
-                                <div style={{ fontSize: '1.1rem', fontFamily: 'serif', fontWeight: 'bold' }}>{translation.root}</div>
-                              </div>
-                            )}
-                            {translation.example && (
-                              <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                                "{translation.example}"
-                              </div>
+                            {translation.transliteration && (
+                              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>({translation.transliteration})</span>
                             )}
                           </div>
-                        )
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            {hoverTooltip && (
-              <div style={{
-                position: 'absolute',
-                left: `${hoverTooltip.x}px`,
-                top: `${hoverTooltip.y}px`,
-                background: '#1e293b',
-                color: '#ffffff',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                zIndex: 1000,
-                boxShadow: '0 4px 6px rgba(0,0,0,0.15)',
-                transform: 'translate(-50%, -100%)',
-                pointerEvents: 'none',
-                whiteSpace: 'nowrap',
-                direction: 'rtl',
-                fontFamily: 'sans-serif'
-              }}>
-                <div style={{ fontWeight: 'bold' }}>{hoverTooltip.translation}</div>
+                          {translation.root && translation.root !== 'N/A' && (
+                            <div>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Root (Shoresh):</span>
+                              <div style={{ fontSize: '1.1rem', fontFamily: 'serif', fontWeight: 'bold' }}>{translation.root}</div>
+                            </div>
+                          )}
+                          {translation.example && (
+                            <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                              "{translation.example}"
+                            </div>
+                          )}
+                        </div>
+                      )
+                    ) : null}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         );
 
