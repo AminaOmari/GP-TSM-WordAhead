@@ -508,6 +508,34 @@ const checkIsExperimentRoute = () => {
   return path.includes('/experiment') || path.includes('/expermint') || !!searchParams.get('PROLIFIC_PID');
 };
 
+const getExperimentProgress = (expStep) => {
+  const steps = [
+    'consent',
+    'lextale',
+    'early_attention_check',
+    'assigned',
+    'pre_reading_1',
+    'reading_1',
+    'quiz_1',
+    'per_task_survey_1',
+    'pre_reading_2',
+    'reading_2',
+    'quiz_2',
+    'per_task_survey_2',
+    'post_study_survey',
+    'survey_demographics',
+    'completed'
+  ];
+  const idx = steps.indexOf(expStep);
+  if (idx === -1) return { percentage: 0, currentStep: 0, totalSteps: steps.length };
+  const percentage = Math.round((idx / (steps.length - 1)) * 100);
+  return {
+    percentage,
+    currentStep: idx + 1,
+    totalSteps: steps.length
+  };
+};
+
 function App() {
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B2'); // Start at Higher Intermediate
@@ -2172,6 +2200,30 @@ function App() {
             </div>
           </header>
         </div>
+
+        {/* Progress Bar */}
+        {(() => {
+          const { percentage, currentStep, totalSteps } = getExperimentProgress(expStep);
+          const remaining = 100 - percentage;
+          return (
+            <div className="progress-bar-container" style={{ width: '100%', maxWidth: '800px', margin: '0 auto 1.5rem auto', padding: '0 1.5rem', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                <span>Progress: <strong style={{ color: 'var(--accent)' }}>{percentage}%</strong> completed</span>
+                <span><strong>{remaining}%</strong> remaining (Step {currentStep} of {totalSteps})</span>
+              </div>
+              <div style={{ width: '100%', height: '8px', background: 'rgba(0, 0, 0, 0.05)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(0, 0, 0, 0.02)' }}>
+                <div style={{
+                  width: `${percentage}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, var(--accent) 0%, #a855f7 100%)',
+                  borderRadius: '10px',
+                  transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 1px 3px rgba(124, 58, 237, 0.2)'
+                }}></div>
+              </div>
+            </div>
+          );
+        })()}
 
         {notification && (
           <div className="notification-toast" style={{
