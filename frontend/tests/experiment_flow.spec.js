@@ -86,7 +86,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     });
 
     // 2. Open the page
-    await page.goto('/');
+    await page.goto('/experiment');
 
     // Check English UI elements direction (LTR container)
     const appContainer = page.locator('.app-container');
@@ -349,7 +349,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     });
 
     // 2. Open the page
-    await page.goto('/');
+    await page.goto('/experiment');
 
     // Check English UI elements direction (LTR container)
     const appContainer = page.locator('.app-container');
@@ -591,7 +591,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     });
 
     // 2. Open page
-    await page.goto('/');
+    await page.goto('/experiment');
 
     // 3. Consent
     const consentButton = page.locator('button:has-text("Continue")');
@@ -794,7 +794,7 @@ test.describe('WordAhead Participant Flow E2E', () => {
     });
 
     // 2. Open page
-    await page.goto('/');
+    await page.goto('/experiment');
 
     // 3. Consent
     const consentButton = page.locator('button:has-text("Continue")');

@@ -502,6 +502,12 @@ const PostStudySurvey = ({ conditionsSeen, onSubmit, onBack, initialData }) => {
   );
 };
 
+const checkIsExperimentRoute = () => {
+  const path = window.location.pathname.toLowerCase();
+  const searchParams = new URLSearchParams(window.location.search);
+  return path.includes('/experiment') || path.includes('/expermint') || !!searchParams.get('PROLIFIC_PID');
+};
+
 function App() {
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B2'); // Start at Higher Intermediate
@@ -518,7 +524,7 @@ function App() {
   const [learnedStatus, setLearnedStatus] = useState(false);
   const [notification, setNotification] = useState('');
   const [fontSize, setFontSize] = useState(1.1);
-  const [experimentMode, setExperimentMode] = useState(true);
+  const [experimentMode, setExperimentMode] = useState(() => checkIsExperimentRoute());
   const [activeTab, setActiveTab] = useState('words'); // 'words' or 'history'
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -526,11 +532,11 @@ function App() {
   const [cardViewModes, setCardViewModes] = useState({});
 
   // --- Experiment Flow States ---
-  const [inExperiment, setInExperiment] = useState(true);
+  const [inExperiment, setInExperiment] = useState(() => checkIsExperimentRoute());
   const [prolificId, setProlificId] = useState('');
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentTimestamp, setConsentTimestamp] = useState('');
-  const [expStep, setExpStep] = useState('consent'); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
+  const [expStep, setExpStep] = useState(() => checkIsExperimentRoute() ? 'consent' : ''); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
   const [lextaleAnswers, setLextaleAnswers] = useState({});
   const [lextaleCurrentIdx, setLextaleCurrentIdx] = useState(0);
   const [lextaleScore, setLextaleScore] = useState(0);
@@ -804,7 +810,7 @@ function App() {
     const rect = event ? event.currentTarget.getBoundingClientRect() : null;
 
     try {
-      const textToUse = experimentMode ? currentTextData.text : text;
+      const textToUse = (inExperiment && currentTextData) ? currentTextData.text : text;
       const sentences = textToUse.match(/[^.!?]*[.!?]/g) || [textToUse];
       const relevantSentence = sentences.find(s =>
         s.toLowerCase().includes(tok.text.toLowerCase())
@@ -1023,7 +1029,7 @@ function App() {
   };
 
   const handleWordMouseEnter = (e, token) => {
-    if (!experimentMode) return;
+    if (!inExperiment) return;
     if (!token.cefr) return;
     
     const wordText = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
@@ -1034,7 +1040,7 @@ function App() {
   };
 
   const handleWordMouseLeave = async (token) => {
-    if (!experimentMode) return;
+    if (!inExperiment) return;
     if (!token.cefr) return;
     
     const wordText = token.text.toLowerCase().replace(/[.,:;?!"()]/g, '');
@@ -2110,10 +2116,22 @@ function App() {
                 </p>
                 <a
                   href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
-                  style={{ color: 'var(--accent)', textDecoration: 'underline', fontWeight: 'bold', fontSize: '1rem' }}
+                  style={{ color: 'var(--accent)', textDecoration: 'underline', fontWeight: 'bold', fontSize: '1rem', display: 'block', marginBottom: '1rem' }}
                 >
                   Optional Prolific Redirect (C10BDQBR)
                 </a>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setInExperiment(false);
+                    setExperimentMode(false);
+                    setExpStep('');
+                    window.history.pushState(null, '', '/');
+                  }}
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', width: '100%' }}
+                >
+                  Go to Homepage
+                </button>
               </div>
             ) : (
               <a
@@ -2175,6 +2193,7 @@ function App() {
               setInExperiment(false);
               setExperimentMode(false);
               setExpStep('');
+              window.history.pushState(null, '', '/');
             }}
             className="skip-test-btn"
             style={{
@@ -2247,13 +2266,6 @@ function App() {
                 checked={experimentMode}
                 onChange={(e) => {
                   setExperimentMode(e.target.checked);
-                  if (e.target.checked) {
-                    setInExperiment(true);
-                    setExpStep('consent');
-                  } else {
-                    setInExperiment(false);
-                    setExpStep('');
-                  }
                 }}
                 style={{
                   cursor: 'pointer',
@@ -2434,7 +2446,9 @@ function App() {
                 let className = "word";
                 const isLearned = learnedWords[t.text.toLowerCase().replace(/[.,:;?!"()]/g, '')];
 
-                if (t.isDifficult && !isLearned) {
+                if (experimentMode) {
+                  className += " word-experiment";
+                } else if (t.isDifficult && !isLearned) {
                   // DIFFICULT WORDS (Purple)
                   if (t.importance > 2) {
                     className += " word-difficult-important";
@@ -2452,7 +2466,7 @@ function App() {
                 }
 
                 // Filter tokens by skimming level
-                if (t.importance < skimmingLevel) {
+                if (!experimentMode && t.importance < skimmingLevel) {
                   return null;
                 }
 
