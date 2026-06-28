@@ -951,6 +951,22 @@ async def experiment_submit(req: SubmitRequest):
         writer = csv.writer(f)
         writer.writerow(headers)
         writer.writerow(row)
+
+    # Save a permanent copy to the local qualtrics_responses.csv file
+    try:
+        exports_dir = os.path.join(PROJECT_ROOT, "data_exports")
+        os.makedirs(exports_dir, exist_ok=True)
+        qualtrics_csv_path = os.path.join(exports_dir, "qualtrics_responses.csv")
+        file_exists = os.path.exists(qualtrics_csv_path) and os.path.getsize(qualtrics_csv_path) > 0
+        
+        with open(qualtrics_csv_path, "a" if file_exists else "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(headers)
+            writer.writerow(row)
+        print(f"DEBUG: Saved copy of synced response locally to {qualtrics_csv_path}")
+    except Exception as e:
+        print(f"ERROR: Failed to save response to local CSV file: {e}")
     # 3. Trigger Qualtrics API Sync
     qualtrics_success = False
     error_message = None
