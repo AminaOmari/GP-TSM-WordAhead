@@ -599,6 +599,7 @@ function App() {
     ac_early: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otherTranslationTools, setOtherTranslationTools] = useState(['']);
 
   const handleTranslationToolChange = (toolLabel) => {
     setSurveyDemographics(prev => {
@@ -606,19 +607,36 @@ function App() {
         ? prev.translation_tools_used.split(', ').map(t => t.trim()).filter(Boolean)
         : [];
       
+      // Filter out any existing 'Other: ...' items
+      currentTools = currentTools.filter(t => !t.startsWith('Other: '));
+
       if (toolLabel === 'None') {
         if (currentTools.includes('None')) {
           currentTools = [];
         } else {
           currentTools = ['None'];
+          setOtherTranslationTools(['']);
         }
       } else {
         currentTools = currentTools.filter(t => t !== 'None');
         if (currentTools.includes(toolLabel)) {
           currentTools = currentTools.filter(t => t !== toolLabel);
+          if (toolLabel === 'Other') {
+            setOtherTranslationTools(['']);
+          }
         } else {
           currentTools.push(toolLabel);
         }
+      }
+
+      // Append non-empty other tools if 'Other' is checked
+      if (currentTools.includes('Other')) {
+        otherTranslationTools.forEach(ot => {
+          const trimmed = ot.trim();
+          if (trimmed) {
+            currentTools.push(`Other: ${trimmed}`);
+          }
+        });
       }
       
       return {
@@ -627,6 +645,39 @@ function App() {
       };
     });
   };
+
+  const handleOtherToolTextChange = (index, value) => {
+    const updated = [...otherTranslationTools];
+    updated[index] = value;
+    setOtherTranslationTools(updated);
+
+    setSurveyDemographics(prev => {
+      let currentTools = prev.translation_tools_used
+        ? prev.translation_tools_used.split(', ').map(t => t.trim()).filter(Boolean)
+        : [];
+
+      currentTools = currentTools.filter(t => !t.startsWith('Other: '));
+
+      if (currentTools.includes('Other')) {
+        updated.forEach(ot => {
+          const trimmed = ot.trim();
+          if (trimmed) {
+            currentTools.push(`Other: ${trimmed}`);
+          }
+        });
+      }
+
+      return {
+        ...prev,
+        translation_tools_used: currentTools.join(', ')
+      };
+    });
+  };
+
+  const addOtherToolField = () => {
+    setOtherTranslationTools(prev => [...prev, '']);
+  };
+
   const [submitResult, setSubmitResult] = useState(null);
   const hoverTimers = React.useRef({});
 
@@ -1982,27 +2033,104 @@ function App() {
                       ? surveyDemographics.translation_tools_used.split(', ').map(t => t.trim()).includes(tool.label)
                       : false;
                     return (
-                      <label
-                        key={tool.key}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          cursor: 'pointer',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          background: 'var(--bg-secondary)',
-                          border: '1px solid #e2e8f0'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleTranslationToolChange(tool.label)}
-                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-                        />
-                        <span style={{ fontSize: '0.9rem' }}>{t(`demographics.tools.${tool.key}`)}</span>
-                      </label>
+                      <React.Fragment key={tool.key}>
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            cursor: 'pointer',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid #e2e8f0'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleTranslationToolChange(tool.label)}
+                            style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                          />
+                          <span style={{ fontSize: '0.9rem' }}>{t(`demographics.tools.${tool.key}`)}</span>
+                        </label>
+                        {isChecked && tool.key === 'other' && (
+                          <div className="other-tools-inputs" style={{ gridColumn: '1 / -1', marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                            {otherTranslationTools.map((otherValue, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+                                <input
+                                  type="text"
+                                  className="input"
+                                  value={otherValue}
+                                  onChange={(e) => handleOtherToolTextChange(idx, e.target.value)}
+                                  placeholder="Specify other translation tool"
+                                  style={{ flex: 1, fontSize: '0.9rem', padding: '0.4rem 0.75rem' }}
+                                />
+                                {idx === otherTranslationTools.length - 1 ? (
+                                  <button
+                                    type="button"
+                                    onClick={addOtherToolField}
+                                    style={{
+                                      padding: '0.4rem 0.8rem',
+                                      borderRadius: '6px',
+                                      border: '1px solid var(--accent)',
+                                      background: 'var(--accent)',
+                                      color: 'white',
+                                      cursor: 'pointer',
+                                      fontWeight: 'bold',
+                                      fontSize: '1rem',
+                                      height: '38px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = otherTranslationTools.filter((_, i) => i !== idx);
+                                      const finalUpdated = updated.length > 0 ? updated : [''];
+                                      setOtherTranslationTools(finalUpdated);
+                                      setSurveyDemographics(prev => {
+                                        let currentTools = prev.translation_tools_used
+                                          ? prev.translation_tools_used.split(', ').map(t => t.trim()).filter(Boolean)
+                                          : [];
+                                        currentTools = currentTools.filter(t => !t.startsWith('Other: '));
+                                        if (currentTools.includes('Other')) {
+                                          finalUpdated.forEach(ot => {
+                                            const trimmed = ot.trim();
+                                            if (trimmed) currentTools.push(`Other: ${trimmed}`);
+                                          });
+                                        }
+                                        return { ...prev, translation_tools_used: currentTools.join(', ') };
+                                      });
+                                    }}
+                                    style={{
+                                      padding: '0.4rem 0.85rem',
+                                      borderRadius: '6px',
+                                      border: '1px solid #cbd5e1',
+                                      background: '#f1f5f9',
+                                      color: '#64748b',
+                                      cursor: 'pointer',
+                                      fontWeight: 'bold',
+                                      fontSize: '1rem',
+                                      height: '38px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    &times;
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </div>
@@ -2026,7 +2154,7 @@ function App() {
                       </label>
                     ))}
                   </div>
-                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fluent (5)</span>
+                  <span className="likert-anchor likert-right" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fluent (10)</span>
                 </div>
               </div>
 
