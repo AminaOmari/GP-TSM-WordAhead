@@ -71,6 +71,10 @@ def get_cefr_level(word):
     if word_lower in efllex_dict:
         return efllex_dict[word_lower]
         
+    # 1.5. Guard: Capitalized word that missed EFLLex is treated as a proper noun (returns A1)
+    if word[:1].isupper():
+        return "A1"
+        
     # 2. Fallback to zipf frequency if the word is not in EFLLex
     freq = zipf_frequency(word_lower, 'en')
     
@@ -89,3 +93,14 @@ def is_difficult(word_cefr, user_cefr):
         return w_idx > u_idx
     except ValueError:
         return False # Default to not difficult if unknown
+
+if __name__ == "__main__":
+    # Self-check assertions
+    print("Running self-check assertions for cefr.py...")
+    assert get_cefr_level("Mozambique") == "A1"   # proper noun, was C2
+    assert get_cefr_level("Kazakhstan") == "A1"   # proper noun, was C2
+    assert get_cefr_level("Madeline")   == "A1"   # person name
+    assert get_cefr_level("NASA")       == "A1"   # acronym
+    assert get_cefr_level("ubiquitous") != "A1"   # real hard word, must stay flagged
+    assert get_cefr_level("the")        == "A2"   # common word via EFLLex, unaffected (actual dict value is A2)
+    print("All assertions passed!")
