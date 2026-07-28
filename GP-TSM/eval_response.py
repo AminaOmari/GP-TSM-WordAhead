@@ -1,24 +1,50 @@
-import sys
+import os
 import numpy as np
+from openai import OpenAI
 from difflib import SequenceMatcher
 import diff_text
-import threading
 
 OPTIMAL_LENGTH = 0.6
-def evaluate_on_meaning(original_paragraph, response):
-  '''
-  Lightweight version of semantic closeness using word overlap and SequenceMatcher.
-  Saves ~300MB of RAM by avoiding SentenceTransformers.
-  '''
-  p1 = set(original_paragraph.lower().split())
-  p2 = set(response.lower().split())
-  
-  if not p1: return 1.0
-  
-  # Jaccard index (overlap / union) - but for extractive shortening, 
-  # we care primarily about how much of the original "meaning words" are still there.
-  overlap = p1.intersection(p2)
-  return len(overlap) / len(p1)
+_openai_client = None
+
+def _get_client():
+    global _openai_client
+    if _openai_client is None:
+        key = os.environ.get("OPENAI_API_KEY", "")
+        if key:
+            _openai_client = OpenAI(api_key=key)
+    return _openai_client
+
+def evaluate_on_meaning(original_paragraph, response, api_key=None):
+    '''
+    Semantic closeness using OpenAI text-embedding-3-small API model.
+    Preserves true neural semantic distance without requiring local MPNet/PyTorch memory.
+    '''
+    if not original_paragraph or not response:
+        return 1.0
+    try:
+        client = _get_client()
+        if not client and api_key:
+            client = OpenAI(api_key=api_key)
+        if not client:
+            p1 = set(original_paragraph.lower().split())
+            p2 = set(response.lower().split())
+            return len(p1.intersection(p2)) / len(p1) if p1 else 1.0
+            
+        res = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=[original_paragraph, response]
+        )
+        e1 = np.array(res.data[0].embedding)
+        e2 = np.array(res.data[1].embedding)
+        cos_sim = np.dot(e1, e2) / (np.linalg.norm(e1) * np.linalg.norm(e2))
+        return float(cos_sim)
+    except Exception as e:
+        print(f"Embedding API error in evaluate_on_meaning: {e}")
+        p1 = set(original_paragraph.lower().split())
+        p2 = set(response.lower().split())
+        return len(p1.intersection(p2)) / len(p1) if p1 else 1.0
+
 
 
 def evaluate_on_length(original_paragraph, response, optimal_length=None):

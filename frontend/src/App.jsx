@@ -3,6 +3,7 @@ import axios from 'axios';
 import { t, setLocale } from './i18n';
 import { BookOpen, Settings, X, Loader2, Play, Activity, Info, Upload, Trash2, StopCircle, HelpCircle, History, Clock, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import OriginalGPTSM from './OriginalGPTSM';
 
 const API_URL = ''; // Relative to the domain serving the app
 const CONSENT_DIR = 'ltr'; // Configurable layout direction for consent screen ('ltr' or 'rtl')
@@ -537,6 +538,10 @@ const getExperimentProgress = (expStep) => {
 };
 
 function App() {
+  if (window.location.pathname.toLowerCase().startsWith('/original')) {
+    return <OriginalGPTSM />;
+  }
+
   const [text, setText] = useState(''); // Start empty
   const [userLevel, setUserLevel] = useState('B2'); // Start at Higher Intermediate
   const [tokens, setTokens] = useState([]);

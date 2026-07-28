@@ -98,6 +98,9 @@ class AnalyzeRequest(BaseModel):
     text: str
     user_level: str
 
+class OriginalAnalyzeRequest(BaseModel):
+    text: str
+
 class TranslateRequest(BaseModel):
     word: str
     context: str = ""
@@ -313,6 +316,90 @@ async def analyze(req: AnalyzeRequest):
     except Exception as e:
         traceback.print_exc()
         # Return the actual error to frontend
+        raise HTTPException(status_code=500, detail=str(e))
+
+def generate_original_tokens(l0: str, l1: str, l2: str, l3: str, l4: str) -> List[Dict[str, Any]]:
+    import html
+    l0_lst = l0.split()
+    l1_lst = l1.split() if l1 else []
+    l2_lst = l2.split() if l2 else []
+    l3_lst = l3.split() if l3 else []
+    l4_lst = l4.split() if l4 else []
+    
+    p1 = 0
+    p2 = 0
+    p3 = 0
+    p4 = 0
+    
+    tokens = []
+    for w in l0_lst:
+        escaped_w = html.escape(w)
+        if p1 < len(l1_lst) and not is_equal(w, l1_lst[p1]):
+            tokens.append({"text": escaped_w, "level": 0})
+        elif p1 < len(l1_lst) and is_equal(w, l1_lst[p1]):
+            p1 += 1
+            matched = False
+            if p4 < len(l4_lst) and is_equal(w, l4_lst[p4]):
+                p4 += 1
+                tokens.append({"text": escaped_w, "level": 4})
+                matched = True
+            if p3 < len(l3_lst) and is_equal(w, l3_lst[p3]):
+                p3 += 1
+                if not matched:
+                    tokens.append({"text": escaped_w, "level": 3})
+                    matched = True
+            if p2 < len(l2_lst) and is_equal(w, l2_lst[p2]):
+                p2 += 1
+                if not matched:
+                    tokens.append({"text": escaped_w, "level": 2})
+                    matched = True
+            if not matched:
+                tokens.append({"text": escaped_w, "level": 1})
+        else:
+            tokens.append({"text": escaped_w, "level": 0})
+    return tokens
+
+@app.post("/api/original/analyze")
+async def analyze_original(req: OriginalAnalyzeRequest):
+    print(f"Received /api/original/analyze request. Text length: {len(req.text)}")
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Server OpenAI API Key is not configured")
+        
+    raw_text = req.text.strip()
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+        
+    if len(raw_text) > 1000:
+        raise HTTPException(status_code=400, detail="Input text exceeds maximum allowed length of 1,000 characters for demo responsiveness.")
+        
+    try:
+        clean_text = clean_rtf(raw_text)
+        paragraphs = [p.strip() for p in clean_text.split('\n') if p.strip()]
+        
+        all_tokens = []
+        
+        for p in paragraphs:
+            print(f"Processing paragraph for /original: {p[:30]}...")
+            gp_res = llm.get_shortened_paragraph(p, k=OPENAI_API_KEY)
+            
+            if not gp_res:
+                continue
+                
+            for item in gp_res:
+                l0 = item.get('0', '')
+                l1 = item.get('1', '')
+                l2 = item.get('2', '')
+                l3 = item.get('3', '')
+                l4 = item.get('4', '')
+                
+                p_tokens = generate_original_tokens(l0, l1, l2, l3, l4)
+                all_tokens.extend(p_tokens)
+                all_tokens.append({"text": "\n", "level": -1})
+                
+        gc.collect()
+        return {"tokens": all_tokens}
+    except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/history")
