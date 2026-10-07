@@ -505,12 +505,20 @@ const PostStudySurvey = ({ conditionsSeen, onSubmit, onBack, initialData }) => {
 
 const checkIsExperimentRoute = () => {
   const path = window.location.pathname.toLowerCase();
-  const searchParams = new URLSearchParams(window.location.search);
-  return path.includes('/experiment') || path.includes('/expermint') || !!searchParams.get('PROLIFIC_PID');
+  return path.includes('/experiment') || path.includes('/expermint');
+};
+
+const validateParticipantFormat = (val) => {
+  const trimmed = (val || '').trim();
+  if (trimmed === '00') return true; // Reusable pilot / demo override
+  if (!/^P\d{3}$/.test(trimmed)) return false;
+  const num = parseInt(trimmed.slice(1), 10);
+  return num >= 1 && num <= 999;
 };
 
 const getExperimentProgress = (expStep) => {
   const steps = [
+    'participant_entry',
     'consent',
     'lextale',
     'early_attention_check',
@@ -567,9 +575,13 @@ function App() {
   // --- Experiment Flow States ---
   const [inExperiment, setInExperiment] = useState(() => checkIsExperimentRoute());
   const [prolificId, setProlificId] = useState('');
+  const [participantInput, setParticipantInput] = useState('');
+  const [participantFormatError, setParticipantFormatError] = useState(false);
+  const [participantBackendError, setParticipantBackendError] = useState('');
+  const [isCheckingParticipant, setIsCheckingParticipant] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentTimestamp, setConsentTimestamp] = useState('');
-  const [expStep, setExpStep] = useState(() => checkIsExperimentRoute() ? 'consent' : ''); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
+  const [expStep, setExpStep] = useState(() => checkIsExperimentRoute() ? 'participant_entry' : ''); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
   const [lextaleAnswers, setLextaleAnswers] = useState({});
   const [lextaleCurrentIdx, setLextaleCurrentIdx] = useState(0);
   const [lextaleScore, setLextaleScore] = useState(0);
@@ -715,17 +727,28 @@ function App() {
     }
   }, [showDashboard]);
 
-  // Check URL parameters for Prolific entry on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const pid = params.get('PROLIFIC_PID');
-    if (pid) {
-      setProlificId(pid);
-      setInExperiment(true);
-      setExperimentMode(true);
-      setExpStep('consent');
+  const handleParticipantSubmit = async () => {
+    const trimmed = participantInput.trim();
+    if (!validateParticipantFormat(trimmed)) {
+      setParticipantFormatError(true);
+      return;
     }
-  }, []);
+    setIsCheckingParticipant(true);
+    setParticipantBackendError('');
+    try {
+      await axios.post(`${API_URL}/api/experiment/check_participant`, {
+        participant_id: trimmed
+      });
+      setProlificId(trimmed);
+      setExpStep('consent');
+    } catch (err) {
+      console.error(err);
+      const msg = err.response?.data?.detail || "This participant number has already been used. Please contact the researcher.";
+      setParticipantBackendError(msg);
+    } finally {
+      setIsCheckingParticipant(false);
+    }
+  };
 
   useEffect(() => {
     if (expStep === 'consent') {
@@ -1373,6 +1396,84 @@ function App() {
   // --- Render Experiment Steps ---
   const renderExperimentFlow = () => {
     switch (expStep) {
+      case 'participant_entry':
+        return (
+          <div className="glass" style={{ maxWidth: '520px', margin: '4rem auto', padding: '2.5rem', textAlign: 'left' }}>
+            <h2 style={{ color: 'var(--accent)', marginTop: 0, textAlign: 'center' }}>Welcome to the Study</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', textAlign: 'center', lineHeight: '1.5' }}>
+              Please enter the participant number provided by the researcher to begin.
+            </p>
+            
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label htmlFor="participant-number-input" style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                Participant number
+              </label>
+              <input
+                id="participant-number-input"
+                type="text"
+                className="input"
+                value={participantInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setParticipantInput(val);
+                  setParticipantBackendError('');
+                  if (val.trim().length > 0 && !validateParticipantFormat(val)) {
+                    setParticipantFormatError(true);
+                  } else {
+                    setParticipantFormatError(false);
+                  }
+                }}
+                placeholder="Enter participant number (e.g. P001)"
+                style={{
+                  width: '100%',
+                  padding: '0.85rem 1rem',
+                  fontSize: '1.1rem',
+                  borderRadius: '8px',
+                  border: participantFormatError ? '1px solid #ef4444' : '1px solid #cbd5e1',
+                  boxSizing: 'border-box'
+                }}
+                autoFocus
+              />
+              {participantFormatError && (
+                <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
+                  Participant number must be the letter P followed by 3 digits (P001–P999).
+                </p>
+              )}
+            </div>
+
+            {participantBackendError && (
+              <div style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#b91c1c',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                marginBottom: '1.5rem',
+                textAlign: 'center'
+              }}>
+                {participantBackendError}
+              </div>
+            )}
+
+            <button
+              className="btn"
+              disabled={!validateParticipantFormat(participantInput) || isCheckingParticipant}
+              onClick={handleParticipantSubmit}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                fontSize: '1.1rem',
+                background: 'var(--accent)',
+                color: '#ffffff',
+                cursor: (!validateParticipantFormat(participantInput) || isCheckingParticipant) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isCheckingParticipant ? 'Checking...' : 'Continue'}
+            </button>
+          </div>
+        );
+
       case 'consent':
         return (
           <div className="glass" style={{ maxWidth: '750px', margin: '2rem auto', padding: '2.5rem', textAlign: 'left' }}>
@@ -1387,16 +1488,16 @@ function App() {
               <p style={{ marginTop: 0 }}>The study looks at how an AI-based reading assistant affects the reading and comprehension of academic English texts among native Hebrew speakers.</p>
               
               <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>What you will be asked to do</h4>
-              <p style={{ marginTop: 0 }}>You will complete a short English-level screening task, then read two short English texts on a desktop computer. After each text you will answer a short comprehension quiz and a brief questionnaire about your reading experience. At the end you will answer a short background questionnaire and a comparison questionnaire. The session is expected to take roughly the time stated on Prolific.</p>
+              <p style={{ marginTop: 0 }}>You will complete a short English-level screening task, then read two short English texts on a desktop computer. After each text you will answer a short comprehension quiz and a brief questionnaire about your reading experience. At the end you will answer a short background questionnaire and a comparison questionnaire. The session is expected to take approximately 25–30 minutes.</p>
               
               <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Voluntary participation and withdrawal</h4>
               <p style={{ marginTop: 0 }}>Participation is entirely voluntary. You may stop at any time without giving a reason. Some questions include simple attention checks to confirm careful reading; responses that do not pass these checks may be excluded from analysis.</p>
               
               <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Privacy and data use</h4>
-              <p style={{ marginTop: 0 }}>The study is anonymous and collects no personally identifying information. Your Prolific ID is used only to deliver your compensation and is not stored in an identifying way alongside your research responses. The English reading texts are processed by a third-party translation service (OpenAI / GPT-4o); no personal information is sent. Data are stored securely and used for academic research only.</p>
+              <p style={{ marginTop: 0 }}>The study is anonymous and collects no personally identifying information. Your participant number is used only to organize study data and is not stored in an identifying way alongside your research responses. The English reading texts are processed by a third-party translation service (OpenAI / GPT-4o); no personal information is sent. Data are stored securely and used for academic research only.</p>
               
               <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Compensation</h4>
-              <p style={{ marginTop: 0 }}>Compensation is provided through Prolific according to the platform's rates, as stated in the study listing.</p>
+              <p style={{ marginTop: 0 }}>Participation details and compensation are provided as communicated by the research team.</p>
               
               <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Contact</h4>
               <p style={{ marginTop: 0, marginBottom: '0.5rem' }}>If you have questions about the study, you may contact the research team or the academic supervisor:</p>
@@ -1410,19 +1511,6 @@ function App() {
               
               <h4 style={{ marginBottom: '0.25rem', color: 'var(--accent)' }}>Consent</h4>
               <p style={{ marginTop: 0 }}>By selecting “I have read and understood the information above, and I agree to take part” and continuing, you confirm that you are at least 18 years old, that you have read and understood this information, and that you agree to take part in the study.</p>
-            </div>
-
-            <div style={{ margin: '1.5rem 0' }}>
-              <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Prolific Participant ID</label>
-              <input
-                type="text"
-                className="input"
-                value={prolificId}
-                onChange={(e) => setProlificId(e.target.value)}
-                placeholder="Enter your Prolific ID"
-                disabled={!!new URLSearchParams(window.location.search).get('PROLIFIC_PID')}
-                style={{ fontSize: '1.1rem' }}
-              />
             </div>
 
             <div style={{ margin: '1.5rem 0' }}>
@@ -1441,7 +1529,7 @@ function App() {
 
             <button
               className="btn"
-              disabled={!prolificId.trim() || !consentChecked}
+              disabled={!consentChecked}
               onClick={() => {
                 const now = new Date().toISOString();
                 setConsentTimestamp(now);
@@ -1543,13 +1631,9 @@ function App() {
               <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
                 Thank you for your interest. Based on your vocabulary screening test score of <strong>{lextaleScore.toFixed(1)}%</strong>, you do not meet the eligibility criteria for this study.
               </p>
-              <button
-                className="btn"
-                onClick={() => window.location.href = `https://app.prolific.co/submissions/complete?cc=not_eligible`}
-                style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
-              >
-                Return to Prolific
-              </button>
+              <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+                You may now let the researcher know you have finished.
+              </p>
             </div>
           );
         }
@@ -2243,24 +2327,12 @@ function App() {
         );
 
       case 'completed': {
-        const isPilot = expCondition?.is_pilot;
         return (
           <div className="glass" style={{ maxWidth: '600px', margin: '4rem auto', padding: '3.5rem', textAlign: 'center' }}>
-            {isPilot ? (
-              <>
-                <h2 style={{ color: 'var(--accent)', marginTop: 0 }}>Pilot / Demo Completed!</h2>
-                <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
-                  You have completed the pilot run of the experiment. Your responses have been successfully logged.
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 style={{ color: '#22c55e', marginTop: 0 }}>Experiment Completed Successfully!</h2>
-                <p style={{ fontSize: '1.1rem', lineHeight: '1.6', margin: '2rem 0' }}>
-                  Thank you very much for your time and contribution to our research study. Your responses have been saved and synchronized with Qualtrics.
-                </p>
-              </>
-            )}
+            <h2 style={{ color: '#22c55e', marginTop: 0, fontSize: '1.8rem' }}>Thank you for participating!</h2>
+            <p style={{ fontSize: '1.2rem', lineHeight: '1.6', margin: '2rem 0', color: 'var(--text-primary)' }}>
+              You may now let the researcher know you have finished.
+            </p>
             {submitResult?.qualtrics_sync?.success ? (
               <p style={{ color: '#166534', background: '#f0fdf4', padding: '0.75rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '2rem' }}>
                 ✓ Server sync status: Data uploaded successfully.
@@ -2270,38 +2342,19 @@ function App() {
                 ℹ Server sync status: Logged locally. (Dry-run mode / API offline)
               </p>
             )}
-            {isPilot ? (
-              <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
-                  Since this is a pilot session, the Prolific redirect is optional:
-                </p>
-                <a
-                  href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
-                  style={{ color: 'var(--accent)', textDecoration: 'underline', fontWeight: 'bold', fontSize: '1rem', display: 'block', marginBottom: '1rem' }}
-                >
-                  Optional Prolific Redirect (C10BDQBR)
-                </a>
-                <button
-                  className="btn"
-                  onClick={() => {
-                    setInExperiment(false);
-                    setExperimentMode(false);
-                    setExpStep('');
-                    window.history.pushState(null, '', '/');
-                  }}
-                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', width: '100%' }}
-                >
-                  Go to Homepage
-                </button>
-              </div>
-            ) : (
-              <a
+            {expCondition?.is_pilot && (
+              <button
                 className="btn"
-                href="https://app.prolific.co/submissions/complete?cc=C10BDQBR"
-                style={{ display: 'inline-block', textDecoration: 'none', padding: '1rem 2.5rem', fontSize: '1.1rem', background: 'var(--accent)', color: '#ffffff' }}
+                onClick={() => {
+                  setInExperiment(false);
+                  setExperimentMode(false);
+                  setExpStep('');
+                  window.history.pushState(null, '', '/');
+                }}
+                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', marginTop: '1rem', width: '100%' }}
               >
-                Redirect to Prolific to Complete
-              </a>
+                Go to Homepage
+              </button>
             )}
           </div>
         );

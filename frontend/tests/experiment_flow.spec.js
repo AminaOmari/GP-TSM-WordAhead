@@ -85,6 +85,10 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
     });
 
+    await page.route('**/api/experiment/check_participant', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, participant_id: "P001" }) });
+    });
+
     // 2. Open the page
     await page.goto('/experiment');
 
@@ -92,13 +96,18 @@ test.describe('WordAhead Participant Flow E2E', () => {
     const appContainer = page.locator('.app-container');
     await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
-    // 3. Consent Page Check
-    const consentButton = page.locator('button:has-text("Continue")');
-    await expect(consentButton).toBeDisabled();
+    // 3. Participant Setup Check
+    const setupContinueButton = page.locator('button:has-text("Continue")');
+    await expect(setupContinueButton).toBeDisabled();
 
-    // Enter Prolific ID
-    const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
-    await pidInput.fill('test_pid_pw');
+    // Enter Participant Number
+    const pidInput = page.locator('#participant-number-input');
+    await pidInput.fill('P001');
+    await expect(setupContinueButton).toBeEnabled();
+    await setupContinueButton.dispatchEvent('click');
+
+    // 4. Consent Page Check
+    const consentButton = page.locator('button:has-text("Continue")');
     await expect(consentButton).toBeDisabled();
 
     // Tick checkbox
@@ -264,10 +273,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await demoSubmitButton.dispatchEvent('click');
 
     // 16. Completed Screen
-    // Verify Prolific redirect URL with correct code C10BDQBR
-    const prolificLink = page.locator('a[href*="C10BDQBR"]');
-    await expect(prolificLink).toBeVisible();
-    await expect(prolificLink).toHaveAttribute('href', 'https://app.prolific.co/submissions/complete?cc=C10BDQBR');
+    await expect(page.locator('h2:has-text("Thank you for participating!")')).toBeVisible();
+    await expect(page.locator('p:has-text("You may now let the researcher know you have finished.")')).toBeVisible();
+    await expect(page.locator('a[href*="C10BDQBR"]')).toHaveCount(0);
   });
 
   test('Walk through complete participant flow with Sequence B and TF format', async ({ page }) => {
@@ -348,6 +356,10 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
     });
 
+    await page.route('**/api/experiment/check_participant', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, participant_id: "P002" }) });
+    });
+
     // 2. Open the page
     await page.goto('/experiment');
 
@@ -355,13 +367,18 @@ test.describe('WordAhead Participant Flow E2E', () => {
     const appContainer = page.locator('.app-container');
     await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
-    // 3. Consent Page Check
-    const consentButton = page.locator('button:has-text("Continue")');
-    await expect(consentButton).toBeDisabled();
+    // 3. Participant Setup Check
+    const setupContinueButton = page.locator('button:has-text("Continue")');
+    await expect(setupContinueButton).toBeDisabled();
 
-    // Enter Prolific ID
-    const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
-    await pidInput.fill('test_pid_pw_tf');
+    // Enter Participant Number
+    const pidInput = page.locator('#participant-number-input');
+    await pidInput.fill('P002');
+    await expect(setupContinueButton).toBeEnabled();
+    await setupContinueButton.dispatchEvent('click');
+
+    // 4. Consent Page Check
+    const consentButton = page.locator('button:has-text("Continue")');
     await expect(consentButton).toBeDisabled();
 
     // Tick checkbox
@@ -507,9 +524,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await demoSubmitButton.dispatchEvent('click');
 
     // 16. Completed Screen
-    const prolificLink = page.locator('a[href*="C10BDQBR"]');
-    await expect(prolificLink).toBeVisible();
-    await expect(prolificLink).toHaveAttribute('href', 'https://app.prolific.co/submissions/complete?cc=C10BDQBR');
+    await expect(page.locator('h2:has-text("Thank you for participating!")')).toBeVisible();
+    await expect(page.locator('p:has-text("You may now let the researcher know you have finished.")')).toBeVisible();
+    await expect(page.locator('a[href*="C10BDQBR"]')).toHaveCount(0);
   });
 
   test('Walk through pilot flow bypassing exclusion', async ({ page }) => {
@@ -590,13 +607,21 @@ test.describe('WordAhead Participant Flow E2E', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, qualtrics_sync: { success: true } }) });
     });
 
+    await page.route('**/api/experiment/check_participant', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, participant_id: "00" }) });
+    });
+
     // 2. Open page
     await page.goto('/experiment');
 
-    // 3. Consent
-    const consentButton = page.locator('button:has-text("Continue")');
-    const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
+    // 3. Participant Setup
+    const setupContinueButton = page.locator('button:has-text("Continue")');
+    const pidInput = page.locator('#participant-number-input');
     await pidInput.fill('00');
+    await setupContinueButton.dispatchEvent('click');
+
+    // 4. Consent
+    const consentButton = page.locator('button:has-text("Continue")');
     await page.locator('input[type="checkbox"]').dispatchEvent('click');
     await consentButton.dispatchEvent('click');
 
@@ -695,8 +720,9 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await demoSubmitButton.dispatchEvent('click');
 
     // 16. Completed Screen
-    await expect(page.locator('h2:has-text("Pilot / Demo Completed!")')).toBeVisible();
-    await expect(page.locator('a:has-text("Optional Prolific Redirect")')).toBeVisible();
+    await expect(page.locator('h2:has-text("Thank you for participating!")')).toBeVisible();
+    await expect(page.locator('text=You may now let the researcher know you have finished.')).toBeVisible();
+    await expect(page.locator('a[href*="C10BDQBR"]')).toHaveCount(0);
   });
 
   test('Mobile Touch Translation Interaction', async ({ page }, testInfo) => {
@@ -762,6 +788,10 @@ test.describe('WordAhead Participant Flow E2E', () => {
       example: "This is a mock text."
     };
 
+    await page.route('**/api/experiment/check_participant', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: true, participant_id: "P005" }) });
+    });
+
     await page.route('**/api/experiment/assign', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockAssignment) });
     });
@@ -796,10 +826,14 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // 2. Open page
     await page.goto('/experiment');
 
+    // 2.5 Participant Entry
+    const partInput = page.locator('#participant-number-input');
+    await expect(partInput).toBeVisible();
+    await partInput.fill('P005');
+    await page.locator('button:has-text("Continue")').click();
+
     // 3. Consent
     const consentButton = page.locator('button:has-text("Continue")');
-    const pidInput = page.locator('input[placeholder="Enter your Prolific ID"]');
-    await pidInput.fill('mobile_test_pid');
     await page.locator('input[type="checkbox"]').dispatchEvent('click');
     await consentButton.dispatchEvent('click');
 
@@ -841,5 +875,47 @@ test.describe('WordAhead Participant Flow E2E', () => {
     
     // Verify that NO hover event has been logged during this touch/tap interaction
     expect(hoverEventLogged).toBe(false);
+  });
+
+  test('Participant Number Entry Format and Duplicate Validation', async ({ page }) => {
+    await page.goto('/experiment');
+
+    const input = page.locator('#participant-number-input');
+    const continueBtn = page.locator('button:has-text("Continue")');
+
+    await expect(input).toBeVisible();
+    await expect(continueBtn).toBeDisabled();
+
+    // Invalid format: missing P
+    await input.fill('001');
+    await expect(page.locator('text=Participant number must be the letter P followed by 3 digits')).toBeVisible();
+    await expect(continueBtn).toBeDisabled();
+
+    // Invalid format: P000 out of range
+    await input.fill('P000');
+    await expect(page.locator('text=Participant number must be the letter P followed by 3 digits')).toBeVisible();
+    await expect(continueBtn).toBeDisabled();
+
+    // Invalid format: P1000 too many digits
+    await input.fill('P1000');
+    await expect(page.locator('text=Participant number must be the letter P followed by 3 digits')).toBeVisible();
+    await expect(continueBtn).toBeDisabled();
+
+    // Mock duplicate check failure
+    await page.route('**/api/experiment/check_participant', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: "This participant number has already been used. Please contact the researcher." })
+      });
+    });
+
+    // Valid format: P001
+    await input.fill('P001');
+    await expect(continueBtn).toBeEnabled();
+    await continueBtn.click();
+
+    // Verify duplicate error displayed
+    await expect(page.locator('text=This participant number has already been used. Please contact the researcher.')).toBeVisible();
   });
 });

@@ -314,6 +314,10 @@ def test_full_experiment_submission():
     headers = imported_csv_data["headers"]
     row = imported_csv_data["row"]
     
+    # Assert column headers carry participant_id and not prolific_pid
+    assert "participant_id" in headers
+    assert "prolific_pid" not in headers
+
     # Assert column headers carry trial1_ / trial2_ prefix and hover metrics exist
     assert "trial1_click_count" in headers
     assert "trial1_unique_words_translated" in headers
@@ -336,6 +340,7 @@ def test_full_experiment_submission():
     
     # Map headers to indices
     h_idx = {h: idx for idx, h in enumerate(headers)}
+    assert row[h_idx["participant_id"]] == pid
     
     # Assert correct calculations
     assert row[h_idx["trial1_click_count"]] == "1"
@@ -721,3 +726,49 @@ def test_pilot_pid_matching_robustness():
     assert cursor.fetchone() is None, "Pilot PID '00' failed to wipe previous session data!"
     
     conn.close()
+
+# ---------------------------------------------------------
+# 7. Participant Number Validation & Reuse Blocking Tests
+# ---------------------------------------------------------
+def test_check_participant_format_validation():
+    # Invalid formats
+    for bad_id in ["P000", "P1000", "P01", "123", "p001", "abc", ""]:
+        res = client.post("/api/experiment/check_participant", json={"participant_id": bad_id})
+        assert res.status_code == 400
+
+    # Valid formats
+    for good_id in ["P001", "P042", "P999"]:
+        res = client.post("/api/experiment/check_participant", json={"participant_id": good_id})
+        assert res.status_code == 200
+        assert res.json()["valid"] is True
+        assert res.json()["participant_id"] == good_id
+
+def test_check_and_assign_duplicate_participant_blocked():
+    test_pid = "P888"
+    
+    # Clean up if previously exists
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM experiment_participants WHERE prolific_pid = ?", (test_pid,))
+    c.execute("DELETE FROM participant_meta WHERE prolific_pid = ?", (test_pid,))
+    conn.commit()
+    conn.close()
+
+    # Initially available
+    check1 = client.post("/api/experiment/check_participant", json={"participant_id": test_pid})
+    assert check1.status_code == 200
+    assert check1.json()["valid"] is True
+
+    # Assign participant
+    assign1 = client.post("/api/experiment/assign", json={"participant_id": test_pid, "lextale_score": 70.0})
+    assert assign1.status_code == 200
+
+    # Now checking again must be BLOCKED with exact error message
+    check2 = client.post("/api/experiment/check_participant", json={"participant_id": test_pid})
+    assert check2.status_code == 400
+    assert check2.json()["detail"] == "This participant number has already been used. Please contact the researcher."
+
+    # Direct re-assign must also be BLOCKED with exact error message
+    assign2 = client.post("/api/experiment/assign", json={"participant_id": test_pid, "lextale_score": 75.0})
+    assert assign2.status_code == 400
+    assert assign2.json()["detail"] == "This participant number has already been used. Please contact the researcher."

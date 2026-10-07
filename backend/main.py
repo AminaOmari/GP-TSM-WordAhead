@@ -647,8 +647,13 @@ async def track_click(req: TrackClickRequest):
 
 # --- Experiment Models & Data ---
 
+class CheckParticipantRequest(BaseModel):
+    participant_id: Optional[str] = None
+    prolific_pid: Optional[str] = None
+
 class AssignRequest(BaseModel):
-    prolific_pid: str
+    prolific_pid: Optional[str] = None
+    participant_id: Optional[str] = None
     lextale_score: float
 
 class LogEventRequest(BaseModel):
@@ -657,7 +662,8 @@ class LogEventRequest(BaseModel):
     payload: Dict[str, Any]
 
 class SurveySubmissionRequest(BaseModel):
-    prolific_pid: str
+    prolific_pid: Optional[str] = None
+    participant_id: Optional[str] = None
     survey_type: str
     condition: Optional[str] = None
     text_id: Optional[str] = None
@@ -683,7 +689,8 @@ class ReadingPayload(BaseModel):
     comprehension: List[Dict[str, Any]]
 
 class SubmitRequest(BaseModel):
-    prolific_pid: str
+    prolific_pid: Optional[str] = None
+    participant_id: Optional[str] = None
     lextale_score: float
     cefr_level: str
     text_format: str
@@ -699,13 +706,42 @@ class SubmitRequest(BaseModel):
 
 # --- Experiment Endpoints ---
 
+@app.post("/api/experiment/check_participant")
+async def check_participant(req: CheckParticipantRequest):
+    pid = (req.participant_id or req.prolific_pid or "").strip()
+    if not pid:
+        raise HTTPException(status_code=400, detail="Participant number cannot be empty")
+        
+    is_pilot = pid in PILOT_PIDS
+    if not is_pilot:
+        match = re.match(r"^P(\d{3})$", pid)
+        if not match or int(match.group(1)) < 1 or int(match.group(1)) > 999:
+            raise HTTPException(status_code=400, detail="Participant number must be the letter P followed by 3 digits (P001-P999).")
+            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT prolific_pid FROM experiment_participants WHERE prolific_pid = ?", (pid,))
+        existing_part = cursor.fetchone()
+        cursor.execute("SELECT prolific_pid FROM participant_meta WHERE prolific_pid = ?", (pid,))
+        existing_meta = cursor.fetchone()
+        conn.close()
+        
+        if existing_part or existing_meta:
+            raise HTTPException(status_code=400, detail="This participant number has already been used. Please contact the researcher.")
+            
+    return {"valid": True, "participant_id": pid}
+
+@app.get("/api/experiment/check_participant/{participant_id}")
+async def check_participant_get(participant_id: str):
+    return await check_participant(CheckParticipantRequest(participant_id=participant_id))
+
 @app.post("/api/experiment/assign")
 async def experiment_assign(req: AssignRequest):
     import random
     import json
-    prolific_pid = req.prolific_pid.strip()
+    prolific_pid = (req.participant_id or req.prolific_pid or "").strip()
     if not prolific_pid:
-        raise HTTPException(status_code=400, detail="Prolific PID cannot be empty")
+        raise HTTPException(status_code=400, detail="Participant number cannot be empty")
         
     is_pilot = prolific_pid in PILOT_PIDS
     
@@ -718,16 +754,7 @@ async def experiment_assign(req: AssignRequest):
         existing = cursor.fetchone()
         if existing:
             conn.close()
-            return {
-                "prolific_pid": existing["prolific_pid"],
-                "lextale_score": existing["lextale_score"],
-                "cefr_level": existing["cefr_level"],
-                "text_format": existing["text_format"],
-                "sequence": existing["sequence"],
-                "text_pair": existing["text_pair"],
-                "text_order": json.loads(existing["text_order"]),
-                "is_pilot": bool(existing.get("is_pilot", False))
-            }
+            raise HTTPException(status_code=400, detail="This participant number has already been used. Please contact the researcher.")
     else:
         # Reusable pilot ID: clear database records for this pilot PID to run fresh
         cursor.execute("DELETE FROM experiment_participants WHERE prolific_pid = ?", (prolific_pid,))
@@ -888,15 +915,17 @@ async def log_event(req: LogEventRequest):
     conn.commit()
     conn.close()
     return {"success": True}
+
 @app.post("/api/survey")
 async def submit_survey(req: SurveySubmissionRequest):
     import json
+    pid = (req.participant_id or req.prolific_pid or "").strip()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO survey_responses (prolific_pid, survey_type, condition, text_id, sequence_position, responses, open_text_responses, ranking)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (req.prolific_pid.strip(), req.survey_type, req.condition, req.text_id, req.sequence_position, json.dumps(req.responses), json.dumps(req.open_text_responses), json.dumps(req.ranking)))
+    """, (pid, req.survey_type, req.condition, req.text_id, req.sequence_position, json.dumps(req.responses), json.dumps(req.open_text_responses), json.dumps(req.ranking)))
     conn.commit()
     conn.close()
     return {"success": True}
@@ -905,16 +934,13 @@ async def submit_survey(req: SurveySubmissionRequest):
 async def experiment_submit(req: SubmitRequest):
     import json
     import csv
-    
-
-    import json
-    import csv
     import codecs
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     payload_data = req.dict()
+    participant_num = (req.participant_id or req.prolific_pid or payload_data.get("participant_id") or payload_data.get("prolific_pid") or "").strip()
     
     # Extract Demographics
     demo = payload_data.get("surveys", {}).get("demographics", {})
@@ -944,7 +970,7 @@ async def experiment_submit(req: SubmitRequest):
     r2_correct = sum(1 for item in r2_real_mcqs if item.get("correct") is True)
     trial2_comprehension_score = r2_correct / 5.0
 
-    is_pilot = req.prolific_pid.strip() in PILOT_PIDS
+    is_pilot = participant_num in PILOT_PIDS
     
     # Insert participant_meta
     cursor.execute("""
@@ -955,7 +981,7 @@ async def experiment_submit(req: SubmitRequest):
             ac_early, quiz1_attention_raw, quiz1_attention_pass, quiz2_attention_raw, quiz2_attention_pass, is_pilot, consent_timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        req.prolific_pid.strip(), demo.get("age"), demo.get("gender"), demo.get("native_language"),
+        participant_num, demo.get("age"), demo.get("gender"), demo.get("native_language"),
         demo.get("years_studying_english"), demo.get("education"), demo.get("self_rated_english"),
         demo.get("frequency_academic_english"), demo.get("use_translation_tools"), demo.get("translation_tools_used"),
         ac_early, quiz1_attention_raw, int(quiz1_attention_pass), quiz2_attention_raw, int(quiz2_attention_pass), int(is_pilot),
@@ -966,7 +992,7 @@ async def experiment_submit(req: SubmitRequest):
     cursor.execute("""
         INSERT INTO experiment_events (prolific_pid, event_type, payload)
         VALUES (?, ?, ?)
-    """, (req.prolific_pid.strip(), "final_submission", json.dumps(payload_data)))
+    """, (participant_num, "final_submission", json.dumps(payload_data)))
     
     conn.commit()
     conn.close()
@@ -981,7 +1007,7 @@ async def experiment_submit(req: SubmitRequest):
     r2_dwell_ms = sum(int(e.get("dwell_ms", 0)) for e in r2_hover_events if isinstance(e, dict))
 
     headers = [
-        "prolific_pid", "lextale_score", "cefr_level", "text_format", "sequence", "text_pair",
+        "participant_id", "lextale_score", "cefr_level", "text_format", "sequence", "text_pair",
         "trial1_text_id", "trial1_condition", "trial1_time_ms", "trial1_hovers", "trial1_clicks",
         "trial1_click_count", "trial1_unique_words_translated", "trial1_hover_count", "trial1_dwell_ms", "trial1_comprehension",
         "trial2_text_id", "trial2_condition", "trial2_time_ms", "trial2_hovers", "trial2_clicks",
@@ -992,7 +1018,7 @@ async def experiment_submit(req: SubmitRequest):
     ]
     
     row = [
-        payload_data["prolific_pid"],
+        participant_num,
         payload_data["lextale_score"],
         payload_data["cefr_level"],
         payload_data["text_format"],
@@ -1033,7 +1059,7 @@ async def experiment_submit(req: SubmitRequest):
     ]
     
     # Write to a temp CSV file in the backend folder (with BOM for Hebrew)
-    temp_csv_path = os.path.join(BASE_DIR, f"temp_{req.prolific_pid}.csv")
+    temp_csv_path = os.path.join(BASE_DIR, f"temp_{participant_num}.csv")
     with open(temp_csv_path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
         writer.writerow(headers)
