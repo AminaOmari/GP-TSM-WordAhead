@@ -518,8 +518,8 @@ const validateParticipantFormat = (val) => {
 
 const getExperimentProgress = (expStep) => {
   const steps = [
-    'participant_entry',
     'consent',
+    'participant_entry',
     'lextale',
     'early_attention_check',
     'assigned',
@@ -581,7 +581,7 @@ function App() {
   const [isCheckingParticipant, setIsCheckingParticipant] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentTimestamp, setConsentTimestamp] = useState('');
-  const [expStep, setExpStep] = useState(() => checkIsExperimentRoute() ? 'participant_entry' : ''); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
+  const [expStep, setExpStep] = useState(() => checkIsExperimentRoute() ? 'consent' : ''); // 'consent', 'lextale', 'assigned', 'reading_1', 'quiz_1', 'reading_2', 'quiz_2', 'survey_sus', 'survey_nasa', 'survey_wa', 'survey_demographics', 'completed'
   const [lextaleAnswers, setLextaleAnswers] = useState({});
   const [lextaleCurrentIdx, setLextaleCurrentIdx] = useState(0);
   const [lextaleScore, setLextaleScore] = useState(0);
@@ -740,7 +740,10 @@ function App() {
         participant_id: trimmed
       });
       setProlificId(trimmed);
-      setExpStep('consent');
+      if (consentTimestamp) {
+        logExperimentEvent("consent_agreed", { consent_timestamp: consentTimestamp }, trimmed);
+      }
+      setExpStep('lextale');
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.detail || "This participant number has already been used. Please contact the researcher.";
@@ -1007,10 +1010,12 @@ function App() {
   };
 
   // --- Experiment Event Logging Helpers ---
-  const logExperimentEvent = async (eventType, payload) => {
+  const logExperimentEvent = async (eventType, payload, overridePid = null) => {
+    const pid = overridePid || prolificId;
+    if (!pid) return;
     try {
       await axios.post(`${API_URL}/api/experiment/log_event`, {
-        session_id: prolificId,
+        session_id: pid,
         event_type: eventType,
         payload
       });
@@ -1527,19 +1532,52 @@ function App() {
               </label>
             </div>
 
-            <button
-              className="btn"
-              disabled={!consentChecked}
-              onClick={() => {
-                const now = new Date().toISOString();
-                setConsentTimestamp(now);
-                logExperimentEvent("consent_agreed", { consent_timestamp: now });
-                setExpStep('lextale');
-              }}
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: 'var(--accent)' }}
-            >
-              Continue
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+              <button
+                className="btn"
+                disabled={!consentChecked}
+                onClick={() => {
+                  const now = new Date().toISOString();
+                  setConsentTimestamp(now);
+                  setExpStep('participant_entry');
+                }}
+                style={{ flex: 1, padding: '1rem', fontSize: '1.1rem', background: 'var(--accent)' }}
+              >
+                Continue
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setExpStep('declined');
+                }}
+                style={{
+                  padding: '1rem 1.5rem',
+                  fontSize: '1rem',
+                  background: 'transparent',
+                  border: '1px solid #cbd5e1',
+                  color: 'var(--text-secondary)',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                Decline
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'declined':
+      case 'consent_declined':
+        return (
+          <div className="glass" style={{ maxWidth: '600px', margin: '4rem auto', padding: '3rem', textAlign: 'center' }}>
+            <h2 style={{ color: 'var(--text-primary)', marginTop: 0 }}>Participation Declined</h2>
+            <p style={{ fontSize: '1.15rem', lineHeight: '1.6', margin: '2rem 0', color: 'var(--text-secondary)' }}>
+              Thank you for your time. You have chosen not to participate in this study.
+            </p>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+              You may now let the researcher know you have finished.
+            </p>
           </div>
         );
 

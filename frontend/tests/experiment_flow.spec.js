@@ -96,7 +96,18 @@ test.describe('WordAhead Participant Flow E2E', () => {
     const appContainer = page.locator('.app-container');
     await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
-    // 3. Participant Setup Check
+    // 3. Consent Page Check
+    const consentButton = page.locator('button:has-text("Continue")');
+    await expect(consentButton).toBeDisabled();
+
+    // Tick checkbox
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
+    await expect(consentButton).toBeEnabled();
+
+    // Click Consent & go to Participant Setup
+    await consentButton.dispatchEvent('click');
+
+    // 4. Participant Setup Check
     const setupContinueButton = page.locator('button:has-text("Continue")');
     await expect(setupContinueButton).toBeDisabled();
 
@@ -105,17 +116,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await pidInput.fill('P001');
     await expect(setupContinueButton).toBeEnabled();
     await setupContinueButton.dispatchEvent('click');
-
-    // 4. Consent Page Check
-    const consentButton = page.locator('button:has-text("Continue")');
-    await expect(consentButton).toBeDisabled();
-
-    // Tick checkbox
-    await page.locator('input[type="checkbox"]').dispatchEvent('click');
-    await expect(consentButton).toBeEnabled();
-
-    // Click Consent & go to LexTALE
-    await consentButton.dispatchEvent('click');
 
     // 4. LexTALE Vocabulary Test
     // Perform YES click 63 times for the vocabulary items
@@ -367,7 +367,18 @@ test.describe('WordAhead Participant Flow E2E', () => {
     const appContainer = page.locator('.app-container');
     await expect(appContainer).toHaveAttribute('dir', 'ltr');
 
-    // 3. Participant Setup Check
+    // 3. Consent Page Check
+    const consentButton = page.locator('button:has-text("Continue")');
+    await expect(consentButton).toBeDisabled();
+
+    // Tick checkbox
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
+    await expect(consentButton).toBeEnabled();
+
+    // Click Consent & go to Participant Setup
+    await consentButton.dispatchEvent('click');
+
+    // 4. Participant Setup Check
     const setupContinueButton = page.locator('button:has-text("Continue")');
     await expect(setupContinueButton).toBeDisabled();
 
@@ -376,17 +387,6 @@ test.describe('WordAhead Participant Flow E2E', () => {
     await pidInput.fill('P002');
     await expect(setupContinueButton).toBeEnabled();
     await setupContinueButton.dispatchEvent('click');
-
-    // 4. Consent Page Check
-    const consentButton = page.locator('button:has-text("Continue")');
-    await expect(consentButton).toBeDisabled();
-
-    // Tick checkbox
-    await page.locator('input[type="checkbox"]').dispatchEvent('click');
-    await expect(consentButton).toBeEnabled();
-
-    // Click Consent & go to LexTALE
-    await consentButton.dispatchEvent('click');
 
     // 4. LexTALE Vocabulary Test
     for (let i = 0; i < 63; i++) {
@@ -614,16 +614,16 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // 2. Open page
     await page.goto('/experiment');
 
-    // 3. Participant Setup
+    // 3. Consent
+    const consentButton = page.locator('button:has-text("Continue")');
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
+    await consentButton.dispatchEvent('click');
+
+    // 4. Participant Setup
     const setupContinueButton = page.locator('button:has-text("Continue")');
     const pidInput = page.locator('#participant-number-input');
     await pidInput.fill('00');
     await setupContinueButton.dispatchEvent('click');
-
-    // 4. Consent
-    const consentButton = page.locator('button:has-text("Continue")');
-    await page.locator('input[type="checkbox"]').dispatchEvent('click');
-    await consentButton.dispatchEvent('click');
 
     // 4. LexTALE
     for (let i = 0; i < 63; i++) {
@@ -826,16 +826,16 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // 2. Open page
     await page.goto('/experiment');
 
-    // 2.5 Participant Entry
+    // 2.5 Consent
+    const consentButton = page.locator('button:has-text("Continue")');
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
+    await consentButton.dispatchEvent('click');
+
+    // 3. Participant Entry
     const partInput = page.locator('#participant-number-input');
     await expect(partInput).toBeVisible();
     await partInput.fill('P005');
     await page.locator('button:has-text("Continue")').click();
-
-    // 3. Consent
-    const consentButton = page.locator('button:has-text("Continue")');
-    await page.locator('input[type="checkbox"]').dispatchEvent('click');
-    await consentButton.dispatchEvent('click');
 
     // 4. LexTALE
     for (let i = 0; i < 63; i++) {
@@ -880,6 +880,10 @@ test.describe('WordAhead Participant Flow E2E', () => {
   test('Participant Number Entry Format and Duplicate Validation', async ({ page }) => {
     await page.goto('/experiment');
 
+    // Agree to consent first to reach participant entry
+    await page.locator('input[type="checkbox"]').dispatchEvent('click');
+    await page.locator('button:has-text("Continue")').dispatchEvent('click');
+
     const input = page.locator('#participant-number-input');
     const continueBtn = page.locator('button:has-text("Continue")');
 
@@ -918,4 +922,22 @@ test.describe('WordAhead Participant Flow E2E', () => {
     // Verify duplicate error displayed
     await expect(page.locator('text=This participant number has already been used. Please contact the researcher.')).toBeVisible();
   });
+
+  test('Consent Decline Screen Flow', async ({ page }) => {
+    await page.goto('/experiment');
+
+    await expect(page.locator('h2:has-text("Research Consent Form")')).toBeVisible();
+    const declineBtn = page.locator('button:has-text("Decline")');
+    await expect(declineBtn).toBeVisible();
+
+    await declineBtn.click();
+
+    // Verify decline screen shown
+    await expect(page.locator('h2:has-text("Participation Declined")')).toBeVisible();
+    await expect(page.locator('text=You may now let the researcher know you have finished.')).toBeVisible();
+
+    // Verify participant number input is never reached
+    await expect(page.locator('#participant-number-input')).toHaveCount(0);
+  });
 });
+
