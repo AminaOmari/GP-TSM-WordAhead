@@ -22,9 +22,15 @@ This guide helps you deploy the **WordAhead** application (GP-TSM adaptive reade
     - **Start Command**: `python backend/main.py`
 4.  **Environment Variables**:
     - Scroll down to "Environment Variables" or click "Advanced".
-    - Click **Add Environment Variable**.
-    - **Key**: `OPENAI_API_KEY`
-    - **Value**: *[Your Secret OpenAI Key from platform.openai.com]*
+    - Click **Add Environment Variable** for each:
+      - **Key**: `OPENAI_API_KEY`
+        **Value**: *[Your Secret OpenAI Key from platform.openai.com]*
+      - **Key**: `QUALTRICS_API_TOKEN` *(Optional: built-in fallback provided)*
+        **Value**: *[Your Qualtrics API token]*
+      - **Key**: `QUALTRICS_DATACENTER` *(Optional: default `fra1`)*
+        **Value**: `fra1`
+      - **Key**: `QUALTRICS_SURVEY_ID` *(Optional: default `SV_8AEVYmqsH5Gd6xU`)*
+        **Value**: `SV_8AEVYmqsH5Gd6xU`
 5.  **Deploy**.
 6.  **Custom Domain Configuration**:
     - Once deployed, go to the "Settings" tab of your service.

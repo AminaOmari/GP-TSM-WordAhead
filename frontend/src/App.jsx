@@ -746,7 +746,12 @@ function App() {
       setExpStep('lextale');
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.detail || "This participant number has already been used. Please contact the researcher.";
+      let msg = "This participant number has already been used. Please contact the researcher.";
+      if (err.response?.data?.detail) {
+        msg = err.response.data.detail;
+      } else if (!err.response) {
+        msg = "Unable to connect to the backend server. Please check your connection or ensure the server is running.";
+      }
       setParticipantBackendError(msg);
     } finally {
       setIsCheckingParticipant(false);
@@ -2376,9 +2381,14 @@ function App() {
                 ✓ Server sync status: Data uploaded successfully.
               </p>
             ) : (
-              <p style={{ color: '#854d0e', background: '#fefce8', padding: '0.75rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                ℹ Server sync status: Logged locally. (Dry-run mode / API offline)
-              </p>
+              <div style={{ color: '#854d0e', background: '#fefce8', padding: '0.75rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                <p style={{ margin: 0, fontWeight: 500 }}>ℹ Server sync status: Logged locally. (Dry-run mode / API offline)</p>
+                {submitResult?.qualtrics_sync?.error && (
+                  <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.8rem', opacity: 0.85 }}>
+                    Sync note: {submitResult.qualtrics_sync.error}
+                  </p>
+                )}
+              </div>
             )}
             {expCondition?.is_pilot && (
               <button

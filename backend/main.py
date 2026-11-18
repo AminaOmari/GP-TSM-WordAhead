@@ -24,7 +24,7 @@ QUALTRICS_SYNC_DIR = os.path.join(PROJECT_ROOT, 'qualtrics-sync-analysis-main')
 if GP_TSM_DIR not in sys.path:
     sys.path.append(GP_TSM_DIR)
 if QUALTRICS_SYNC_DIR not in sys.path:
-    sys.path.append(QUALTRICS_SYNC_DIR)
+    sys.path.insert(0, QUALTRICS_SYNC_DIR)
 
 # Switch CWD to GP-TSM directory to satisfy its local file writing (shortened_responses.json)
 # This is a bit of a hack but safer for that codebase.
@@ -1086,12 +1086,17 @@ async def experiment_submit(req: SubmitRequest):
     import_result = {}
     
     try:
+        if QUALTRICS_SYNC_DIR not in sys.path and os.path.exists(QUALTRICS_SYNC_DIR):
+            sys.path.insert(0, QUALTRICS_SYNC_DIR)
+            
         from src.config import Config
         from src.qualtrics_client import QualtricsClient
         
         sim_mode = not Config.is_live_configured()
+        print(f"DEBUG: Qualtrics sync starting. Live configured: {Config.is_live_configured()}, sim_mode: {sim_mode}")
         client = QualtricsClient(simulation_mode=sim_mode)
         import_result = client.import_responses(temp_csv_path)
+        print(f"DEBUG: Qualtrics import_result: {import_result}")
         
         if import_result.get("success"):
             qualtrics_success = True

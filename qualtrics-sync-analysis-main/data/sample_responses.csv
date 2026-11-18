@@ -1,0 +1,11 @@
+ResponseId,QID1_NPS,QID2_Product,QID3_Support,QID4_Feedback,QID5_Country
+R_01,10,5,5,Absolutely amazing! Outstanding customer support.,USA
+R_02,8,4,4,"Good experience, but the pricing is a bit high.",Israel
+R_03,5,2,3,"Support was decent, but product itself is buggy.",Germany
+R_04,9,5,4,"Great job, very satisfied.",USA
+R_05,6,3,2,Slow responses and hard to navigate website.,UK
+R_06,10,5,5,Fantastic service! Highly recommended!,Israel
+R_07,7,4,3,Average experience. Nothing special.,UK
+R_08,3,1,2,Terrible customer support. Will cancel soon.,Germany
+R_09,9,5,5,Loved everything about it. Keep it up!,Israel
+R_10,8,4,4,Solid product with good features.,USA
