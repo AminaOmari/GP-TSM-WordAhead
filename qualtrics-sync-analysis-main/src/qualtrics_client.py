@@ -2,6 +2,9 @@ import io
 import os
 import time
 import zipfile
+import csv
+import json
+from datetime import datetime, timezone
 import requests
 from src.config import Config
 from src.data_manager import DataManager
@@ -86,6 +89,52 @@ class QualtricsClient:
                 "error_text": str(e)
             }
 
+    def _format_for_qualtrics(self, input_path: str) -> str:
+        """
+        Ensures the CSV file has the exact 3-row header and standard metadata
+        columns required by the Qualtrics response import engine.
+        Returns the path to a formatted temporary file (or original if already formatted).
+        """
+        try:
+            with open(input_path, 'r', encoding='utf-8-sig') as f:
+                reader = list(csv.reader(f))
+            if not reader:
+                return input_path
+            
+            headers = reader[0]
+            data_rows = reader[1:]
+            
+            # If already has 3-row header with ImportId JSON
+            if len(reader) >= 3 and reader[2] and reader[2][0].startswith('{'):
+                return input_path
+            
+            row1_std = ['StartDate','EndDate','Status','IPAddress','Progress','Duration (in seconds)','Finished','RecordedDate','ResponseId','RecipientLastName','RecipientFirstName','RecipientEmail','ExternalReference','LocationLatitude','LocationLongitude','DistributionChannel','UserLanguage']
+            row2_std = ['Start Date','End Date','Response Type','IP Address','Progress','Duration (in seconds)','Finished','Recorded Date','Response ID','Recipient Last Name','Recipient First Name','Recipient Email','External Data Reference','Location Latitude','Location Longitude','Distribution Channel','User Language']
+            row3_std = ['{"ImportId":"startDate","timeZone":"Z"}','{"ImportId":"endDate","timeZone":"Z"}','{"ImportId":"status"}','{"ImportId":"ipAddress"}','{"ImportId":"progress"}','{"ImportId":"duration"}','{"ImportId":"finished"}','{"ImportId":"recordedDate","timeZone":"Z"}','{"ImportId":"_recordId"}','{"ImportId":"recipientLastName"}','{"ImportId":"recipientFirstName"}','{"ImportId":"recipientEmail"}','{"ImportId":"externalDataReference"}','{"ImportId":"locationLatitude"}','{"ImportId":"locationLongitude"}','{"ImportId":"distributionChannel"}','{"ImportId":"userLanguage"}']
+            
+            custom_cols = [c for c in headers if c not in row1_std]
+            custom_idx = [headers.index(c) for c in custom_cols]
+            
+            row1 = row1_std + custom_cols
+            row2 = row2_std + custom_cols
+            row3 = row3_std + [json.dumps({"ImportId": c}) for c in custom_cols]
+            
+            now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            formatted_rows = [row1, row2, row3]
+            for row in data_rows:
+                std_vals = [now_str, now_str, "0", "", "100", "0", "1", now_str, "", "", "", "", "", "", "", "anonymous", "EN"]
+                custom_vals = [row[i] if i < len(row) else "" for i in custom_idx]
+                formatted_rows.append(std_vals + custom_vals)
+                
+            formatted_path = input_path + ".qualtrics_formatted.csv"
+            with open(formatted_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerows(formatted_rows)
+            return formatted_path
+        except Exception as e:
+            print(f"Warning: could not reformat CSV for Qualtrics: {e}")
+            return input_path
+
     def import_responses(self, csv_file_path: str) -> dict:
         """
         Uploads survey response CSV to Qualtrics survey.
@@ -107,44 +156,62 @@ class QualtricsClient:
                 "progress_id": progress_id
             }
 
+        upload_path = self._format_for_qualtrics(csv_file_path)
         try:
-            # 1. Primary method: Qualtrics v3 API multipart/form-data upload
-            with open(csv_file_path, "rb") as f:
-                headers = {"X-API-TOKEN": self.headers.get("X-API-TOKEN", "").strip()}
-                files = {"file": ("responses.csv", f, "text/csv")}
-                response = requests.post(url, headers=headers, files=files, timeout=20)
+            with open(upload_path, "rb") as f:
+                headers = {
+                    "X-API-TOKEN": self.headers.get("X-API-TOKEN", "").strip(),
+                    "Content-Type": "text/csv; charset=UTF-8"
+                }
+                response = requests.post(url, headers=headers, data=f, timeout=20)
                 
             if response.status_code == 200:
                 result = response.json().get("result", {})
+                progress_id = result.get("progressId")
+                
+                # Poll for up to 4 seconds to confirm processing success
+                if progress_id:
+                    for _ in range(4):
+                        time.sleep(1)
+                        try:
+                            check = requests.get(f"{url}/{progress_id}", headers={"X-API-TOKEN": headers["X-API-TOKEN"]}, timeout=5).json()
+                            status = check.get("result", {}).get("status")
+                            if status == "complete":
+                                return {
+                                    "success": True,
+                                    "progress_id": progress_id,
+                                    "responses_imported": check.get("result", {}).get("responsesImported", 1)
+                                }
+                            elif status == "failed":
+                                err = check.get("result", {}).get("error", {}).get("message", "Import processing failed")
+                                return {
+                                    "success": False,
+                                    "error_text": f"Qualtrics processing error: {err}"
+                                }
+                        except Exception:
+                            break
+
                 return {
                     "success": True,
-                    "progress_id": result.get("progressId")
-                }
-
-            # 2. Secondary fallback: Raw binary upload with Content-Type: text/csv
-            with open(csv_file_path, "rb") as f:
-                raw_headers = {k: v for k, v in self.headers.items() if k.lower() != "content-type"}
-                raw_headers["Content-Type"] = "text/csv"
-                raw_response = requests.post(url, headers=raw_headers, data=f, timeout=20)
-
-            if raw_response.status_code == 200:
-                result = raw_response.json().get("result", {})
-                return {
-                    "success": True,
-                    "progress_id": result.get("progressId")
+                    "progress_id": progress_id
                 }
             else:
-                err_text = response.text if response.text else raw_response.text
                 return {
                     "success": False,
                     "error_code": response.status_code,
-                    "error_text": f"HTTP {response.status_code}: {err_text}"
+                    "error_text": f"HTTP {response.status_code}: {response.text}"
                 }
         except Exception as e:
             return {
                 "success": False,
                 "error_text": str(e)
             }
+        finally:
+            if upload_path != csv_file_path and os.path.exists(upload_path):
+                try:
+                    os.remove(upload_path)
+                except Exception:
+                    pass
 
     def start_response_export(self) -> dict:
         """
