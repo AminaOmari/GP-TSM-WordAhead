@@ -202,5 +202,13 @@ def init_db():
         except Exception as alter_err:
             print(f"Error altering table text_analyses: {alter_err}")
 
+    # Remove P001 and P002 test records if present
+    for stray_pid in ["P001", "P002"]:
+        cursor.execute("DELETE FROM experiment_participants WHERE prolific_pid = ?", (stray_pid,))
+        cursor.execute("DELETE FROM participant_meta WHERE prolific_pid = ?", (stray_pid,))
+        cursor.execute("DELETE FROM survey_responses WHERE prolific_pid = ?", (stray_pid,))
+        cursor.execute("DELETE FROM experiment_events WHERE prolific_pid = ?", (stray_pid,))
+    conn.commit()
+
     conn.close()
     print(f"✅ SQLite Database initialized at: {DB_PATH}")

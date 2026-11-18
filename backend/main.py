@@ -56,7 +56,7 @@ if BASE_DIR not in sys.path:
 from EXPERIMENT_TEXTS_block import EXPERIMENT_TEXTS, PAIRS
 
 # Configure pilot Prolific PIDs
-PILOT_PIDS_RAW = os.getenv("PILOT_PIDS", "00")
+PILOT_PIDS_RAW = os.getenv("PILOT_PIDS", "00,P000")
 PILOT_PIDS = [pid.strip() for pid in PILOT_PIDS_RAW.split(",") if pid.strip()]
 
 app = FastAPI()
@@ -734,6 +734,19 @@ async def check_participant(req: CheckParticipantRequest):
 @app.get("/api/experiment/check_participant/{participant_id}")
 async def check_participant_get(participant_id: str):
     return await check_participant(CheckParticipantRequest(participant_id=participant_id))
+
+@app.delete("/api/experiment/participant/{participant_id}")
+async def delete_participant(participant_id: str):
+    pid = participant_id.strip()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM experiment_participants WHERE prolific_pid = ?", (pid,))
+    cursor.execute("DELETE FROM participant_meta WHERE prolific_pid = ?", (pid,))
+    cursor.execute("DELETE FROM survey_responses WHERE prolific_pid = ?", (pid,))
+    cursor.execute("DELETE FROM experiment_events WHERE prolific_pid = ?", (pid,))
+    conn.commit()
+    conn.close()
+    return {"success": True, "deleted": pid}
 
 @app.post("/api/experiment/assign")
 async def experiment_assign(req: AssignRequest):

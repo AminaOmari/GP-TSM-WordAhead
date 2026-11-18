@@ -510,7 +510,7 @@ const checkIsExperimentRoute = () => {
 
 const validateParticipantFormat = (val) => {
   const trimmed = (val || '').trim();
-  if (trimmed === '00') return true; // Reusable pilot / demo override
+  if (trimmed === '00' || trimmed === 'P000') return true; // Reusable pilot / test override
   if (!/^P\d{3}$/.test(trimmed)) return false;
   const num = parseInt(trimmed.slice(1), 10);
   return num >= 1 && num <= 999;
@@ -1446,7 +1446,7 @@ function App() {
               />
               {participantFormatError && (
                 <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', marginBottom: 0 }}>
-                  Participant number must be the letter P followed by 3 digits (P001–P999).
+                  Participant number must be the letter P followed by 3 digits (P001–P999) or P000 for testing.
                 </p>
               )}
             </div>

@@ -732,12 +732,12 @@ def test_pilot_pid_matching_robustness():
 # ---------------------------------------------------------
 def test_check_participant_format_validation():
     # Invalid formats
-    for bad_id in ["P000", "P1000", "P01", "123", "p001", "abc", ""]:
+    for bad_id in ["P1000", "P01", "123", "p001", "abc", ""]:
         res = client.post("/api/experiment/check_participant", json={"participant_id": bad_id})
         assert res.status_code == 400
 
-    # Valid formats
-    for good_id in ["P001", "P042", "P999"]:
+    # Valid formats (including P000 test user)
+    for good_id in ["P000", "P001", "P042", "P999"]:
         res = client.post("/api/experiment/check_participant", json={"participant_id": good_id})
         assert res.status_code == 200
         assert res.json()["valid"] is True
@@ -772,3 +772,21 @@ def test_check_and_assign_duplicate_participant_blocked():
     assign2 = client.post("/api/experiment/assign", json={"participant_id": test_pid, "lextale_score": 75.0})
     assert assign2.status_code == 400
     assert assign2.json()["detail"] == "This participant number has already been used. Please contact the researcher."
+
+def test_delete_participant_endpoint():
+    pid = "P001"
+    # Assign participant
+    client.post("/api/experiment/assign", json={"participant_id": pid, "lextale_score": 70.0})
+    # Verify participant is blocked
+    res = client.post("/api/experiment/check_participant", json={"participant_id": pid})
+    assert res.status_code == 400
+    
+    # Delete participant
+    del_res = client.delete(f"/api/experiment/participant/{pid}")
+    assert del_res.status_code == 200
+    assert del_res.json()["success"] is True
+    
+    # Now participant number is available again
+    check = client.post("/api/experiment/check_participant", json={"participant_id": pid})
+    assert check.status_code == 200
+    assert check.json()["valid"] is True
